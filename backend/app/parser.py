@@ -4,36 +4,70 @@ from datetime import datetime
 import email.utils
 import urllib.parse
 from typing import List, Dict, Any
+import re
+import json
 
 def resolve_google_news_link(url: str) -> str:
     """
-    Sends a request to follow Google News redirect and returns the original target URL.
-    Falls back to the original URL if a timeout or connection issue occurs.
+    Decodes Google News RSS redirect URL into the original target URL using the internal RPC API.
     """
     if not url or "news.google.com" not in url:
         return url
-    
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    }
-    
+        
     try:
-        # Use httpx Client to follow redirects
-        # Set a short timeout (3.0 seconds) to prevent the crawler from hanging too long
-        with httpx.Client(follow_redirects=True, headers=headers, timeout=3.0) as client:
-            # Try HEAD first as it is lightweight
-            response = client.head(url)
-            # If the site blocks HEAD (405, 403, etc.), fall back to GET
-            if response.status_code in [403, 404, 405]:
-                response = client.get(url)
+        # 1. Extract base64 string
+        parsed_url = urllib.parse.urlparse(url)
+        base64_str = parsed_url.path.split('/')[-1]
+        if not base64_str:
+            return url
             
-            final_url = str(response.url)
-            print(f"[Parser] Resolved: {url[:50]}... -> {final_url[:70]}")
-            return final_url
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+        
+        # 2. Fetch parameters from the google articles URL
+        articles_url = f"https://news.google.com/articles/{base64_str}"
+        response = httpx.get(articles_url, headers=headers, follow_redirects=True, timeout=5.0)
+        if response.status_code != 200:
+            # Fallback to RSS articles URL
+            articles_url = f"https://news.google.com/rss/articles/{base64_str}"
+            response = httpx.get(articles_url, headers=headers, follow_redirects=True, timeout=5.0)
+            response.raise_for_status()
+            
+        html_text = response.text
+        
+        # Extract signature and timestamp using Regex
+        sig_match = re.search(r'data-n-a-sg=["\']([^"\']+)["\']', html_text)
+        ts_match = re.search(r'data-n-a-ts=["\']([^"\']+)["\']', html_text)
+        
+        if not sig_match or not ts_match:
+            return url
+            
+        signature = sig_match.group(1)
+        timestamp = ts_match.group(1)
+        
+        # 3. Post to batchexecute RPC endpoint
+        post_url = "https://news.google.com/_/DotsSplashUi/data/batchexecute"
+        inner_payload = f'["garturlreq",[["X","X",["X","X"],null,null,1,1,"US:en",null,1,null,null,null,null,null,0,1],"X","X",1,[1,1,1],1,1,null,0,0,null,0],"{base64_str}",{timestamp},"{signature}"]'
+        payload = ["Fbv4je", inner_payload]
+        payload_str = f"f.req={urllib.parse.quote(json.dumps([[payload]]))}"
+        
+        headers["Content-Type"] = "application/x-www-form-urlencoded;charset=UTF-8"
+        
+        response = httpx.post(post_url, headers=headers, content=payload_str, timeout=5.0)
+        response.raise_for_status()
+        
+        # Clean and parse the response
+        cleaned_text = response.text.split("\n\n")[1]
+        parsed_data = json.loads(cleaned_text)[:-2]
+        decoded_url = json.loads(parsed_data[0][2])[1]
+        
+        print(f"[Parser] RPC Resolved: {url[:55]}... -> {decoded_url[:70]}")
+        return decoded_url
     except Exception as e:
-        # In case of timeout or other network issues, fall back to the google news redirect URL
-        print(f"[Parser] Failed to resolve redirect for {url[:50]}: {e}")
+        print(f"[Parser] Failed to RPC resolve {url[:55]}: {e}")
         return url
+
 
 def fetch_google_news_rss(keyword: str) -> List[Dict[str, Any]]:
     """
