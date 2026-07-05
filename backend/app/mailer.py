@@ -5,6 +5,8 @@ import httpx
 import pytz
 from .config import settings
 
+SOCIAL_DOMAINS = ["dcard.tw", "ptt.cc", "threads.net", "instagram.com", "facebook.com"]
+
 def send_daily_news_email(news_items, date_str: str):
     # Query database for custom recipient email
     from .database import SessionLocal
@@ -31,7 +33,6 @@ def send_daily_news_email(news_items, date_str: str):
         print("[Mailer] No recipient emails configured. Skipping email sending.")
         return False, "No recipient emails configured"
 
-
     # Send mail to all recipients
     success_count = 0
     results = []
@@ -51,34 +52,46 @@ def send_daily_news_email(news_items, date_str: str):
     overall_msg = "; ".join(results)
     return overall_success, overall_msg
 
-
 def send_via_formsubmit(news_items, date_str: str, recipient: str):
     url = f"https://formsubmit.co/ajax/{recipient}"
     
-    if not news_items:
-        payload = {
-            "監測狀態": "今日未監測到任何相關新聞報導。",
-            "最新新聞數量": "0 則",
-            "_subject": f"【國北教大輿情日報】{date_str} - 今日無新聞",
-            "_template": "box"
-        }
+    # Split list into news and social
+    news_list = []
+    social_list = []
+    for item in news_items:
+        url_lower = item.url.lower()
+        if any(domain in url_lower for domain in SOCIAL_DOMAINS):
+            social_list.append(item)
+        else:
+            news_list.append(item)
+            
+    payload = {
+        "監測狀態": "正常運作中",
+        "監測日期": date_str,
+        "_template": "table"
+    }
+
+    # Format News section
+    if not news_list:
+        payload["新聞媒體報導"] = "今日未監測到任何媒體新聞。"
     else:
         news_lines = []
-        for i, item in enumerate(news_items, 1):
+        for i, item in enumerate(news_list, 1):
             pub_time = item.publish_time.strftime("%H:%M") if hasattr(item.publish_time, 'strftime') else str(item.publish_time)
-            news_lines.append(
-                f"{i}. [{item.source}] {item.title}\n"
-                f"   時間: {pub_time} | 關鍵字: {item.keyword}\n"
-                f"   新聞連結: {item.url}"
-            )
-        
-        payload = {
-            "監測狀態": "正常運作中",
-            "今日新聞總數": f"{len(news_items)} 則",
-            "輿情報導清單": "\n\n".join(news_lines),
-            "_subject": f"【國北教大輿情日報】{date_str} - 共 {len(news_items)} 則新聞",
-            "_template": "table"
-        }
+            news_lines.append(f"{i}. [{item.source}] {item.title}\n   時間: {pub_time} | 關鍵字: {item.keyword}\n   連結: {item.url}")
+        payload["新聞媒體報導"] = "\n\n".join(news_lines)
+
+    # Format Social/Forum section
+    if not social_list:
+        payload["社群與網路論壇"] = "今日未監測到任何社群貼文或論壇討論。"
+    else:
+        social_lines = []
+        for i, item in enumerate(social_list, 1):
+            pub_time = item.publish_time.strftime("%H:%M") if hasattr(item.publish_time, 'strftime') else str(item.publish_time)
+            social_lines.append(f"{i}. [{item.source}] {item.title}\n   時間: {pub_time} | 關鍵字: {item.keyword}\n   連結: {item.url}")
+        payload["社群與網路論壇"] = "\n\n".join(social_lines)
+
+    payload["_subject"] = f"【國北教大輿情日報】{date_str} - 新聞 {len(news_list)} 則 | 社群 {len(social_list)} 則"
         
     try:
         headers = {
@@ -101,18 +114,26 @@ def send_via_formsubmit(news_items, date_str: str, recipient: str):
         return False, msg
 
 def send_via_smtp(news_items, date_str: str, recipient: str):
-    # 1. Build Content HTML
-    if not news_items:
-        content_html = """
+    # Split list into news and social
+    news_list = []
+    social_list = []
+    for item in news_items:
+        url_lower = item.url.lower()
+        if any(domain in url_lower for domain in SOCIAL_DOMAINS):
+            social_list.append(item)
+        else:
+            news_list.append(item)
+
+    # 1. Build Traditional News HTML Section
+    if not news_list:
+        news_html = """
         <div class="empty-state">
-          <p style="font-size: 16px; font-weight: 600; margin: 0 0 8px 0; color: #475569;">今日無最新新聞</p>
-          <p style="margin: 0; font-size: 13px;">今日目前未監測到任何與關鍵字相關的新聞報導。</p>
+          <p style="margin: 0; font-size: 13px; color: #64748b;">今日未監測到傳統媒體新聞報導。</p>
         </div>
         """
     else:
         rows = []
-        for item in news_items:
-            # publish time formatting
+        for item in news_list:
             pub_time = item.publish_time.strftime("%H:%M") if hasattr(item.publish_time, 'strftime') else str(item.publish_time)
             rows.append(f"""
             <tr>
@@ -129,15 +150,53 @@ def send_via_smtp(news_items, date_str: str, recipient: str):
             </tr>
             """)
         
-        content_html = f"""
-        <p style="font-size: 14px; color: #475569; margin: 0 0 16px 0;">
-          今日共監測到 <strong>{len(news_items)}</strong> 則相關新聞報導，清單如下：
-        </p>
+        news_html = f"""
         <table class="news-table">
           <thead>
             <tr>
               <th>新聞標題 / 關鍵字</th>
               <th style="width: 100px;">媒體來源</th>
+              <th style="width: 80px;">時間</th>
+            </tr>
+          </thead>
+          <tbody>
+            {"".join(rows)}
+          </tbody>
+        </table>
+        """
+
+    # 2. Build Social/Forum HTML Section
+    if not social_list:
+        social_html = """
+        <div class="empty-state" style="background-color: #faf5ff;">
+          <p style="margin: 0; font-size: 13px; color: #7c3aed;">今日未監測到社群或網路論壇貼文。</p>
+        </div>
+        """
+    else:
+        rows = []
+        for item in social_list:
+            pub_time = item.publish_time.strftime("%H:%M") if hasattr(item.publish_time, 'strftime') else str(item.publish_time)
+            rows.append(f"""
+            <tr>
+              <td>
+                <div><a href="{item.url}" class="news-title" style="color: #6d28d9;" target="_blank">{item.title}</a></div>
+                <span class="badge badge-keyword" style="margin-top: 4px; background-color: #f5f3ff; color: #5b21b6; border-color: #ddd6fe;">{item.keyword}</span>
+              </td>
+              <td style="white-space: nowrap;">
+                <span class="badge badge-social">{item.source}</span>
+              </td>
+              <td style="white-space: nowrap; color: #64748b;">
+                {pub_time}
+              </td>
+            </tr>
+            """)
+        
+        social_html = f"""
+        <table class="news-table">
+          <thead>
+            <tr>
+              <th>貼文標題 / 關鍵字</th>
+              <th style="width: 100px;">來源平台</th>
               <th style="width: 80px;">時間</th>
             </tr>
           </thead>
@@ -190,9 +249,16 @@ def send_via_smtp(news_items, date_str: str, recipient: str):
     .content {{
       padding: 24px;
     }}
+    .section-title {{
+      font-size: 15px;
+      font-weight: 700;
+      padding-bottom: 6px;
+      margin-top: 0;
+      margin-bottom: 12px;
+    }}
     .empty-state {{
       text-align: center;
-      padding: 40px 20px;
+      padding: 30px 20px;
       background-color: #f1f5f9;
       border-radius: 8px;
       color: #64748b;
@@ -200,7 +266,7 @@ def send_via_smtp(news_items, date_str: str, recipient: str):
     .news-table {{
       width: 100%;
       border-collapse: collapse;
-      margin-top: 16px;
+      margin-bottom: 24px;
     }}
     .news-table th {{
       text-align: left;
@@ -232,16 +298,22 @@ def send_via_smtp(news_items, date_str: str, recipient: str):
       font-size: 10px;
       font-weight: 600;
       border-radius: 4px;
+      border: 1px solid;
     }}
     .badge-keyword {{
       background-color: #eff6ff;
       color: #1e40af;
-      border: 1px solid #bfdbfe;
+      border-color: #bfdbfe;
     }}
     .badge-source {{
       background-color: #f0fdf4;
       color: #166534;
-      border: 1px solid #bbf7d0;
+      border-color: #bbf7d0;
+    }}
+    .badge-social {{
+      background-color: #faf5ff;
+      color: #6b21a8;
+      border-color: #e9d5ff;
     }}
     .footer {{
       background-color: #f8fafc;
@@ -256,31 +328,44 @@ def send_via_smtp(news_items, date_str: str, recipient: str):
 <body>
   <div class="container">
     <div class="header">
-      <h1>國北教大新聞輿情監測日報</h1>
+      <h1>國北教大新聞與社群監測日報</h1>
       <p>監測日期：{date_str}</p>
     </div>
     <div class="content">
-      {content_html}
+      <!-- News Section -->
+      <h2 class="section-title" style="color: #1d2a4a; border-bottom: 2px solid #1d2a4a;">📰 新聞媒體報導 ({len(news_list)} 則)</h2>
+      {news_html}
+      
+      <!-- Social Section -->
+      <h2 class="section-title" style="color: #6b21a8; border-bottom: 2px solid #6b21a8; margin-top: 32px;">💬 社群輿情與網路論壇 ({len(social_list)} 則)</h2>
+      {social_html}
     </div>
     <div class="footer">
-      本信件由國北教大新聞公佈欄系統自動發送。請勿直接回覆。
+      本信件由國北教大輿情公佈欄系統自動發送。請勿直接回覆。
     </div>
   </div>
 </body>
 </html>"""
 
     # Plain text version fallback
-    plain_text = f"國北教大新聞輿情監測日報 ({date_str})\n\n"
-    if not news_items:
+    plain_text = f"國北教大新聞與社群監測日報 ({date_str})\n\n"
+    
+    plain_text += f"📰 傳統新聞媒體報導 ({len(news_list)} 則)：\n"
+    if not news_list:
         plain_text += "今日無最新新聞。\n"
     else:
-        plain_text += f"今日共監測到 {len(news_items)} 則相關新聞報導：\n\n"
-        for item in news_items:
+        for item in news_list:
+            plain_text += f"- [{item.source}] {item.title} ({item.url})\n"
+            
+    plain_text += f"\n💬 社群輿情與網路論壇 ({len(social_list)} 則)：\n"
+    if not social_list:
+        plain_text += "今日無社群貼文或論壇討論。\n"
+    else:
+        for item in social_list:
             plain_text += f"- [{item.source}] {item.title} ({item.url})\n"
 
     # 2. Setup Vercel SMTP relay details
     relay_url = "https://ntue-news-bulletin.vercel.app/api/send-email"
-
     payload = {
         "secret": "ntue1234",
         "smtp_host": settings.SMTP_HOST,
@@ -288,7 +373,7 @@ def send_via_smtp(news_items, date_str: str, recipient: str):
         "smtp_username": settings.SMTP_USERNAME,
         "smtp_password": settings.SMTP_PASSWORD,
         "to": recipient,
-        "subject": f"【國北教大輿情日報】{date_str} - 共 {len(news_items)} 則新聞",
+        "subject": f"【國北教大輿情日報】{date_str} - 新聞 {len(news_list)} 則 | 社群 {len(social_list)} 則",
         "text": plain_text,
         "html": html_body
     }
@@ -314,4 +399,3 @@ def send_via_smtp(news_items, date_str: str, recipient: str):
         msg_str = f"Failed to send email via Vercel SMTP relay to {recipient}: {str(e)}"
         print(f"[Mailer] {msg_str}")
         return False, msg_str
-

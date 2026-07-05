@@ -29,8 +29,19 @@ def fetch_all_keywords_news():
         
         total_new = 0
         for kw in keywords:
+            # 1. Fetch traditional news
             items = parser.fetch_google_news_rss(kw.word)
-            for item in items:
+            
+            # 2. Fetch social/forum posts using site operators
+            social_query = f'"{kw.word}" (site:dcard.tw OR site:ptt.cc OR site:threads.net OR site:instagram.com OR site:facebook.com)'
+            social_items = parser.fetch_google_news_rss(social_query)
+            
+            for item in social_items:
+                item["keyword"] = kw.word
+                
+            all_items = items + social_items
+            
+            for item in all_items:
                 # Database-agnostic query-and-insert deduplication
                 exists = db.query(models.News).filter(models.News.url == item["url"]).first()
                 if not exists:
@@ -44,6 +55,7 @@ def fetch_all_keywords_news():
                     db.add(news_entry)
                     total_new += 1
             db.commit()
+
             
         print(f"[{datetime.now()}] Finished scheduled news fetch. Saved {total_new} new articles.")
         

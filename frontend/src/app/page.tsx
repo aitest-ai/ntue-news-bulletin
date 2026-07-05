@@ -45,6 +45,8 @@ interface ToastState {
 // Hardcoded production fallback URL
 const RENDER_BACKEND_URL = "https://ntue-news-bulletin.onrender.com";
 
+const SOCIAL_DOMAINS = ["dcard.tw", "ptt.cc", "threads.net", "instagram.com", "facebook.com"];
+
 export default function BulletinBoard() {
   // Authentication State
   const [token, setToken] = useState<string | null>(null);
@@ -65,7 +67,7 @@ export default function BulletinBoard() {
   const [selectedKeyword, setSelectedKeyword] = useState("");
   const [newKeyword, setNewKeyword] = useState("");
   const [page, setPage] = useState(1);
-  const pageSize = 10;
+  const pageSize = 30; // Increased page size for rich multi-column display
 
   // Background Scheduler Jobs State
   const [jobs, setJobs] = useState<JobItem[]>([]);
@@ -581,6 +583,78 @@ export default function BulletinBoard() {
 
   const totalPages = Math.ceil(totalNews / pageSize);
 
+  // Split fetched news into traditional news and social/forum items
+  const traditionalNews = news.filter(item => 
+    !SOCIAL_DOMAINS.some(domain => item.url.toLowerCase().includes(domain))
+  );
+  
+  const socialNews = news.filter(item => 
+    SOCIAL_DOMAINS.some(domain => item.url.toLowerCase().includes(domain))
+  );
+
+  // Custom premium render method for news card list
+  const renderNewsCards = (items: NewsItem[], isSocial: boolean) => {
+    if (items.length === 0) {
+      return (
+        <div className="empty-state" style={{ padding: "3rem 1rem", border: "1px dashed var(--border-color)", borderRadius: "8px" }}>
+          <p>目前尚無相關資料</p>
+        </div>
+      );
+    }
+    return (
+      <div className="news-cards-list" style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+        {items.map((item) => (
+          <div 
+            key={item.id} 
+            className="news-card glass-panel" 
+            style={{ 
+              padding: "1rem", 
+              borderLeft: isSocial ? "4px solid #7c3aed" : "4px solid #1d2a4a",
+              transition: "transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease",
+              cursor: "pointer",
+              borderRadius: "4px 8px 8px 4px"
+            }}
+            onClick={() => window.open(item.url, "_blank", "noopener,noreferrer")}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow = "0 8px 16px rgba(0, 0, 0, 0.08)";
+              e.currentTarget.style.borderLeftColor = "#c28e2e";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "none";
+              e.currentTarget.style.borderLeftColor = isSocial ? "#7c3aed" : "#1d2a4a";
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.5rem" }}>
+              <span className="source-badge" style={{
+                backgroundColor: isSocial ? "#faf5ff" : "#f0fdf4",
+                color: isSocial ? "#6b21a8" : "#166534",
+                borderColor: isSocial ? "#e9d5ff" : "#bbf7d0"
+              }}>
+                {item.source}
+              </span>
+              <span className="news-time" style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+                {formatDate(item.publish_time)}
+              </span>
+            </div>
+            <h4 style={{ 
+              fontSize: "0.9rem", 
+              fontWeight: 600, 
+              marginTop: "0.5rem", 
+              marginBottom: "0.5rem", 
+              lineHeight: 1.4, 
+              color: "var(--text-primary)" 
+            }}>
+              {item.title}
+            </h4>
+            <span className="keyword-badge">{item.keyword}</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   // If initial auth check has not finished, show empty load state
   if (!authChecked) {
     return null;
@@ -657,7 +731,7 @@ export default function BulletinBoard() {
           <div className="stats-container">
             <div className="glass-panel stat-card">
               <div className="stat-val">{totalNews}</div>
-              <div className="stat-lbl">佈告新聞總數</div>
+              <div className="stat-lbl">佈告資料總數</div>
             </div>
             <div className="glass-panel stat-card">
               <div className="stat-val">{keywords.length}</div>
@@ -732,7 +806,7 @@ export default function BulletinBoard() {
             <>
               <div className="news-filters">
                 <h2 className="panel-title" style={{ marginBottom: 0 }}>
-                  佈告內容
+                  佈告輿情監測
                 </h2>
                 <select
                   className="select-filter"
@@ -751,50 +825,63 @@ export default function BulletinBoard() {
                 </select>
               </div>
 
-              <div className="news-table-wrapper">
-                {loadingNews ? (
-                  <div className="empty-state">
-                    <span className="spinner" style={{ width: "30px", height: "30px", borderWidth: "4px" }}></span>
-                    <p style={{ marginTop: "1rem" }}>讀取新聞公佈欄中...</p>
+              {loadingNews ? (
+                <div className="empty-state" style={{ padding: "5rem 1rem" }}>
+                  <span className="spinner" style={{ width: "30px", height: "30px", borderWidth: "4px" }}></span>
+                  <p style={{ marginTop: "1rem" }}>讀取公佈欄資料中...</p>
+                </div>
+              ) : (
+                /* Split Columns Grid for News and Social */
+                <div className="bulletin-split-grid" style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap", marginTop: "1.5rem" }}>
+                  {/* Column 1: Traditional News */}
+                  <div className="bulletin-column" style={{ flex: "1 1 300px", minWidth: "280px" }}>
+                    <h3 style={{ 
+                      fontSize: "0.95rem", 
+                      fontWeight: 700, 
+                      color: "#1d2a4a", 
+                      borderBottom: "2px solid #1d2a4a", 
+                      paddingBottom: "0.4rem",
+                      marginBottom: "1rem",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center"
+                    }}>
+                      <span>📰 新聞媒體報導</span>
+                      <span className="source-badge" style={{ backgroundColor: "#f1f5f9", color: "#475569" }}>
+                        {traditionalNews.length} 則
+                      </span>
+                    </h3>
+                    {renderNewsCards(traditionalNews, false)}
                   </div>
-                ) : news.length > 0 ? (
-                  <table className="news-table">
-                    <thead>
-                      <tr>
-                        <th>新聞標題 / 原始連結</th>
-                        <th style={{ width: "150px" }}>來源</th>
-                        <th style={{ width: "180px" }}>發布時間</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {news.map((item) => (
-                        <tr key={item.id} className="news-row">
-                          <td>
-                            <a href={item.url} target="_blank" rel="noopener noreferrer" className="news-title-link">
-                              {item.title}
-                            </a>
-                            <span className="keyword-badge">{item.keyword}</span>
-                          </td>
-                          <td>
-                            <span className="source-badge">{item.source}</span>
-                          </td>
-                          <td>
-                            <span className="news-time">{formatDate(item.publish_time)}</span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <div className="empty-state">沒有符合條件的新聞</div>
-                )}
-              </div>
+
+                  {/* Column 2: Social & Forums */}
+                  <div className="bulletin-column" style={{ flex: "1 1 300px", minWidth: "280px" }}>
+                    <h3 style={{ 
+                      fontSize: "0.95rem", 
+                      fontWeight: 700, 
+                      color: "#6b21a8", 
+                      borderBottom: "2px solid #6b21a8", 
+                      paddingBottom: "0.4rem",
+                      marginBottom: "1rem",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center"
+                    }}>
+                      <span>💬 社群與論壇討論</span>
+                      <span className="source-badge" style={{ backgroundColor: "#faf5ff", color: "#6b21a8" }}>
+                        {socialNews.length} 則
+                      </span>
+                    </h3>
+                    {renderNewsCards(socialNews, true)}
+                  </div>
+                </div>
+              )}
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="pagination-container">
+                <div className="pagination-container" style={{ marginTop: "2rem" }}>
                   <span className="pagination-info">
-                    顯示第 {(page - 1) * pageSize + 1} 至 {Math.min(page * pageSize, totalNews)} 則新聞，共 {totalNews} 則
+                    顯示第 {(page - 1) * pageSize + 1} 至 {Math.min(page * pageSize, totalNews)} 則資料，共 {totalNews} 則
                   </span>
                   <div className="pagination-controls">
                     <button className="btn btn-outline" onClick={() => setPage((p) => Math.max(p - 1, 1))} disabled={page === 1}>
