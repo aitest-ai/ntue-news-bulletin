@@ -121,7 +121,7 @@ def cleanup_social(db: Session = Depends(get_db), user: str = Depends(auth.verif
     """
     Deletes all social posts from the database to allow clean recrawling. (Guarded by Password JWT)
     """
-    SOCIAL_SOURCES = ["Dcard", "PTT", "Threads", "Facebook", "Instagram", "Social Media"]
+    SOCIAL_SOURCES = ["Dcard", "PTT", "Threads", "Facebook", "Instagram", "Social Media"]  # Facebook kept here to clean up old entries
     deleted_count = db.query(models.News).filter(models.News.source.in_(SOCIAL_SOURCES)).delete(synchronize_session=False)
     db.commit()
     return {"message": f"成功清理 {deleted_count} 筆舊社群貼文！"}

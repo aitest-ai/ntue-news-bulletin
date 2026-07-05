@@ -6,7 +6,7 @@ import pytz
 import html
 from .config import settings
 
-SOCIAL_DOMAINS = ["dcard.tw", "ptt.cc", "threads.net", "instagram.com", "facebook.com"]
+SOCIAL_DOMAINS = ["dcard.tw", "ptt.cc", "pttweb.cc", "threads.net", "threads.com", "instagram.com"]
 
 def send_daily_news_email(news_items, date_str: str):
     # Query database for custom recipient email
@@ -57,7 +57,7 @@ def send_via_formsubmit(news_items, date_str: str, recipient: str):
     url = f"https://formsubmit.co/ajax/{recipient}"
     
     # Split list into news and social
-    SOCIAL_SOURCES = ["dcard", "ptt", "threads", "instagram", "facebook", "ig", "fb"]
+    SOCIAL_SOURCES = ["dcard", "ptt", "threads", "instagram"]
     news_list = []
     social_list = []
     for item in news_items:
@@ -120,7 +120,7 @@ def send_via_formsubmit(news_items, date_str: str, recipient: str):
 
 def send_via_smtp(news_items, date_str: str, recipient: str):
     # Split list into news and social
-    SOCIAL_SOURCES = ["dcard", "ptt", "threads", "instagram", "facebook", "ig", "fb"]
+    SOCIAL_SOURCES = ["dcard", "ptt", "threads", "instagram"]
     news_list = []
     social_list = []
     for item in news_items:

@@ -205,103 +205,136 @@ def parse_yahoo_date(date_str: str) -> datetime:
         
     return datetime.now()
 
+NTUE_RELEVANCE_TERMS = [
+    "國北教大", "北教大", "國立臺北教育大學", "臺北教育大學", "台北教育大學",
+    "ntue", "國北教", "北師大", "北師"
+]
+
+def title_mentions_ntue(title: str) -> bool:
+    """Check if post title actually discusses NTUE content."""
+    t = title.lower()
+    return any(term.lower() in t for term in NTUE_RELEVANCE_TERMS)
+
 def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
     """
-    Searches Yahoo for Dcard, PTT, Threads, IG, and FB posts mentioning the keyword.
-    Parses dates and filters out posts older than 7 days, as well as non-posts.
+    Searches Yahoo for Dcard (NTUE board), PTT, Threads, and Instagram posts.
+    - Dcard: searches the dedicated NTUE board (site:dcard.tw/f/ntue) — always relevant.
+    - PTT/Threads/IG: keyword + platform search, then filters by title relevance.
+    - Facebook: excluded entirely.
+    - Only posts within the past 7 days with a confirmed date tag are kept.
     """
-    import html
-    
-    # Only search Dcard, PTT, Threads, Facebook, Instagram
-    search_queries = [
-        f'"{keyword}" dcard',
-        f'"{keyword}" ptt',
-        f'"{keyword}" threads',
-        f'"{keyword}" facebook',
-        f'"{keyword}" instagram'
-    ]
-    
+    import html as htmllib
+    import time
+
     items = []
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    }
+    seen_urls = set()
     
-    for query in search_queries:
-        encoded_query = urllib.parse.quote(query)
-        # Append &btf=w to restrict Yahoo Search results to the past week (7 days)
-        url = f"https://tw.search.yahoo.com/search?p={encoded_query}&btf=w"
-        
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                      "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+
+    def yahoo_search(query: str) -> list:
+        """Return list of (url, title, date_text) from Yahoo search."""
+        encoded = urllib.parse.quote(query)
+        search_url = f"https://tw.search.yahoo.com/search?p={encoded}"
         try:
-            req = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(req, timeout=8.0) as response:
-                html_text = response.read().decode('utf-8', errors='ignore')
-                
-            # Split by redirect link prefix to isolate result blocks cleanly
+            req = urllib.request.Request(search_url, headers=headers)
+            with urllib.request.urlopen(req, timeout=10.0) as resp:
+                html_text = resp.read().decode("utf-8", errors="ignore")
             segments = html_text.split('href="https://r.search.yahoo.com/')
-            
+            results = []
             for seg in segments[1:]:
-                # Extract direct URL from RU parameter
                 ru_match = re.search(r'RU=([^/"]+)/', seg)
                 if not ru_match:
                     continue
                 direct_url = urllib.parse.unquote(ru_match.group(1))
-                
-                # Verify it is one of our target social domains
-                is_social = any(d in direct_url.lower() for d in [
-                    "dcard.tw", "ptt.cc", "pttweb.cc", "threads.net", 
-                    "threads.com", "instagram.com", "facebook.com"
-                ])
-                if not is_social:
-                    continue
-                    
-                # Exclude duplicate URLs in current fetch batch
-                if any(item["url"] == direct_url for item in items):
-                    continue
-                    
-                # ONLY capture actual posts, NOT board/profile homepages
-                if not is_real_social_post(direct_url):
-                    continue
-                    
-                # Title is in aria-label attribute of the link
-                title_match = re.search(r'aria-label="([^"]+)"', seg)
-                if not title_match:
-                    continue
-                clean_title = html.unescape(title_match.group(1))
-                
-                # Date tag is in span with class fc-smoke nearby
-                date_match = re.search(r'<span class="fc-smoke">([^<]+)</span>', seg[:1500])
-                date_text = date_match.group(1).strip() if date_match else "None"
-                
-                # Parse date and filter out posts older than 7 days
-                publish_time = parse_yahoo_date(date_text)
-                if (datetime.now() - publish_time).days > 7:
-                    # Skip posts older than 1 week
-                    continue
-                    
-                # Set appropriate source name based on URL
-                source = "Social Media"
-                url_lower = direct_url.lower()
-                if "dcard.tw" in url_lower:
-                    source = "Dcard"
-                elif "ptt.cc" in url_lower or "pttweb.cc" in url_lower:
-                    source = "PTT"
-                elif "threads.net" in url_lower or "threads.com" in url_lower:
-                    source = "Threads"
-                elif "facebook.com" in url_lower:
-                    source = "Facebook"
-                elif "instagram.com" in url_lower:
-                    source = "Instagram"
-                    
-                items.append({
-                    "title": clean_title.strip(),
-                    "url": direct_url,
-                    "source": source,
-                    "publish_time": publish_time,
-                    "keyword": keyword
-                })
+                title_m = re.search(r'aria-label="([^"]+)"', seg)
+                title = htmllib.unescape(title_m.group(1)) if title_m else ""
+                date_m = re.search(r'<span class="fc-smoke">([^<]+)</span>', seg[:2000])
+                date_text = date_m.group(1).strip() if date_m else None
+                results.append((direct_url, title, date_text))
+            return results
         except Exception as e:
-            print(f"[Social Scraper] Error searching '{query}' on Yahoo: {e}")
-            
-    print(f"[Social Scraper] Found {len(items)} social posts (newer than 1 week) for keyword '{keyword}'")
+            print(f"[Social Scraper] Yahoo search error for '{query}': {e}")
+            return []
+
+    def try_add(url: str, title: str, date_text, source: str, kw: str,
+                require_relevance: bool = False):
+        """Validate and add an article to items list."""
+        url_lower = url.lower()
+        
+        # Skip Facebook entirely
+        if "facebook.com" in url_lower or "fb.com" in url_lower:
+            return
+        
+        # Dedup
+        if url in seen_urls:
+            return
+        
+        # Must be a real post, not a homepage/board
+        if not is_real_social_post(url):
+            return
+        
+        # For PTT/Threads/IG: title must mention NTUE-related terms
+        if require_relevance and not title_mentions_ntue(title):
+            print(f"[Social Scraper] Skipping irrelevant: {title[:50]}")
+            return
+        
+        # Date must exist and be within 7 days
+        if date_text is None:
+            # No date tag from Yahoo — skip to avoid pulling old content
+            return
+        publish_time = parse_yahoo_date(date_text)
+        age_days = (datetime.now() - publish_time).days
+        if age_days > 7:
+            print(f"[Social Scraper] Skipping old post ({age_days}d): {title[:50]}")
+            return
+        
+        seen_urls.add(url)
+        items.append({
+            "title": title.strip(),
+            "url": url,
+            "source": source,
+            "publish_time": publish_time,
+            "keyword": kw,
+        })
+
+    # ── 1. Dcard: search dedicated NTUE board only ──────────────────────────
+    print(f"[Social Scraper] Searching Dcard NTUE board...")
+    for url, title, date_text in yahoo_search("site:dcard.tw/f/ntue"):
+        if "dcard.tw" not in url.lower():
+            continue
+        try_add(url, title, date_text, "Dcard", keyword, require_relevance=False)
+    time.sleep(1.5)
+
+    # ── 2. PTT: keyword + ptt, require title relevance ──────────────────────
+    print(f"[Social Scraper] Searching PTT for '{keyword}'...")
+    for url, title, date_text in yahoo_search(f"{keyword} ptt"):
+        if "ptt.cc" not in url.lower() and "pttweb.cc" not in url.lower():
+            continue
+        try_add(url, title, date_text, "PTT", keyword, require_relevance=True)
+    time.sleep(1.5)
+
+    # ── 3. Threads: keyword + threads, require title relevance ──────────────
+    print(f"[Social Scraper] Searching Threads for '{keyword}'...")
+    for url, title, date_text in yahoo_search(f"{keyword} threads"):
+        if "threads.com" not in url.lower() and "threads.net" not in url.lower():
+            continue
+        try_add(url, title, date_text, "Threads", keyword, require_relevance=True)
+    time.sleep(1.5)
+
+    # ── 4. Instagram: keyword + instagram, require title relevance ───────────
+    print(f"[Social Scraper] Searching Instagram for '{keyword}'...")
+    for url, title, date_text in yahoo_search(f"{keyword} instagram"):
+        if "instagram.com" not in url.lower():
+            continue
+        try_add(url, title, date_text, "Instagram", keyword, require_relevance=True)
+    time.sleep(1.5)
+
+    print(f"[Social Scraper] Found {len(items)} valid social posts for keyword '{keyword}'")
     return items
+
+
+
 

@@ -45,7 +45,7 @@ interface ToastState {
 // Hardcoded production fallback URL
 const RENDER_BACKEND_URL = "https://ntue-news-bulletin.onrender.com";
 
-const SOCIAL_DOMAINS = ["dcard.tw", "ptt.cc", "threads.net", "instagram.com", "facebook.com"];
+const SOCIAL_DOMAINS = ["dcard.tw", "ptt.cc", "pttweb.cc", "threads.net", "threads.com", "instagram.com"];
 
 export default function BulletinBoard() {
   // Authentication State
@@ -584,7 +584,7 @@ export default function BulletinBoard() {
   const totalPages = Math.ceil(totalNews / pageSize);
 
   // Split fetched news into traditional news and social/forum items
-  const SOCIAL_SOURCES = ["dcard", "ptt", "threads", "instagram", "facebook", "ig", "fb"];
+  const SOCIAL_SOURCES = ["dcard", "ptt", "threads", "instagram"];
   
   const isSocialItem = (item: NewsItem) => {
     const urlLower = item.url.toLowerCase();
