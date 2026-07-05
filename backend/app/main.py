@@ -116,6 +116,16 @@ def trigger_fetch(user: str = Depends(auth.verify_token)):
     new_count = scheduler.fetch_all_keywords_news()
     return {"message": "新聞重新抓取完成！", "new_articles_count": new_count}
 
+@app.post("/api/news/cleanup-social")
+def cleanup_social(db: Session = Depends(get_db), user: str = Depends(auth.verify_token)):
+    """
+    Deletes all social posts from the database to allow clean recrawling. (Guarded by Password JWT)
+    """
+    SOCIAL_SOURCES = ["Dcard", "PTT", "Threads", "Facebook", "Instagram", "Social Media"]
+    deleted_count = db.query(models.News).filter(models.News.source.in_(SOCIAL_SOURCES)).delete(synchronize_session=False)
+    db.commit()
+    return {"message": f"成功清理 {deleted_count} 筆舊社群貼文！"}
+
 @app.post("/api/test-email")
 def test_email(user: str = Depends(auth.verify_token)):
     """
