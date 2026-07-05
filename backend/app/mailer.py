@@ -50,8 +50,14 @@ def send_via_formsubmit(news_items, date_str: str):
         }
         
     try:
-        response = httpx.post(url, json=payload, headers={"Accept": "application/json"}, timeout=15.0)
+        headers = {
+            "Accept": "application/json",
+            "Referer": "https://ntue-news-bulletin.vercel.app",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+        response = httpx.post(url, json=payload, headers=headers, timeout=15.0)
         if response.status_code == 200:
+
             print("[Mailer] Daily news email successfully sent via FormSubmit.co!")
             return True
         else:
