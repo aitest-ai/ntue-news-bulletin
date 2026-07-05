@@ -255,12 +255,6 @@ def send_via_smtp(news_items, date_str: str, recipient: str):
 </body>
 </html>"""
 
-    # 2. Setup SMTP details
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"【國北教大輿情日報】{date_str} - 共 {len(news_items)} 則新聞"
-    msg["From"] = f"國北教大新聞公佈欄 <{settings.SMTP_USERNAME}>"
-    msg["To"] = recipient
-
     # Plain text version fallback
     plain_text = f"國北教大新聞輿情監測日報 ({date_str})\n\n"
     if not news_items:
@@ -269,21 +263,41 @@ def send_via_smtp(news_items, date_str: str, recipient: str):
         plain_text += f"今日共監測到 {len(news_items)} 則相關新聞報導：\n\n"
         for item in news_items:
             plain_text += f"- [{item.source}] {item.title} ({item.url})\n"
-    
-    msg.attach(MIMEText(plain_text, "plain", "utf-8"))
-    msg.attach(MIMEText(html_body, "html", "utf-8"))
+
+    # 2. Setup Vercel SMTP relay details
+    relay_url = "https://ntue-news-bulletin.vercel.app/api/send-email"
+
+    payload = {
+        "secret": "ntue1234",
+        "smtp_host": settings.SMTP_HOST,
+        "smtp_port": settings.SMTP_PORT,
+        "smtp_username": settings.SMTP_USERNAME,
+        "smtp_password": settings.SMTP_PASSWORD,
+        "to": recipient,
+        "subject": f"【國北教大輿情日報】{date_str} - 共 {len(news_items)} 則新聞",
+        "text": plain_text,
+        "html": html_body
+    }
 
     try:
-        # Connect to SMTP
-        server = smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT)
-        server.starttls()  # Upgrade connection to secure encrypted TLS
-        server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
-        server.sendmail(settings.SMTP_USERNAME, recipient, msg.as_string())
-        server.quit()
-        msg_str = f"Daily news email sent successfully via SMTP to {recipient}!"
-        print(f"[Mailer] {msg_str}")
-        return True, msg_str
+        response = httpx.post(relay_url, json=payload, timeout=25.0)
+        if response.status_code == 200:
+            res_data = response.json()
+            msg_str = f"Daily news email sent successfully via Vercel SMTP relay (Message ID: {res_data.get('messageId')}) to {recipient}!"
+            print(f"[Mailer] {msg_str}")
+            return True, msg_str
+        else:
+            err_data = {}
+            try:
+                err_data = response.json()
+            except:
+                pass
+            err_msg = err_data.get("error", response.text)
+            msg_str = f"Vercel SMTP relay returned error status {response.status_code}: {err_msg}"
+            print(f"[Mailer] {msg_str}")
+            return False, msg_str
     except Exception as e:
-        msg_str = f"Failed to send daily news email via SMTP to {recipient}: {str(e)}"
+        msg_str = f"Failed to send email via Vercel SMTP relay to {recipient}: {str(e)}"
         print(f"[Mailer] {msg_str}")
         return False, msg_str
+
