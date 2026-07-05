@@ -11,32 +11,42 @@ def send_daily_news_email(news_items, date_str: str):
     from . import models
     
     db = SessionLocal()
-    recipient = None
+    recipients = []
     try:
         setting = db.query(models.SystemSetting).filter(models.SystemSetting.key == "email_recipient").first()
         if setting and setting.value:
-            recipient = setting.value.strip()
+            recipients = [e.strip() for e in setting.value.split(",") if e.strip()]
     except Exception as e:
-        print(f"[Mailer] Error querying recipient from DB: {e}")
+        print(f"[Mailer] Error querying recipient list from DB: {e}")
     finally:
         db.close()
         
-    if not recipient:
-        recipient = settings.EMAIL_RECIPIENT
+    if not recipients and settings.EMAIL_RECIPIENT:
+        recipients = [settings.EMAIL_RECIPIENT.strip()]
 
-    if not recipient:
-        print("[Mailer] Recipient email not configured. Skipping email sending.")
-        return False, "EMAIL_RECIPIENT not configured"
+    if not recipients:
+        print("[Mailer] No recipient emails configured. Skipping email sending.")
+        return False, "No recipient emails configured"
 
-    # Option A: If SMTP credentials are configured, use SMTP
-    if settings.SMTP_USERNAME and settings.SMTP_PASSWORD:
-        print(f"[Mailer] Sending daily news email to {recipient} via SMTP...")
-        return send_via_smtp(news_items, date_str, recipient)
-    
-    # Option B: Otherwise, use FormSubmit.co AJAX API (No credentials needed!)
-    else:
-        print(f"[Mailer] Sending daily news email to {recipient} via FormSubmit.co AJAX fallback...")
-        return send_via_formsubmit(news_items, date_str, recipient)
+    # Send mail to all recipients
+    success_count = 0
+    results = []
+    for recipient in recipients:
+        if settings.SMTP_USERNAME and settings.SMTP_PASSWORD:
+            print(f"[Mailer] Sending daily news email to {recipient} via SMTP...")
+            success, msg = send_via_smtp(news_items, date_str, recipient)
+        else:
+            print(f"[Mailer] Sending daily news email to {recipient} via FormSubmit.co AJAX fallback...")
+            success, msg = send_via_formsubmit(news_items, date_str, recipient)
+        
+        if success:
+            success_count += 1
+        results.append(f"{recipient}: {msg}")
+        
+    overall_success = success_count > 0
+    overall_msg = "; ".join(results)
+    return overall_success, overall_msg
+
 
 def send_via_formsubmit(news_items, date_str: str, recipient: str):
     url = f"https://formsubmit.co/ajax/{recipient}"

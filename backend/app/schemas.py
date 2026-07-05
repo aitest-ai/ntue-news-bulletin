@@ -52,6 +52,7 @@ class JobCreate(BaseModel):
     minute: int
 
 class SystemSettings(BaseModel):
-    email_recipient: str
+    email_recipients: List[str]
+
 
 

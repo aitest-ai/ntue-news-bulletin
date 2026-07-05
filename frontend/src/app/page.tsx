@@ -72,8 +72,9 @@ export default function BulletinBoard() {
   const [newJobHour, setNewJobHour] = useState(12);
   const [newJobMinute, setNewJobMinute] = useState(0);
 
-  // System Settings State (Dynamic Recipient Email)
-  const [emailRecipient, setEmailRecipient] = useState("");
+  // System Settings State (Dynamic Recipient Email List)
+  const [emailRecipients, setEmailRecipients] = useState<string[]>([]);
+  const [newEmailRecipient, setNewEmailRecipient] = useState("");
 
   // Loaders & Actions State
   const [loadingNews, setLoadingNews] = useState(false);
@@ -226,7 +227,7 @@ export default function BulletinBoard() {
     setKeywords([]);
     setJobs([]);
     setSelectedKeyword("");
-    setEmailRecipient("");
+    setEmailRecipients([]);
     showToast("您已成功登出系統", "success");
   };
 
@@ -236,30 +237,68 @@ export default function BulletinBoard() {
       const res = await safeFetch("/api/settings", { headers: getHeaders() });
       if (await handleResponse(res)) {
         const data = await res.json();
-        setEmailRecipient(data.email_recipient);
+        setEmailRecipients(data.email_recipients || []);
       }
     } catch (err) {
-      showToast("無法載入信箱設定", "error");
+      showToast("無法載入信箱設定清單", "error");
     }
   };
 
-  // Update Settings
-  const handleUpdateSettings = async (e: React.FormEvent) => {
+  // Add Email to list
+  const handleAddEmail = async (e: React.FormEvent) => {
     e.preventDefault();
+    const email = newEmailRecipient.trim();
+    if (!email) return;
+    if (!email.includes("@")) {
+      showToast("電子信箱格式不正確！", "error");
+      return;
+    }
+    if (emailRecipients.includes(email)) {
+      showToast("該電子信箱已在接收清單中！", "error");
+      return;
+    }
+
+    const updatedList = [...emailRecipients, email];
     try {
       const res = await safeFetch("/api/settings", {
         method: "POST",
         headers: getHeaders(),
-        body: JSON.stringify({ email_recipient: emailRecipient }),
+        body: JSON.stringify({ email_recipients: updatedList }),
       });
 
       if (await handleResponse(res)) {
         if (res.ok) {
-          showToast("成功更新輿情日報收件信箱！", "success");
+          showToast(`已成功將「${email}」加入日報發送名單！`, "success");
+          setNewEmailRecipient("");
           fetchSettings();
         } else {
           const errData = await res.json();
-          showToast(errData.detail || "更新信箱失敗", "error");
+          showToast(errData.detail || "新增收件信箱失敗", "error");
+        }
+      }
+    } catch (err) {
+      showToast("連線至伺服器失敗", "error");
+    }
+  };
+
+  // Delete Email from list
+  const handleDeleteEmail = async (emailToDelete: string) => {
+    if (!confirm(`確定要將「${emailToDelete}」從日報發送名單移出嗎？`)) return;
+
+    const updatedList = emailRecipients.filter(email => email !== emailToDelete);
+    try {
+      const res = await safeFetch("/api/settings", {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify({ email_recipients: updatedList }),
+      });
+
+      if (await handleResponse(res)) {
+        if (res.ok) {
+          showToast(`已成功將「${emailToDelete}」從名單移出。`, "success");
+          fetchSettings();
+        } else {
+          showToast("移除收件信箱失敗", "error");
         }
       }
     } catch (err) {
@@ -877,28 +916,54 @@ export default function BulletinBoard() {
                 )}
               </div>
 
-              {/* Dynamic Recipient Email Form Configuration */}
+              {/* Dynamic Recipient Email List Configuration */}
               <div className="glass-panel" style={{ padding: "1.5rem", marginTop: "2.5rem", border: "1px solid var(--border-color)" }}>
                 <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "var(--primary-color)", marginBottom: "0.5rem" }}>
-                  輿情日報 Email 接收信箱設定
+                  輿情日報 Email 接收信箱清單管理
                 </h3>
                 <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", marginBottom: "1rem", lineHeight: 1.4 }}>
-                  設定排程任務執行完成後，自動將當日最新新聞摘要傳送至指定信箱。如果今天沒有新新聞，亦會傳送「今日無新聞」之安全回報。
+                  設定排程任務執行完成後，自動將當日最新新聞摘要傳送至下方列出的信箱。如果今天沒有新新聞，亦會傳送「今日無新聞」之安全回報。
                 </p>
-                <form onSubmit={handleUpdateSettings} style={{ display: "flex", gap: "0.5rem", maxWidth: "500px" }}>
+
+                {/* Add Email Form */}
+                <form onSubmit={handleAddEmail} style={{ display: "flex", gap: "0.5rem", maxWidth: "500px", marginBottom: "1.5rem" }}>
                   <input
                     type="email"
                     className="input-text"
-                    placeholder="請輸入收件信箱 (例如: user@example.com)"
-                    value={emailRecipient}
-                    onChange={(e) => setEmailRecipient(e.target.value)}
+                    placeholder="輸入要接收日報的新信箱..."
+                    value={newEmailRecipient}
+                    onChange={(e) => setNewEmailRecipient(e.target.value)}
                     required
                   />
                   <button type="submit" className="btn btn-primary" style={{ whiteSpace: "nowrap" }}>
-                    儲存信箱
+                    新增信箱
                   </button>
                 </form>
-                <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.5rem", lineHeight: 1.4 }}>
+
+                {/* Email Recipients List */}
+                <div className="keyword-list" style={{ display: "flex", flexDirection: "column", gap: "0.5rem", maxWidth: "500px" }}>
+                  {emailRecipients.map((email) => (
+                    <div key={email} className="keyword-item" style={{ width: "100%", justifyContent: "space-between" }}>
+                      <span className="keyword-text" style={{ fontSize: "0.85rem", padding: "4px" }}>
+                        {email}
+                      </span>
+                      <button
+                        className="btn btn-danger-outline"
+                        style={{ padding: "0.2rem 0.5rem", fontSize: "0.75rem", height: "auto" }}
+                        onClick={() => handleDeleteEmail(email)}
+                      >
+                        移除
+                      </button>
+                    </div>
+                  ))}
+                  {emailRecipients.length === 0 && (
+                    <div className="empty-state" style={{ padding: "1rem" }}>
+                      目前無接收信箱，日報將無法發送。
+                    </div>
+                  )}
+                </div>
+
+                <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "1rem", lineHeight: 1.4 }}>
                   ※ 變更後的新信箱於「第一次發信」時，會收到一封來自 FormSubmit 的確認啟動信（若尚未啟用過該信箱），點擊信中確認按鈕後即開始自動接收日報。如果您的伺服器配置了 SMTP 發信（如 Gmail 帳密），信件將會經由您的 Gmail 帳號發送，且不需要任何確認。
                 </p>
               </div>

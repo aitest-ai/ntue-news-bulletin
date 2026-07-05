@@ -173,30 +173,45 @@ def test_email(user: str = Depends(auth.verify_token)):
 @app.get("/api/settings", response_model=schemas.SystemSettings)
 def get_settings(db: Session = Depends(get_db), user: str = Depends(auth.verify_token)):
     """
-    Get current system settings (recipient email). (Guarded by Password JWT)
+    Get current system settings (recipient email list). (Guarded by Password JWT)
     """
     setting = db.query(models.SystemSetting).filter(models.SystemSetting.key == "email_recipient").first()
-    recipient = setting.value if setting else settings.EMAIL_RECIPIENT
-    return {"email_recipient": recipient}
+    
+    recipients = []
+    if setting and setting.value:
+        recipients = [e.strip() for e in setting.value.split(",") if e.strip()]
+    
+    if not recipients and settings.EMAIL_RECIPIENT:
+        recipients = [settings.EMAIL_RECIPIENT.strip()]
+        
+    return {"email_recipients": recipients}
 
 @app.post("/api/settings", response_model=schemas.SystemSettings)
 def update_settings(req: schemas.SystemSettings, db: Session = Depends(get_db), user: str = Depends(auth.verify_token)):
     """
-    Update system settings (recipient email). (Guarded by Password JWT)
+    Update system settings (recipient email list). (Guarded by Password JWT)
     """
-    clean_email = req.email_recipient.strip()
-    if clean_email and "@" not in clean_email:
-        raise HTTPException(status_code=400, detail="請輸入正確的電子信箱格式！")
+    cleaned_emails = []
+    for email in req.email_recipients:
+        clean = email.strip()
+        if not clean:
+            continue
+        if "@" not in clean:
+            raise HTTPException(status_code=400, detail=f"電子信箱「{clean}」格式不正確！")
+        cleaned_emails.append(clean)
+        
+    joined_value = ",".join(cleaned_emails)
         
     setting = db.query(models.SystemSetting).filter(models.SystemSetting.key == "email_recipient").first()
     if not setting:
-        setting = models.SystemSetting(key="email_recipient", value=clean_email)
+        setting = models.SystemSetting(key="email_recipient", value=joined_value)
         db.add(setting)
     else:
-        setting.value = clean_email
+        setting.value = joined_value
         
     db.commit()
-    return {"email_recipient": clean_email}
+    return {"email_recipients": cleaned_emails}
+
 
 
 @app.get("/api/keywords", response_model=List[schemas.Keyword])
