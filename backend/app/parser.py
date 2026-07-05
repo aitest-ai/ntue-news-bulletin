@@ -1,6 +1,6 @@
 import httpx
 import xml.etree.ElementTree as ET
-from datetime import datetime
+from datetime import datetime, timedelta
 import email.utils
 import urllib.parse
 from typing import List, Dict, Any
@@ -167,10 +167,48 @@ def is_real_social_post(url: str) -> bool:
         
     return False
 
+def parse_yahoo_date(date_str: str) -> datetime:
+    if not date_str or date_str == "None":
+        return datetime.now()
+        
+    date_str = date_str.strip().lower()
+    
+    # Handle "X小時前" or "X hr ago"
+    hr_match = re.search(r'(\d+)\s*(?:小時|hour|hr)', date_str)
+    if hr_match:
+        hrs = int(hr_match.group(1))
+        return datetime.now() - timedelta(hours=hrs)
+        
+    # Handle "X天前" or "X day ago"
+    day_match = re.search(r'(\d+)\s*(?:天|day|d)\s*(?:前|ago)?', date_str)
+    if day_match:
+        days = int(day_match.group(1))
+        return datetime.now() - timedelta(days=days)
+        
+    # Handle "X分鐘前" or "X min ago"
+    min_match = re.search(r'(\d+)\s*(?:分鐘|minute|min|m)\s*(?:前|ago)?', date_str)
+    if min_match:
+        mins = int(min_match.group(1))
+        return datetime.now() - timedelta(minutes=mins)
+        
+    # Handle date format like "2026年6月12日"
+    date_match = re.search(r'(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日', date_str)
+    if date_match:
+        y, m, d = int(date_match.group(1)), int(date_match.group(2)), int(date_match.group(3))
+        return datetime(y, m, d)
+        
+    # Match YYYY-MM-DD or YYYY/MM/DD
+    dash_match = re.search(r'(\d{4})[-/](\d{1,2})[-/](\d{1,2})', date_str)
+    if dash_match:
+        y, m, d = int(dash_match.group(1)), int(dash_match.group(2)), int(dash_match.group(3))
+        return datetime(y, m, d)
+        
+    return datetime.now()
+
 def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
     """
     Searches Yahoo for Dcard, PTT, Threads, IG, and FB posts mentioning the keyword.
-    Filters out non-posts (like main pages, boards, or profile lists).
+    Parses dates and filters out posts older than 7 days, as well as non-posts.
     """
     import html
     
@@ -197,13 +235,15 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
             with urllib.request.urlopen(req, timeout=8.0) as response:
                 html_text = response.read().decode('utf-8', errors='ignore')
                 
-            # Regex to match Yahoo search result links with title
-            pattern = r'href="(https://r\.search\.yahoo\.com/[^"]+?/RU=([^/"]+)/[^"]*?)"[^>]*?aria-label="([^"]+?)"'
-            matches = re.findall(pattern, html_text)
+            # Split by redirect link prefix to isolate result blocks cleanly
+            segments = html_text.split('href="https://r.search.yahoo.com/')
             
-            for full_href, ru_param, title_attr in matches:
-                direct_url = urllib.parse.unquote(ru_param)
-                clean_title = html.unescape(title_attr)
+            for seg in segments[1:]:
+                # Extract direct URL from RU parameter
+                ru_match = re.search(r'RU=([^/"]+)/', seg)
+                if not ru_match:
+                    continue
+                direct_url = urllib.parse.unquote(ru_match.group(1))
                 
                 # Verify it is one of our target social domains
                 is_social = any(d in direct_url.lower() for d in [
@@ -213,12 +253,28 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
                 if not is_social:
                     continue
                     
-                # Exclude duplicate URLs
+                # Exclude duplicate URLs in current fetch batch
                 if any(item["url"] == direct_url for item in items):
                     continue
                     
                 # ONLY capture actual posts, NOT board/profile homepages
                 if not is_real_social_post(direct_url):
+                    continue
+                    
+                # Title is in aria-label attribute of the link
+                title_match = re.search(r'aria-label="([^"]+)"', seg)
+                if not title_match:
+                    continue
+                clean_title = html.unescape(title_match.group(1))
+                
+                # Date tag is in span with class fc-smoke nearby
+                date_match = re.search(r'<span class="fc-smoke">([^<]+)</span>', seg[:1500])
+                date_text = date_match.group(1).strip() if date_match else "None"
+                
+                # Parse date and filter out posts older than 7 days
+                publish_time = parse_yahoo_date(date_text)
+                if (datetime.now() - publish_time).days > 7:
+                    # Skip posts older than 1 week
                     continue
                     
                 # Set appropriate source name based on URL
@@ -239,12 +295,12 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
                     "title": clean_title.strip(),
                     "url": direct_url,
                     "source": source,
-                    "publish_time": datetime.now(),
+                    "publish_time": publish_time,
                     "keyword": keyword
                 })
         except Exception as e:
             print(f"[Social Scraper] Error searching '{query}' on Yahoo: {e}")
             
-    print(f"[Social Scraper] Found {len(items)} social posts for keyword '{keyword}'")
+    print(f"[Social Scraper] Found {len(items)} social posts (newer than 1 week) for keyword '{keyword}'")
     return items
 
