@@ -51,13 +51,20 @@ def fetch_all_keywords_news():
         try:
             tz = pytz.timezone("Asia/Taipei")
             now = datetime.now(tz)
-            start_of_today = datetime(now.year, now.month, now.day, 0, 0, 0, tzinfo=tz)
-            end_of_today = datetime(now.year, now.month, now.day, 23, 59, 59, tzinfo=tz)
+            
+            # Localize dates in Taipei timezone first
+            start_of_today = tz.localize(datetime(now.year, now.month, now.day, 0, 0, 0))
+            end_of_today = tz.localize(datetime(now.year, now.month, now.day, 23, 59, 59))
+            
+            # Convert to UTC naive datetimes to match SQLite database datetime formats
+            utc_start = start_of_today.astimezone(pytz.utc).replace(tzinfo=None)
+            utc_end = end_of_today.astimezone(pytz.utc).replace(tzinfo=None)
             
             news_today = db.query(models.News).filter(
-                models.News.publish_time >= start_of_today,
-                models.News.publish_time <= end_of_today
+                models.News.publish_time >= utc_start,
+                models.News.publish_time <= utc_end
             ).order_by(models.News.publish_time.desc()).all()
+
             
             date_str = now.strftime("%Y/%m/%d")
             from .mailer import send_daily_news_email
