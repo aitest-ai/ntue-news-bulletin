@@ -167,6 +167,35 @@ def test_email(user: str = Depends(auth.verify_token)):
         db.close()
 
 
+@app.get("/api/settings", response_model=schemas.SystemSettings)
+def get_settings(db: Session = Depends(get_db), user: str = Depends(auth.verify_token)):
+    """
+    Get current system settings (recipient email). (Guarded by Password JWT)
+    """
+    setting = db.query(models.SystemSetting).filter(models.SystemSetting.key == "email_recipient").first()
+    recipient = setting.value if setting else settings.EMAIL_RECIPIENT
+    return {"email_recipient": recipient}
+
+@app.post("/api/settings", response_model=schemas.SystemSettings)
+def update_settings(req: schemas.SystemSettings, db: Session = Depends(get_db), user: str = Depends(auth.verify_token)):
+    """
+    Update system settings (recipient email). (Guarded by Password JWT)
+    """
+    clean_email = req.email_recipient.strip()
+    if clean_email and "@" not in clean_email:
+        raise HTTPException(status_code=400, detail="請輸入正確的電子信箱格式！")
+        
+    setting = db.query(models.SystemSetting).filter(models.SystemSetting.key == "email_recipient").first()
+    if not setting:
+        setting = models.SystemSetting(key="email_recipient", value=clean_email)
+        db.add(setting)
+    else:
+        setting.value = clean_email
+        
+    db.commit()
+    return {"email_recipient": clean_email}
+
+
 @app.get("/api/keywords", response_model=List[schemas.Keyword])
 def read_keywords(db: Session = Depends(get_db), user: str = Depends(auth.verify_token)):
     """

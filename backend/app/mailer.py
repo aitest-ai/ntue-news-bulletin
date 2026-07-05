@@ -6,23 +6,40 @@ import pytz
 from .config import settings
 
 def send_daily_news_email(news_items, date_str: str):
-    # Check if recipient is configured
-    if not settings.EMAIL_RECIPIENT:
-        print("[Mailer] EMAIL_RECIPIENT not configured. Skipping email sending.")
+    # Query database for custom recipient email
+    from .database import SessionLocal
+    from . import models
+    
+    db = SessionLocal()
+    recipient = None
+    try:
+        setting = db.query(models.SystemSetting).filter(models.SystemSetting.key == "email_recipient").first()
+        if setting and setting.value:
+            recipient = setting.value.strip()
+    except Exception as e:
+        print(f"[Mailer] Error querying recipient from DB: {e}")
+    finally:
+        db.close()
+        
+    if not recipient:
+        recipient = settings.EMAIL_RECIPIENT
+
+    if not recipient:
+        print("[Mailer] Recipient email not configured. Skipping email sending.")
         return False, "EMAIL_RECIPIENT not configured"
 
     # Option A: If SMTP credentials are configured, use SMTP
     if settings.SMTP_USERNAME and settings.SMTP_PASSWORD:
-        print(f"[Mailer] Sending daily news email to {settings.EMAIL_RECIPIENT} via SMTP...")
-        return send_via_smtp(news_items, date_str)
+        print(f"[Mailer] Sending daily news email to {recipient} via SMTP...")
+        return send_via_smtp(news_items, date_str, recipient)
     
     # Option B: Otherwise, use FormSubmit.co AJAX API (No credentials needed!)
     else:
-        print(f"[Mailer] Sending daily news email to {settings.EMAIL_RECIPIENT} via FormSubmit.co AJAX fallback...")
-        return send_via_formsubmit(news_items, date_str)
+        print(f"[Mailer] Sending daily news email to {recipient} via FormSubmit.co AJAX fallback...")
+        return send_via_formsubmit(news_items, date_str, recipient)
 
-def send_via_formsubmit(news_items, date_str: str):
-    url = f"https://formsubmit.co/ajax/{settings.EMAIL_RECIPIENT}"
+def send_via_formsubmit(news_items, date_str: str, recipient: str):
+    url = f"https://formsubmit.co/ajax/{recipient}"
     
     if not news_items:
         payload = {
@@ -69,7 +86,7 @@ def send_via_formsubmit(news_items, date_str: str):
         print(f"[Mailer] {msg}")
         return False, msg
 
-def send_via_smtp(news_items, date_str: str):
+def send_via_smtp(news_items, date_str: str, recipient: str):
     # 1. Build Content HTML
     if not news_items:
         content_html = """
@@ -242,7 +259,7 @@ def send_via_smtp(news_items, date_str: str):
     msg = MIMEMultipart("alternative")
     msg["Subject"] = f"【國北教大輿情日報】{date_str} - 共 {len(news_items)} 則新聞"
     msg["From"] = f"國北教大新聞公佈欄 <{settings.SMTP_USERNAME}>"
-    msg["To"] = settings.EMAIL_RECIPIENT
+    msg["To"] = recipient
 
     # Plain text version fallback
     plain_text = f"國北教大新聞輿情監測日報 ({date_str})\n\n"
@@ -261,12 +278,12 @@ def send_via_smtp(news_items, date_str: str):
         server = smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT)
         server.starttls()  # Upgrade connection to secure encrypted TLS
         server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
-        server.sendmail(settings.SMTP_USERNAME, settings.EMAIL_RECIPIENT, msg.as_string())
+        server.sendmail(settings.SMTP_USERNAME, recipient, msg.as_string())
         server.quit()
-        msg_str = "Daily news email sent successfully via SMTP!"
+        msg_str = f"Daily news email sent successfully via SMTP to {recipient}!"
         print(f"[Mailer] {msg_str}")
         return True, msg_str
     except Exception as e:
-        msg_str = f"Failed to send daily news email via SMTP: {str(e)}"
+        msg_str = f"Failed to send daily news email via SMTP to {recipient}: {str(e)}"
         print(f"[Mailer] {msg_str}")
         return False, msg_str

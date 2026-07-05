@@ -72,6 +72,9 @@ export default function BulletinBoard() {
   const [newJobHour, setNewJobHour] = useState(12);
   const [newJobMinute, setNewJobMinute] = useState(0);
 
+  // System Settings State (Dynamic Recipient Email)
+  const [emailRecipient, setEmailRecipient] = useState("");
+
   // Loaders & Actions State
   const [loadingNews, setLoadingNews] = useState(false);
   const [loadingJobs, setLoadingJobs] = useState(false);
@@ -98,6 +101,7 @@ export default function BulletinBoard() {
   useEffect(() => {
     if (token) {
       fetchKeywords();
+      fetchSettings();
       if (activeTab === "bulletin") {
         fetchNews();
       } else {
@@ -222,7 +226,45 @@ export default function BulletinBoard() {
     setKeywords([]);
     setJobs([]);
     setSelectedKeyword("");
+    setEmailRecipient("");
     showToast("您已成功登出系統", "success");
+  };
+
+  // Fetch Settings
+  const fetchSettings = async () => {
+    try {
+      const res = await safeFetch("/api/settings", { headers: getHeaders() });
+      if (await handleResponse(res)) {
+        const data = await res.json();
+        setEmailRecipient(data.email_recipient);
+      }
+    } catch (err) {
+      showToast("無法載入信箱設定", "error");
+    }
+  };
+
+  // Update Settings
+  const handleUpdateSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await safeFetch("/api/settings", {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify({ email_recipient: emailRecipient }),
+      });
+
+      if (await handleResponse(res)) {
+        if (res.ok) {
+          showToast("成功更新輿情日報收件信箱！", "success");
+          fetchSettings();
+        } else {
+          const errData = await res.json();
+          showToast(errData.detail || "更新信箱失敗", "error");
+        }
+      }
+    } catch (err) {
+      showToast("連線至伺服器失敗", "error");
+    }
   };
 
   // Fetch Keywords
@@ -553,7 +595,7 @@ export default function BulletinBoard() {
           <div className="header-title-text">
             <h1>國北教大新聞公佈欄</h1>
             <p>
-              自動於每天 <strong>7:30 - 10:00</strong> 期間每 30 分鐘更新。預設密碼存取保護。
+              自動於每天 <strong>7:30 - 10:00</strong> 及 <strong>16:00 - 18:00</strong> 期間每 30 分鐘更新。
             </p>
           </div>
         </div>
@@ -642,7 +684,7 @@ export default function BulletinBoard() {
               新聞公佈欄
             </button>
             <button className={`tab-btn ${activeTab === "jobs" ? "active" : ""}`} onClick={() => setActiveTab("jobs")}>
-              定期排程設定
+              定期排程與信箱設定
             </button>
           </div>
 
@@ -732,12 +774,12 @@ export default function BulletinBoard() {
             </>
           )}
 
-          {/* TAB 2: Scheduled cron tasks */}
+          {/* TAB 2: Scheduled cron tasks & Email configurations */}
           {activeTab === "jobs" && (
             <div style={{ padding: "0.5rem 0" }}>
               <div className="news-filters" style={{ flexWrap: "wrap", gap: "1rem" }}>
                 <h2 className="panel-title" style={{ marginBottom: 0 }}>
-                  排程任務監控
+                  定時排程排程任務
                 </h2>
                 
                 {/* Add Job Form */}
@@ -833,6 +875,32 @@ export default function BulletinBoard() {
                     <p style={{ fontSize: "0.85rem", marginTop: "0.5rem" }}>您可以點擊上方「還原預設任務」重設預設排程。</p>
                   </div>
                 )}
+              </div>
+
+              {/* Dynamic Recipient Email Form Configuration */}
+              <div className="glass-panel" style={{ padding: "1.5rem", marginTop: "2.5rem", border: "1px solid var(--border-color)" }}>
+                <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "var(--primary-color)", marginBottom: "0.5rem" }}>
+                  輿情日報 Email 接收信箱設定
+                </h3>
+                <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", marginBottom: "1rem", lineHeight: 1.4 }}>
+                  設定排程任務執行完成後，自動將當日最新新聞摘要傳送至指定信箱。如果今天沒有新新聞，亦會傳送「今日無新聞」之安全回報。
+                </p>
+                <form onSubmit={handleUpdateSettings} style={{ display: "flex", gap: "0.5rem", maxWidth: "500px" }}>
+                  <input
+                    type="email"
+                    className="input-text"
+                    placeholder="請輸入收件信箱 (例如: user@example.com)"
+                    value={emailRecipient}
+                    onChange={(e) => setEmailRecipient(e.target.value)}
+                    required
+                  />
+                  <button type="submit" className="btn btn-primary" style={{ whiteSpace: "nowrap" }}>
+                    儲存信箱
+                  </button>
+                </form>
+                <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.5rem", lineHeight: 1.4 }}>
+                  ※ 變更後的新信箱於「第一次發信」時，會收到一封來自 FormSubmit 的確認啟動信（若尚未啟用過該信箱），點擊信中確認按鈕後即開始自動接收日報。如果您的伺服器配置了 SMTP 發信（如 Gmail 帳密），信件將會經由您的 Gmail 帳號發送，且不需要任何確認。
+                </p>
               </div>
             </div>
           )}

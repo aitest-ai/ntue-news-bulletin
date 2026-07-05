@@ -18,3 +18,11 @@ class News(Base):
     publish_time = Column(DateTime(timezone=True), nullable=False)
     keyword = Column(String(255), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class SystemSetting(Base):
+    __tablename__ = "system_settings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    key = Column(String(255), unique=True, index=True, nullable=False)
+    value = Column(Text, nullable=True)
+
