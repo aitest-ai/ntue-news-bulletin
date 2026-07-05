@@ -3,6 +3,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import httpx
 import pytz
+import html
 from .config import settings
 
 SOCIAL_DOMAINS = ["dcard.tw", "ptt.cc", "threads.net", "instagram.com", "facebook.com"]
@@ -135,10 +136,11 @@ def send_via_smtp(news_items, date_str: str, recipient: str):
         rows = []
         for item in news_list:
             pub_time = item.publish_time.strftime("%H:%M") if hasattr(item.publish_time, 'strftime') else str(item.publish_time)
+            escaped_url = html.escape(item.url)
             rows.append(f"""
             <tr>
               <td>
-                <div><a href="{item.url}" class="news-title" target="_blank">{item.title}</a></div>
+                <div><a href="{escaped_url}" class="news-title" target="_blank">{item.title}</a></div>
                 <span class="badge badge-keyword" style="margin-top: 4px;">{item.keyword}</span>
               </td>
               <td style="white-space: nowrap;">
@@ -176,10 +178,11 @@ def send_via_smtp(news_items, date_str: str, recipient: str):
         rows = []
         for item in social_list:
             pub_time = item.publish_time.strftime("%H:%M") if hasattr(item.publish_time, 'strftime') else str(item.publish_time)
+            escaped_url = html.escape(item.url)
             rows.append(f"""
             <tr>
               <td>
-                <div><a href="{item.url}" class="news-title" style="color: #6d28d9;" target="_blank">{item.title}</a></div>
+                <div><a href="{escaped_url}" class="news-title" style="color: #6d28d9;" target="_blank">{item.title}</a></div>
                 <span class="badge badge-keyword" style="margin-top: 4px; background-color: #f5f3ff; color: #5b21b6; border-color: #ddd6fe;">{item.keyword}</span>
               </td>
               <td style="white-space: nowrap;">
