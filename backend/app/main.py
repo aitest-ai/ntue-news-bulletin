@@ -177,12 +177,15 @@ def get_settings(db: Session = Depends(get_db), user: str = Depends(auth.verify_
     """
     setting = db.query(models.SystemSetting).filter(models.SystemSetting.key == "email_recipient").first()
     
+    if setting is None:
+        recipients = []
+        if settings.EMAIL_RECIPIENT:
+            recipients = [settings.EMAIL_RECIPIENT.strip()]
+        return {"email_recipients": recipients}
+        
     recipients = []
-    if setting and setting.value:
+    if setting.value:
         recipients = [e.strip() for e in setting.value.split(",") if e.strip()]
-    
-    if not recipients and settings.EMAIL_RECIPIENT:
-        recipients = [settings.EMAIL_RECIPIENT.strip()]
         
     return {"email_recipients": recipients}
 

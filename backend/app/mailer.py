@@ -11,22 +11,26 @@ def send_daily_news_email(news_items, date_str: str):
     from . import models
     
     db = SessionLocal()
-    recipients = []
+    setting = None
     try:
         setting = db.query(models.SystemSetting).filter(models.SystemSetting.key == "email_recipient").first()
-        if setting and setting.value:
-            recipients = [e.strip() for e in setting.value.split(",") if e.strip()]
     except Exception as e:
         print(f"[Mailer] Error querying recipient list from DB: {e}")
     finally:
         db.close()
         
-    if not recipients and settings.EMAIL_RECIPIENT:
-        recipients = [settings.EMAIL_RECIPIENT.strip()]
+    recipients = []
+    if setting is None:
+        if settings.EMAIL_RECIPIENT:
+            recipients = [settings.EMAIL_RECIPIENT.strip()]
+    else:
+        if setting.value:
+            recipients = [e.strip() for e in setting.value.split(",") if e.strip()]
 
     if not recipients:
         print("[Mailer] No recipient emails configured. Skipping email sending.")
         return False, "No recipient emails configured"
+
 
     # Send mail to all recipients
     success_count = 0
