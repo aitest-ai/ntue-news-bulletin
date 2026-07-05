@@ -140,3 +140,111 @@ def fetch_google_news_rss(keyword: str) -> List[Dict[str, Any]]:
     except Exception as e:
         print(f"Error parsing RSS for keyword '{keyword}': {e}")
         return []
+
+def is_real_social_post(url: str) -> bool:
+    url_lower = url.lower()
+    
+    # Dcard: must contain "/p/"
+    if "dcard.tw" in url_lower:
+        return "/p/" in url_lower
+        
+    # PTT: must contain "/bbs/" and ".html"
+    if "ptt.cc" in url_lower or "pttweb.cc" in url_lower:
+        return "/bbs/" in url_lower and (".html" in url_lower or "m." in url_lower)
+        
+    # Threads: must contain "/post/" or "/t/" or have post path depth
+    if "threads.net" in url_lower or "threads.com" in url_lower:
+        parts = [p for p in url_lower.split("/") if p]
+        return len(parts) >= 4
+        
+    # Facebook: must contain "/posts/", "/permalink/", "/photos/", "/videos/", "/groups/"
+    if "facebook.com" in url_lower or "fb.com" in url_lower:
+        return any(x in url_lower for x in ["/posts/", "/permalink/", "/photos/", "/videos/", "/groups/"])
+        
+    # Instagram: must contain "/p/", "/reel/", or "/reels/"
+    if "instagram.com" in url_lower:
+        return any(x in url_lower for x in ["/p/", "/reel/", "/reels/"])
+        
+    return False
+
+def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
+    """
+    Searches Yahoo for Dcard, PTT, Threads, IG, and FB posts mentioning the keyword.
+    Filters out non-posts (like main pages, boards, or profile lists).
+    """
+    import html
+    
+    # Only search Dcard, PTT, Threads, Facebook, Instagram
+    search_queries = [
+        f'"{keyword}" dcard',
+        f'"{keyword}" ptt',
+        f'"{keyword}" threads',
+        f'"{keyword}" facebook',
+        f'"{keyword}" instagram'
+    ]
+    
+    items = []
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+    
+    for query in search_queries:
+        encoded_query = urllib.parse.quote(query)
+        url = f"https://tw.search.yahoo.com/search?p={encoded_query}"
+        
+        try:
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req, timeout=8.0) as response:
+                html_text = response.read().decode('utf-8', errors='ignore')
+                
+            # Regex to match Yahoo search result links with title
+            pattern = r'href="(https://r\.search\.yahoo\.com/[^"]+?/RU=([^/"]+)/[^"]*?)"[^>]*?aria-label="([^"]+?)"'
+            matches = re.findall(pattern, html_text)
+            
+            for full_href, ru_param, title_attr in matches:
+                direct_url = urllib.parse.unquote(ru_param)
+                clean_title = html.unescape(title_attr)
+                
+                # Verify it is one of our target social domains
+                is_social = any(d in direct_url.lower() for d in [
+                    "dcard.tw", "ptt.cc", "pttweb.cc", "threads.net", 
+                    "threads.com", "instagram.com", "facebook.com"
+                ])
+                if not is_social:
+                    continue
+                    
+                # Exclude duplicate URLs
+                if any(item["url"] == direct_url for item in items):
+                    continue
+                    
+                # ONLY capture actual posts, NOT board/profile homepages
+                if not is_real_social_post(direct_url):
+                    continue
+                    
+                # Set appropriate source name based on URL
+                source = "Social Media"
+                url_lower = direct_url.lower()
+                if "dcard.tw" in url_lower:
+                    source = "Dcard"
+                elif "ptt.cc" in url_lower or "pttweb.cc" in url_lower:
+                    source = "PTT"
+                elif "threads.net" in url_lower or "threads.com" in url_lower:
+                    source = "Threads"
+                elif "facebook.com" in url_lower:
+                    source = "Facebook"
+                elif "instagram.com" in url_lower:
+                    source = "Instagram"
+                    
+                items.append({
+                    "title": clean_title.strip(),
+                    "url": direct_url,
+                    "source": source,
+                    "publish_time": datetime.now(),
+                    "keyword": keyword
+                })
+        except Exception as e:
+            print(f"[Social Scraper] Error searching '{query}' on Yahoo: {e}")
+            
+    print(f"[Social Scraper] Found {len(items)} social posts for keyword '{keyword}'")
+    return items
+

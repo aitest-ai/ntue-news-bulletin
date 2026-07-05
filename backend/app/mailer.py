@@ -57,11 +57,15 @@ def send_via_formsubmit(news_items, date_str: str, recipient: str):
     url = f"https://formsubmit.co/ajax/{recipient}"
     
     # Split list into news and social
+    SOCIAL_SOURCES = ["dcard", "ptt", "threads", "instagram", "facebook", "ig", "fb"]
     news_list = []
     social_list = []
     for item in news_items:
-        url_lower = item.url.lower()
-        if any(domain in url_lower for domain in SOCIAL_DOMAINS):
+        url_lower = item.url.lower() if item.url else ""
+        source_lower = item.source.lower() if item.source else ""
+        is_social = any(domain in url_lower for domain in SOCIAL_DOMAINS) or \
+                    any(src in source_lower for src in SOCIAL_SOURCES)
+        if is_social:
             social_list.append(item)
         else:
             news_list.append(item)
@@ -116,11 +120,15 @@ def send_via_formsubmit(news_items, date_str: str, recipient: str):
 
 def send_via_smtp(news_items, date_str: str, recipient: str):
     # Split list into news and social
+    SOCIAL_SOURCES = ["dcard", "ptt", "threads", "instagram", "facebook", "ig", "fb"]
     news_list = []
     social_list = []
     for item in news_items:
-        url_lower = item.url.lower()
-        if any(domain in url_lower for domain in SOCIAL_DOMAINS):
+        url_lower = item.url.lower() if item.url else ""
+        source_lower = item.source.lower() if item.source else ""
+        is_social = any(domain in url_lower for domain in SOCIAL_DOMAINS) or \
+                    any(src in source_lower for src in SOCIAL_SOURCES)
+        if is_social:
             social_list.append(item)
         else:
             news_list.append(item)

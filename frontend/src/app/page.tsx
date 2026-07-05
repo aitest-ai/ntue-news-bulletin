@@ -584,13 +584,17 @@ export default function BulletinBoard() {
   const totalPages = Math.ceil(totalNews / pageSize);
 
   // Split fetched news into traditional news and social/forum items
-  const traditionalNews = news.filter(item => 
-    !SOCIAL_DOMAINS.some(domain => item.url.toLowerCase().includes(domain))
-  );
+  const SOCIAL_SOURCES = ["dcard", "ptt", "threads", "instagram", "facebook", "ig", "fb"];
   
-  const socialNews = news.filter(item => 
-    SOCIAL_DOMAINS.some(domain => item.url.toLowerCase().includes(domain))
-  );
+  const isSocialItem = (item: NewsItem) => {
+    const urlLower = item.url.toLowerCase();
+    const sourceLower = item.source.toLowerCase();
+    return SOCIAL_DOMAINS.some(domain => urlLower.includes(domain)) ||
+           SOCIAL_SOURCES.some(src => sourceLower.includes(src));
+  };
+
+  const traditionalNews = news.filter(item => !isSocialItem(item));
+  const socialNews = news.filter(item => isSocialItem(item));
 
   // Custom premium render method for news card list
   const renderNewsCards = (items: NewsItem[], isSocial: boolean) => {

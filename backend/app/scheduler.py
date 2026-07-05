@@ -32,13 +32,9 @@ def fetch_all_keywords_news():
             # 1. Fetch traditional news
             items = parser.fetch_google_news_rss(kw.word)
             
-            # 2. Fetch social/forum posts using site operators
-            social_query = f'"{kw.word}" (site:dcard.tw OR site:ptt.cc OR site:threads.net OR site:instagram.com OR site:facebook.com)'
-            social_items = parser.fetch_google_news_rss(social_query)
+            # 2. Fetch social/forum posts using Yahoo Search scraper
+            social_items = parser.fetch_social_posts(kw.word)
             
-            for item in social_items:
-                item["keyword"] = kw.word
-                
             all_items = items + social_items
             
             for item in all_items:

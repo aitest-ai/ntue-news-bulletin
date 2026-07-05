@@ -246,10 +246,14 @@ def create_keyword(
     db.commit()
     db.refresh(new_kw)
     
-    # Bootstrap immediate fetch for the new keyword
+    # Bootstrap immediate fetch for the new keyword (both news and social posts)
     try:
-        items = fetch_google_news_rss(new_kw.word)
-        for item in items:
+        from .parser import fetch_social_posts
+        news_items = fetch_google_news_rss(new_kw.word)
+        social_items = fetch_social_posts(new_kw.word)
+        all_items = news_items + social_items
+        
+        for item in all_items:
             exists = db.query(models.News).filter(models.News.url == item["url"]).first()
             if not exists:
                 news_entry = models.News(
