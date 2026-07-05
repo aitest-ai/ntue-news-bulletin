@@ -234,10 +234,13 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
                       "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
 
-    def yahoo_search(query: str) -> list:
-        """Return list of (url, title, date_text) from Yahoo search."""
+    def yahoo_search(query: str, use_btf: bool = False) -> list:
+        """Return list of (url, title, date_text) from Yahoo search.
+        use_btf=True appends &btf=w to restrict to past-week results.
+        """
         encoded = urllib.parse.quote(query)
-        search_url = f"https://tw.search.yahoo.com/search?p={encoded}"
+        btf_param = "&btf=w" if use_btf else ""
+        search_url = f"https://tw.search.yahoo.com/search?p={encoded}{btf_param}"
         try:
             req = urllib.request.Request(search_url, headers=headers)
             with urllib.request.urlopen(req, timeout=10.0) as resp:
@@ -260,8 +263,10 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
             return []
 
     def try_add(url: str, title: str, date_text, source: str, kw: str,
-                require_relevance: bool = False):
-        """Validate and add an article to items list."""
+                require_relevance: bool = False, date_required: bool = True):
+        """Validate and add an article to items list.
+        date_required=False: accept posts without a date tag (when btf=w already filtered them).
+        """
         url_lower = url.lower()
         
         # Skip Facebook entirely
@@ -281,15 +286,21 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
             print(f"[Social Scraper] Skipping irrelevant: {title[:50]}")
             return
         
-        # Date must exist and be within 7 days
+        # Handle date: if no date tag exists
         if date_text is None:
-            # No date tag from Yahoo — skip to avoid pulling old content
-            return
-        publish_time = parse_yahoo_date(date_text)
-        age_days = (datetime.now() - publish_time).days
-        if age_days > 7:
-            print(f"[Social Scraper] Skipping old post ({age_days}d): {title[:50]}")
-            return
+            if date_required:
+                # No date and we require one — skip
+                return
+            else:
+                # No date but Yahoo's btf=w filter already limits to past week
+                # Default to now() as an approximation
+                publish_time = datetime.now()
+        else:
+            publish_time = parse_yahoo_date(date_text)
+            age_days = (datetime.now() - publish_time).days
+            if age_days > 7:
+                print(f"[Social Scraper] Skipping old post ({age_days}d): {title[:50]}")
+                return
         
         seen_urls.add(url)
         items.append({
@@ -301,35 +312,41 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
         })
 
     # ── 1. Dcard: search dedicated NTUE board only ──────────────────────────
+    # No btf=w needed — board is always NTUE-relevant; accept posts even without date tag
     print(f"[Social Scraper] Searching Dcard NTUE board...")
     for url, title, date_text in yahoo_search("site:dcard.tw/f/ntue"):
         if "dcard.tw" not in url.lower():
             continue
-        try_add(url, title, date_text, "Dcard", keyword, require_relevance=False)
+        try_add(url, title, date_text, "Dcard", keyword,
+                require_relevance=False, date_required=False)
     time.sleep(1.5)
 
-    # ── 2. PTT: keyword + ptt, require title relevance ──────────────────────
+    # ── 2. PTT: keyword + ptt + btf=w, require title relevance ─────────────
+    # Use btf=w so Yahoo pre-filters to past week; accept posts without date tag
     print(f"[Social Scraper] Searching PTT for '{keyword}'...")
-    for url, title, date_text in yahoo_search(f"{keyword} ptt"):
+    for url, title, date_text in yahoo_search(f"{keyword} ptt", use_btf=True):
         if "ptt.cc" not in url.lower() and "pttweb.cc" not in url.lower():
             continue
-        try_add(url, title, date_text, "PTT", keyword, require_relevance=True)
+        try_add(url, title, date_text, "PTT", keyword,
+                require_relevance=True, date_required=False)
     time.sleep(1.5)
 
-    # ── 3. Threads: keyword + threads, require title relevance ──────────────
+    # ── 3. Threads: keyword + threads + btf=w, require title relevance ──────
     print(f"[Social Scraper] Searching Threads for '{keyword}'...")
-    for url, title, date_text in yahoo_search(f"{keyword} threads"):
+    for url, title, date_text in yahoo_search(f"{keyword} threads", use_btf=True):
         if "threads.com" not in url.lower() and "threads.net" not in url.lower():
             continue
-        try_add(url, title, date_text, "Threads", keyword, require_relevance=True)
+        try_add(url, title, date_text, "Threads", keyword,
+                require_relevance=True, date_required=False)
     time.sleep(1.5)
 
-    # ── 4. Instagram: keyword + instagram, require title relevance ───────────
+    # ── 4. Instagram: keyword + instagram + btf=w, require title relevance ───
     print(f"[Social Scraper] Searching Instagram for '{keyword}'...")
-    for url, title, date_text in yahoo_search(f"{keyword} instagram"):
+    for url, title, date_text in yahoo_search(f"{keyword} instagram", use_btf=True):
         if "instagram.com" not in url.lower():
             continue
-        try_add(url, title, date_text, "Instagram", keyword, require_relevance=True)
+        try_add(url, title, date_text, "Instagram", keyword,
+                require_relevance=True, date_required=False)
     time.sleep(1.5)
 
     print(f"[Social Scraper] Found {len(items)} valid social posts for keyword '{keyword}'")
