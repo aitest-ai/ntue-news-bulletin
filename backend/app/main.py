@@ -217,6 +217,46 @@ def get_scheduler_jobs(user: str = Depends(auth.verify_token)):
         })
     return jobs
 
+@app.post("/api/scheduler/jobs", response_model=schemas.JobResponse)
+def create_scheduler_job(req: schemas.JobCreate, user: str = Depends(auth.verify_token)):
+    """
+    Register a new scheduled task (cron job) to fetch news. (Guarded by Password JWT)
+    """
+    if not (0 <= req.hour <= 23) or not (0 <= req.minute <= 59):
+        raise HTTPException(status_code=400, detail="小時必須在 0-23 之間，分鐘必須在 0-59 之間")
+        
+    tz = pytz.timezone("Asia/Taipei")
+    job_id = f"news_fetch_{req.hour}_{req.minute}"
+    job_name = f"自動抓取新聞 {req.hour}:{str(req.minute).zfill(2)}"
+    
+    # Check if a job with this ID already exists
+    existing_job = scheduler.scheduler.get_job(job_id)
+    if existing_job:
+        raise HTTPException(status_code=400, detail=f"已存在該時段 ({req.hour}:{str(req.minute).zfill(2)}) 的抓取任務！")
+        
+    try:
+        job = scheduler.scheduler.add_job(
+            scheduler.fetch_all_keywords_news,
+            CronTrigger(hour=str(req.hour), minute=str(req.minute), timezone=tz),
+            id=job_id,
+            name=job_name,
+            replace_existing=True
+        )
+        
+        next_run = None
+        if job.next_run_time:
+            next_run = job.next_run_time.isoformat()
+            
+        return {
+            "id": job.id,
+            "name": job.name or job.id,
+            "trigger": str(job.trigger),
+            "next_run_time": next_run,
+            "paused": False
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"註冊任務失敗: {str(e)}")
+
 @app.post("/api/scheduler/jobs/{job_id}/run")
 def trigger_scheduler_job(
     job_id: str, 

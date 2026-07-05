@@ -69,6 +69,8 @@ export default function BulletinBoard() {
 
   // Background Scheduler Jobs State
   const [jobs, setJobs] = useState<JobItem[]>([]);
+  const [newJobHour, setNewJobHour] = useState(12);
+  const [newJobMinute, setNewJobMinute] = useState(0);
 
   // Loaders & Actions State
   const [loadingNews, setLoadingNews] = useState(false);
@@ -382,6 +384,31 @@ export default function BulletinBoard() {
       showToast("連線至伺服器失敗", "error");
     } finally {
       setIsFetching(false);
+    }
+  };
+
+  // Create Job
+  const handleCreateJob = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await safeFetch("/api/scheduler/jobs", {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify({ hour: newJobHour, minute: newJobMinute }),
+      });
+
+      if (await handleResponse(res)) {
+        if (res.ok) {
+          const data = await res.json();
+          showToast(`成功新增定時抓取任務：${data.name}！`, "success");
+          fetchJobs();
+        } else {
+          const errData = await res.json();
+          showToast(errData.detail || "新增排程任務失敗", "error");
+        }
+      }
+    } catch (err) {
+      showToast("連線至伺服器失敗", "error");
     }
   };
 
@@ -708,10 +735,41 @@ export default function BulletinBoard() {
           {/* TAB 2: Scheduled cron tasks */}
           {activeTab === "jobs" && (
             <div style={{ padding: "0.5rem 0" }}>
-              <div className="news-filters">
+              <div className="news-filters" style={{ flexWrap: "wrap", gap: "1rem" }}>
                 <h2 className="panel-title" style={{ marginBottom: 0 }}>
-                  排程任務監控 (7:30 - 10:00 每30分鐘自動重新抓取)
+                  排程任務監控
                 </h2>
+                
+                {/* Add Job Form */}
+                <form onSubmit={handleCreateJob} style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+                  <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+                    新增抓取時段：
+                  </span>
+                  <select
+                    className="select-filter"
+                    value={newJobHour}
+                    onChange={(e) => setNewJobHour(parseInt(e.target.value))}
+                    style={{ width: "80px", minWidth: "auto", padding: "0.5rem", height: "38px" }}
+                  >
+                    {Array.from({ length: 24 }, (_, i) => (
+                      <option key={i} value={i}>{String(i).padStart(2, "0")} 時</option>
+                    ))}
+                  </select>
+                  <select
+                    className="select-filter"
+                    value={newJobMinute}
+                    onChange={(e) => setNewJobMinute(parseInt(e.target.value))}
+                    style={{ width: "80px", minWidth: "auto", padding: "0.5rem", height: "38px" }}
+                  >
+                    {Array.from({ length: 60 }, (_, i) => (
+                      <option key={i} value={i}>{String(i).padStart(2, "0")} 分</option>
+                    ))}
+                  </select>
+                  <button type="submit" className="btn btn-primary" style={{ padding: "0.5rem 1rem", fontSize: "0.85rem", height: "38px", display: "flex", alignItems: "center" }}>
+                    新增排程
+                  </button>
+                </form>
+
                 <button className="btn btn-danger-outline" onClick={handleResetJobs}>
                   還原預設任務
                 </button>

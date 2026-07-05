@@ -46,3 +46,8 @@ class JobResponse(BaseModel):
     trigger: str
     next_run_time: Optional[str] = None
     paused: bool
+
+class JobCreate(BaseModel):
+    hour: int
+    minute: int
+
