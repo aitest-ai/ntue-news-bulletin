@@ -46,6 +46,25 @@ def fetch_all_keywords_news():
             db.commit()
             
         print(f"[{datetime.now()}] Finished scheduled news fetch. Saved {total_new} new articles.")
+        
+        # Trigger daily news email dispatch
+        try:
+            tz = pytz.timezone("Asia/Taipei")
+            now = datetime.now(tz)
+            start_of_today = datetime(now.year, now.month, now.day, 0, 0, 0, tzinfo=tz)
+            end_of_today = datetime(now.year, now.month, now.day, 23, 59, 59, tzinfo=tz)
+            
+            news_today = db.query(models.News).filter(
+                models.News.publish_time >= start_of_today,
+                models.News.publish_time <= end_of_today
+            ).order_by(models.News.publish_time.desc()).all()
+            
+            date_str = now.strftime("%Y/%m/%d")
+            from .mailer import send_daily_news_email
+            send_daily_news_email(news_today, date_str)
+        except Exception as mail_err:
+            print(f"Error preparing or sending news email: {mail_err}")
+
         return total_new
     except Exception as e:
         print(f"Error in scheduled news fetch: {e}")
