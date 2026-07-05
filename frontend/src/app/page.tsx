@@ -42,12 +42,18 @@ interface ToastState {
   type: "success" | "error";
 }
 
+// Hardcoded production fallback URL
+const RENDER_BACKEND_URL = "https://ntue-news-bulletin.onrender.com";
+
 export default function BulletinBoard() {
   // Authentication State
   const [token, setToken] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
+
+  // Silent automatic routing state (remembers if Vercel proxy has failed in current session)
+  const [useDirectBackend, setUseDirectBackend] = useState(false);
 
   // Layout Tab State
   const [activeTab, setActiveTab] = useState<"bulletin" | "jobs">("bulletin");
@@ -70,11 +76,18 @@ export default function BulletinBoard() {
   const [isFetching, setIsFetching] = useState(false);
   const [toast, setToast] = useState<ToastState>({ show: false, message: "", type: "success" });
 
-  // Load auth state from localStorage on mount
+  // Load auth state and check fallback routing status on mount
   useEffect(() => {
-    const savedToken = localStorage.getItem("bulletin_token");
-    if (savedToken) {
-      setToken(savedToken);
+    if (typeof window !== "undefined") {
+      const savedToken = localStorage.getItem("bulletin_token");
+      if (savedToken) {
+        setToken(savedToken);
+      }
+      
+      const savedFallback = sessionStorage.getItem("use_direct_backend") === "true";
+      if (savedFallback) {
+        setUseDirectBackend(true);
+      }
     }
     setAuthChecked(true);
   }, []);
@@ -97,6 +110,53 @@ export default function BulletinBoard() {
     setTimeout(() => {
       setToast((prev) => ({ ...prev, show: false }));
     }, 4000);
+  };
+
+  // Silent safe fetch with automatic direct-to-Render fallback
+  const safeFetch = async (path: string, options: RequestInit = {}) => {
+    const cleanPath = path.startsWith("/") ? path : `/${path}`;
+    const directUrl = `${RENDER_BACKEND_URL}${cleanPath}`;
+    const proxyUrl = cleanPath;
+
+    // Case 1: Already detected proxy failure in this session -> go direct
+    if (useDirectBackend) {
+      try {
+        return await fetch(directUrl, options);
+      } catch (err) {
+        throw err;
+      }
+    }
+
+    // Case 2: Try Vercel's proxy first
+    try {
+      const res = await fetch(proxyUrl, options);
+
+      // If Vercel returns 502 Bad Gateway / 503 Tunnel Unavailable / 504 Timeout
+      if (res.status === 502 || res.status === 503 || res.status === 504) {
+        console.warn(`Vercel proxy returned ${res.status}. Silently falling back to Render directly...`);
+        const fallbackRes = await fetch(directUrl, options);
+        
+        if (fallbackRes.ok || fallbackRes.status < 500) {
+          setUseDirectBackend(true);
+          sessionStorage.setItem("use_direct_backend", "true");
+        }
+        return fallbackRes;
+      }
+
+      return res;
+    } catch (err) {
+      // If network fails entirely (DNS or CORS on relative proxy path) -> retry directly
+      console.warn("Proxy connection error. Silently falling back to Render directly...", err);
+      try {
+        const fallbackRes = await fetch(directUrl, options);
+        setUseDirectBackend(true);
+        sessionStorage.setItem("use_direct_backend", "true");
+        return fallbackRes;
+      } catch (fallbackErr) {
+        // Both failed, throw original error
+        throw err;
+      }
+    }
   };
 
   // Auth Helper: Headers builder
@@ -126,7 +186,7 @@ export default function BulletinBoard() {
     setIsLoggingIn(true);
 
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await safeFetch("/api/auth/login", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
@@ -166,7 +226,7 @@ export default function BulletinBoard() {
   // Fetch Keywords
   const fetchKeywords = async () => {
     try {
-      const res = await fetch("/api/keywords", { headers: getHeaders() });
+      const res = await safeFetch("/api/keywords", { headers: getHeaders() });
       if (await handleResponse(res)) {
         const data = await res.json();
         setKeywords(data);
@@ -188,7 +248,7 @@ export default function BulletinBoard() {
       if (selectedKeyword) {
         url += `&keyword=${encodeURIComponent(selectedKeyword)}`;
       }
-      const res = await fetch(url, { headers: getHeaders() });
+      const res = await safeFetch(url, { headers: getHeaders() });
       if (await handleResponse(res)) {
         const data = await res.json();
         setNews(data.items);
@@ -212,7 +272,7 @@ export default function BulletinBoard() {
     setIsFetching(true);
     showToast("公佈欄內容目前為空，正在為您自動抓取最新新聞...", "success");
     try {
-      const res = await fetch("/api/news/fetch", { method: "POST", headers: getHeaders() });
+      const res = await safeFetch("/api/news/fetch", { method: "POST", headers: getHeaders() });
       if (await handleResponse(res)) {
         if (res.ok) {
           const data = await res.json();
@@ -231,7 +291,7 @@ export default function BulletinBoard() {
   const fetchJobs = async () => {
     setLoadingJobs(true);
     try {
-      const res = await fetch("/api/scheduler/jobs", { headers: getHeaders() });
+      const res = await safeFetch("/api/scheduler/jobs", { headers: getHeaders() });
       if (await handleResponse(res)) {
         const data = await res.json();
         setJobs(data);
@@ -250,7 +310,7 @@ export default function BulletinBoard() {
     if (!word) return;
 
     try {
-      const res = await fetch("/api/keywords", {
+      const res = await safeFetch("/api/keywords", {
         method: "POST",
         headers: getHeaders(),
         body: JSON.stringify({ word }),
@@ -278,7 +338,7 @@ export default function BulletinBoard() {
     if (!confirm(`確定要刪除關鍵字「${word}」嗎？`)) return;
 
     try {
-      const res = await fetch(`/api/keywords/${id}`, {
+      const res = await safeFetch(`/api/keywords/${id}`, {
         method: "DELETE",
         headers: getHeaders(),
       });
@@ -304,7 +364,7 @@ export default function BulletinBoard() {
     setIsFetching(true);
     showToast("正在抓取最新新聞...", "success");
     try {
-      const res = await fetch("/api/news/fetch", { method: "POST", headers: getHeaders() });
+      const res = await safeFetch("/api/news/fetch", { method: "POST", headers: getHeaders() });
       if (await handleResponse(res)) {
         if (res.ok) {
           const data = await res.json();
@@ -328,7 +388,7 @@ export default function BulletinBoard() {
   // Job Action Handlers
   const handleRunJob = async (jobId: string) => {
     try {
-      const res = await fetch(`/api/scheduler/jobs/${jobId}/run`, { method: "POST", headers: getHeaders() });
+      const res = await safeFetch(`/api/scheduler/jobs/${jobId}/run`, { method: "POST", headers: getHeaders() });
       if (await handleResponse(res)) {
         if (res.ok) {
           showToast(`排程「${jobId}」已立即觸發`, "success");
@@ -345,7 +405,7 @@ export default function BulletinBoard() {
 
   const handleToggleJob = async (jobId: string) => {
     try {
-      const res = await fetch(`/api/scheduler/jobs/${jobId}/toggle`, { method: "POST", headers: getHeaders() });
+      const res = await safeFetch(`/api/scheduler/jobs/${jobId}/toggle`, { method: "POST", headers: getHeaders() });
       if (await handleResponse(res)) {
         if (res.ok) {
           const data = await res.json();
@@ -363,7 +423,7 @@ export default function BulletinBoard() {
   const handleDeleteJob = async (jobId: string) => {
     if (!confirm(`確定要移除任務「${jobId}」嗎？`)) return;
     try {
-      const res = await fetch(`/api/scheduler/jobs/${jobId}`, { method: "DELETE", headers: getHeaders() });
+      const res = await safeFetch(`/api/scheduler/jobs/${jobId}`, { method: "DELETE", headers: getHeaders() });
       if (await handleResponse(res)) {
         if (res.ok) {
           showToast(`已成功移除任務「${jobId}」`, "success");
@@ -380,7 +440,7 @@ export default function BulletinBoard() {
   const handleResetJobs = async () => {
     if (!confirm("確定要重設為系統預設排程嗎？（這將重新註冊 7:30 - 10:00 期間每30分鐘定時採集任務）")) return;
     try {
-      const res = await fetch("/api/scheduler/jobs/reset", { method: "POST", headers: getHeaders() });
+      const res = await safeFetch("/api/scheduler/jobs/reset", { method: "POST", headers: getHeaders() });
       if (await handleResponse(res)) {
         if (res.ok) {
           showToast("預設排程任務已成功恢復！", "success");

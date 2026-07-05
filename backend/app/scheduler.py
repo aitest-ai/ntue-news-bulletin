@@ -16,6 +16,7 @@ def fetch_all_keywords_news():
             default_words = [
                 "國立臺北教育大學",
                 "國北教大",
+                "北教大",
                 "NTUE",
                 "National Taipei University of Education"
             ]
@@ -62,6 +63,7 @@ def start_scheduler():
             default_words = [
                 "國立臺北教育大學",
                 "國北教大",
+                "北教大",
                 "NTUE",
                 "National Taipei University of Education"
             ]
@@ -78,14 +80,21 @@ def start_scheduler():
     # Timezone Asia/Taipei
     tz = pytz.timezone("Asia/Taipei")
 
-    # Cron timings: 07:30, 08:00, 08:30, 09:00, 09:30, 10:00 Taipei time
+    # Cron timings: 
+    # Morning: 07:30, 08:00, 08:30, 09:00, 09:30, 10:00 Taipei time
+    # Evening: 16:00, 16:30, 17:00, 17:30, 18:00 Taipei time
     fetch_times = [
         ("7", "30"),
         ("8", "0"),
         ("8", "30"),
         ("9", "0"),
         ("9", "30"),
-        ("10", "0")
+        ("10", "0"),
+        ("16", "0"),
+        ("16", "30"),
+        ("17", "0"),
+        ("17", "30"),
+        ("18", "0")
     ]
     
     for h, m in fetch_times:
@@ -100,4 +109,4 @@ def start_scheduler():
         )
         
     scheduler.start()
-    print(f"APScheduler workers started. Registered {len(fetch_times)} daily cron triggers for 07:30-10:00 period.")
+    print(f"APScheduler workers started. Registered {len(fetch_times)} daily cron triggers.")

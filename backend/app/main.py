@@ -15,22 +15,42 @@ from .config import settings
 async def lifespan(app: FastAPI):
     # Ensure SQLite tables exist
     Base.metadata.create_all(bind=engine)
+    
+    # Seed default keywords synchronously before starting the scheduler
+    db = SessionLocal()
+    try:
+        keywords = db.query(models.Keyword).all()
+        if not keywords:
+            default_words = [
+                "國立臺北教育大學",
+                "國北教大",
+                "北教大",
+                "NTUE",
+                "National Taipei University of Education"
+            ]
+            for word in default_words:
+                db.add(models.Keyword(word=word))
+            db.commit()
+            print("Default keywords successfully seeded in database.")
+    except Exception as e:
+        print(f"Error seeding database keywords on startup: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
     # Start APScheduler background tasks
     scheduler.start_scheduler()
     
-    # Auto-fetch once if the news database is empty on startup
+    # Auto-fetch synchronously once if the news database is empty on startup.
+    # This prevents the race condition where the frontend requests news before the async bootstrapper runs.
     db = SessionLocal()
     try:
         news_count = db.query(models.News).count()
         if news_count == 0:
-            print("Database is empty on startup. Triggering initial fetch...")
-            # Queue fetch job immediately
-            scheduler.scheduler.add_job(
-                scheduler.fetch_all_keywords_news,
-                id="initial_fetch_bootstrap"
-            )
+            print("Database is empty on startup. Triggering synchronous initial fetch bootstrap...")
+            scheduler.fetch_all_keywords_news()
     except Exception as e:
-        print(f"Error checking news count on startup: {e}")
+        print(f"Error running initial news fetch on startup: {e}")
     finally:
         db.close()
         
@@ -159,6 +179,20 @@ def delete_keyword(
     if not db_kw:
         raise HTTPException(status_code=404, detail="找不到此關鍵字")
     
+    # Protect system default keywords from being deleted
+    default_words = [
+        "國立臺北教育大學",
+        "國北教大",
+        "北教大",
+        "NTUE",
+        "National Taipei University of Education"
+    ]
+    if db_kw.word in default_words:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="此關鍵字為系統預設核心追蹤詞，無法刪除！"
+        )
+        
     db.delete(db_kw)
     db.commit()
     return None
@@ -251,14 +285,19 @@ def reset_scheduler_jobs(user: str = Depends(auth.verify_token)):
     # Timezone Asia/Taipei
     tz = pytz.timezone("Asia/Taipei")
 
-    # Re-register 7:30 - 10:00 triggers
+    # Re-register 7:30 - 10:00 and 16:00 - 18:00 triggers
     fetch_times = [
         ("7", "30"),
         ("8", "0"),
         ("8", "30"),
         ("9", "0"),
         ("9", "30"),
-        ("10", "0")
+        ("10", "0"),
+        ("16", "0"),
+        ("16", "30"),
+        ("17", "0"),
+        ("17", "30"),
+        ("18", "0")
     ]
     
     for h, m in fetch_times:
