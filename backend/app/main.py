@@ -116,6 +116,57 @@ def trigger_fetch(user: str = Depends(auth.verify_token)):
     new_count = scheduler.fetch_all_keywords_news()
     return {"message": "新聞重新抓取完成！", "new_articles_count": new_count}
 
+@app.post("/api/test-email")
+def test_email(user: str = Depends(auth.verify_token)):
+    """
+    Manually triggers email dispatch for testing and returns the exact status message. (Guarded by Password JWT)
+    """
+    from .database import SessionLocal
+    from . import models
+    from .config import settings
+    import pytz
+    from datetime import datetime
+    
+    db = SessionLocal()
+    try:
+        tz = pytz.timezone("Asia/Taipei")
+        now = datetime.now(tz)
+        
+        # Localize dates in Taipei timezone first
+        start_of_today = tz.localize(datetime(now.year, now.month, now.day, 0, 0, 0))
+        end_of_today = tz.localize(datetime(now.year, now.month, now.day, 23, 59, 59))
+        
+        # Convert to UTC naive datetimes to match SQLite database datetime formats
+        utc_start = start_of_today.astimezone(pytz.utc).replace(tzinfo=None)
+        utc_end = end_of_today.astimezone(pytz.utc).replace(tzinfo=None)
+        
+        news_today = db.query(models.News).filter(
+            models.News.publish_time >= utc_start,
+            models.News.publish_time <= utc_end
+        ).order_by(models.News.publish_time.desc()).all()
+        
+        date_str = now.strftime("%Y/%m/%d")
+        
+        # Call mailer (which now returns (success: bool, detail: str))
+        from .mailer import send_daily_news_email
+        success, message = send_daily_news_email(news_today, date_str)
+        
+        return {
+            "success": success,
+            "message": message,
+            "news_count_sent": len(news_today),
+            "recipient": settings.EMAIL_RECIPIENT
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error_type": str(type(e)),
+            "error_message": str(e)
+        }
+    finally:
+        db.close()
+
+
 @app.get("/api/keywords", response_model=List[schemas.Keyword])
 def read_keywords(db: Session = Depends(get_db), user: str = Depends(auth.verify_token)):
     """

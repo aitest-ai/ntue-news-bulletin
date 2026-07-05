@@ -9,7 +9,7 @@ def send_daily_news_email(news_items, date_str: str):
     # Check if recipient is configured
     if not settings.EMAIL_RECIPIENT:
         print("[Mailer] EMAIL_RECIPIENT not configured. Skipping email sending.")
-        return False
+        return False, "EMAIL_RECIPIENT not configured"
 
     # Option A: If SMTP credentials are configured, use SMTP
     if settings.SMTP_USERNAME and settings.SMTP_PASSWORD:
@@ -57,15 +57,17 @@ def send_via_formsubmit(news_items, date_str: str):
         }
         response = httpx.post(url, json=payload, headers=headers, timeout=15.0)
         if response.status_code == 200:
-
-            print("[Mailer] Daily news email successfully sent via FormSubmit.co!")
-            return True
+            msg = f"Success from FormSubmit: {response.text}"
+            print(f"[Mailer] {msg}")
+            return True, msg
         else:
-            print(f"[Mailer] FormSubmit.co returned error status: {response.status_code} - {response.text}")
-            return False
+            msg = f"FormSubmit returned error status {response.status_code}: {response.text}"
+            print(f"[Mailer] {msg}")
+            return False, msg
     except Exception as e:
-        print(f"[Mailer] Failed to send via FormSubmit.co: {e}")
-        return False
+        msg = f"Exception sending via FormSubmit: {str(e)}"
+        print(f"[Mailer] {msg}")
+        return False, msg
 
 def send_via_smtp(news_items, date_str: str):
     # 1. Build Content HTML
@@ -261,8 +263,10 @@ def send_via_smtp(news_items, date_str: str):
         server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
         server.sendmail(settings.SMTP_USERNAME, settings.EMAIL_RECIPIENT, msg.as_string())
         server.quit()
-        print("[Mailer] Daily news email sent successfully via SMTP!")
-        return True
+        msg_str = "Daily news email sent successfully via SMTP!"
+        print(f"[Mailer] {msg_str}")
+        return True, msg_str
     except Exception as e:
-        print(f"[Mailer] Failed to send daily news email via SMTP: {e}")
-        return False
+        msg_str = f"Failed to send daily news email via SMTP: {str(e)}"
+        print(f"[Mailer] {msg_str}")
+        return False, msg_str
