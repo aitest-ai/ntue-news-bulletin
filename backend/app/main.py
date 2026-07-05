@@ -155,8 +155,11 @@ def test_email(user: str = Depends(auth.verify_token)):
             "success": success,
             "message": message,
             "news_count_sent": len(news_today),
-            "recipient": settings.EMAIL_RECIPIENT
+            "smtp_configured": bool(settings.SMTP_USERNAME and settings.SMTP_PASSWORD),
+            "smtp_username_val": settings.SMTP_USERNAME,
+            "smtp_password_len": len(settings.SMTP_PASSWORD) if settings.SMTP_PASSWORD else 0
         }
+
     except Exception as e:
         return {
             "success": False,
