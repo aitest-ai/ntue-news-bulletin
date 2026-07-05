@@ -228,7 +228,8 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
     
     for query in search_queries:
         encoded_query = urllib.parse.quote(query)
-        url = f"https://tw.search.yahoo.com/search?p={encoded_query}"
+        # Append &btf=w to restrict Yahoo Search results to the past week (7 days)
+        url = f"https://tw.search.yahoo.com/search?p={encoded_query}&btf=w"
         
         try:
             req = urllib.request.Request(url, headers=headers)
