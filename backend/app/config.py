@@ -12,7 +12,8 @@ class Settings(BaseSettings):
     SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
     SMTP_USERNAME: str = os.getenv("SMTP_USERNAME", "")
     SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
-    EMAIL_RECIPIENT: str = os.getenv("EMAIL_RECIPIENT", "")
+    EMAIL_RECIPIENT: str = os.getenv("EMAIL_RECIPIENT", "kancollect126@gmail.com")
+
 
     class Config:
         env_file = ".env"
