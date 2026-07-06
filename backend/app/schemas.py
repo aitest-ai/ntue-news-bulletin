@@ -26,12 +26,13 @@ class NewsBase(BaseModel):
     title: str
     url: str
     source: str
-    publish_time: datetime
+    publish_time: Optional[datetime] = None  # publishedAt (nullable)
     keyword: str
 
 class News(NewsBase):
     id: int
-    created_at: datetime
+    crawled_at: datetime  # crawledAt
+    created_at: datetime  # createdAt
 
     class Config:
         from_attributes = True

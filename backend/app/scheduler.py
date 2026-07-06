@@ -37,16 +37,29 @@ def fetch_all_keywords_news():
             
             all_items = items + social_items
             
+            import hashlib
             for item in all_items:
-                # Database-agnostic query-and-insert deduplication
-                exists = db.query(models.News).filter(models.News.url == item["url"]).first()
+                # Unique key: prioritizes url, fallbacks to hash of platform + title + keyword if invalid
+                url_val = item.get("url")
+                if url_val and isinstance(url_val, str) and url_val.strip().lower().startswith("http"):
+                    unique_url = url_val.strip()
+                else:
+                    platform = item.get("source", "Social")
+                    title_val = item.get("title", "")
+                    kw_val = item.get("keyword", "")
+                    raw_str = f"{platform}:{title_val}:{kw_val}"
+                    h = hashlib.sha256(raw_str.encode("utf-8")).hexdigest()
+                    unique_url = f"hash://{platform}/{h}"
+
+                exists = db.query(models.News).filter(models.News.url == unique_url).first()
                 if not exists:
                     news_entry = models.News(
                         title=item["title"],
-                        url=item["url"],
+                        url=unique_url,
                         source=item["source"],
                         publish_time=item["publish_time"],
-                        keyword=item["keyword"]
+                        keyword=item["keyword"],
+                        crawled_at=datetime.utcnow()
                     )
                     db.add(news_entry)
                     total_new += 1

@@ -15,9 +15,10 @@ class News(Base):
     title = Column(String(512), nullable=False)
     url = Column(Text, unique=True, index=True, nullable=False)
     source = Column(String(255), nullable=False)
-    publish_time = Column(DateTime(timezone=True), nullable=False)
+    publish_time = Column(DateTime(timezone=True), nullable=True)  # publishedAt (nullable)
     keyword = Column(String(255), nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    crawled_at = Column(DateTime(timezone=True), server_default=func.now())  # crawledAt
+    created_at = Column(DateTime(timezone=True), server_default=func.now())  # createdAt
 
 class SystemSetting(Base):
     __tablename__ = "system_settings"

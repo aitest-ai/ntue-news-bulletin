@@ -16,6 +16,24 @@ async def lifespan(app: FastAPI):
     # Ensure SQLite tables exist
     Base.metadata.create_all(bind=engine)
     
+    # Run automatic SQLite migration if crawled_at column is missing
+    from sqlalchemy import text
+    db_mig = SessionLocal()
+    try:
+        db_mig.execute(text("SELECT crawled_at FROM news LIMIT 1"))
+    except Exception:
+        print("Column 'crawled_at' does not exist in 'news' table. Altering table...")
+        db_mig.rollback()
+        try:
+            db_mig.execute(text("ALTER TABLE news ADD COLUMN crawled_at DATETIME DEFAULT CURRENT_TIMESTAMP"))
+            db_mig.commit()
+            print("Successfully added 'crawled_at' column to 'news' table.")
+        except Exception as migration_err:
+            print(f"Error altering table 'news': {migration_err}")
+            db_mig.rollback()
+    finally:
+        db_mig.close()
+    
     # Seed default keywords synchronously before starting the scheduler
     db = SessionLocal()
     try:
@@ -263,15 +281,29 @@ def create_keyword(
         social_items = fetch_social_posts(new_kw.word)
         all_items = news_items + social_items
         
+        import hashlib
         for item in all_items:
-            exists = db.query(models.News).filter(models.News.url == item["url"]).first()
+            # Unique key: prioritizes url, fallbacks to hash of platform + title + keyword if invalid
+            url_val = item.get("url")
+            if url_val and isinstance(url_val, str) and url_val.strip().lower().startswith("http"):
+                unique_url = url_val.strip()
+            else:
+                platform = item.get("source", "Social")
+                title_val = item.get("title", "")
+                kw_val = item.get("keyword", "")
+                raw_str = f"{platform}:{title_val}:{kw_val}"
+                h = hashlib.sha256(raw_str.encode("utf-8")).hexdigest()
+                unique_url = f"hash://{platform}/{h}"
+
+            exists = db.query(models.News).filter(models.News.url == unique_url).first()
             if not exists:
                 news_entry = models.News(
                     title=item["title"],
-                    url=item["url"],
+                    url=unique_url,
                     source=item["source"],
                     publish_time=item["publish_time"],
-                    keyword=item["keyword"]
+                    keyword=item["keyword"],
+                    crawled_at=datetime.utcnow()
                 )
                 db.add(news_entry)
         db.commit()

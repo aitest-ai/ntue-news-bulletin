@@ -215,6 +215,167 @@ def title_mentions_ntue(title: str) -> bool:
     t = title.lower()
     return any(term.lower() in t for term in NTUE_RELEVANCE_TERMS)
 
+from typing import Optional
+import pytz
+
+def parse_iso_datetime(iso_str: str) -> Optional[datetime]:
+    iso_str = iso_str.strip().replace("Z", "+00:00")
+    try:
+        dt = datetime.fromisoformat(iso_str)
+        if dt.tzinfo:
+            dt = dt.astimezone(pytz.utc).replace(tzinfo=None)
+        return dt
+    except Exception:
+        m = re.search(r'(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})', iso_str)
+        if m:
+            try:
+                return datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)),
+                                int(m.group(4)), int(m.group(5)), int(m.group(6)))
+            except Exception:
+                pass
+    return None
+
+def parse_dcard_html_time(html: str) -> Optional[datetime]:
+    import json
+    import re
+    from datetime import datetime, timedelta
+
+    m = re.search(r'property="article:published_time"\s+content="([^"]+)"', html) or \
+        re.search(r'content="([^"]+)"\s+property="article:published_time"', html)
+    if m:
+        t = parse_iso_datetime(m.group(1))
+        if t:
+            return t
+
+    json_ld_matches = re.findall(r'<script\s+type="application/ld\+json">([\s\S]*?)</script>', html)
+    for ld in json_ld_matches:
+        try:
+            data = json.loads(ld.strip())
+            if isinstance(data, dict):
+                dp = data.get("datePublished") or data.get("dateCreated")
+                if dp:
+                    t = parse_iso_datetime(dp)
+                    if t:
+                        return t
+        except Exception:
+            pass
+
+    m_created = re.search(r'"createdAt"\s*:\s*"([^"]+)"', html)
+    if m_created:
+        t = parse_iso_datetime(m_created.group(1))
+        if t:
+            return t
+            
+    m_pub = re.search(r'"publishedAt"\s*:\s*"([^"]+)"', html)
+    if m_pub:
+        t = parse_iso_datetime(m_pub.group(1))
+        if t:
+            return t
+
+    hr_match = re.search(r'(\d+)\s*(?:小時前|小時|hour|hr)', html)
+    if hr_match:
+        return datetime.utcnow() - timedelta(hours=int(hr_match.group(1)))
+        
+    day_match = re.search(r'(\d+)\s*(?:天前|天|day|d)', html)
+    if day_match:
+        return datetime.utcnow() - timedelta(days=int(day_match.group(1)))
+        
+    min_match = re.search(r'(\d+)\s*(?:分鐘前|分鐘|min|m)', html)
+    if min_match:
+        return datetime.utcnow() - timedelta(minutes=int(min_match.group(1)))
+        
+    if "剛剛" in html or "just now" in html:
+        return datetime.utcnow()
+
+    return None
+
+def fetch_dcard_metadata(url: str) -> dict:
+    import urllib.request
+    import json
+    import re
+    
+    res = {
+        "title": "",
+        "url": url,
+        "forumName": "Dcard - 臺北教育大學板",
+        "excerpt": "",
+        "publishedAt": None,
+        "commentCount": 0,
+        "likeCount": 0
+    }
+    
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "zh-TW,zh;q=0.9",
+        "Referer": "https://www.dcard.tw/"
+    }
+    req = urllib.request.Request(url, headers=headers)
+    try:
+        # Max 1 retry
+        with urllib.request.urlopen(req, timeout=5.0) as r:
+            html = r.read().decode("utf-8", errors="ignore")
+            
+        res["publishedAt"] = parse_dcard_html_time(html)
+        
+        title_match = re.search(r"<title>([^<]+)</title>", html)
+        if title_match:
+            res["title"] = title_match.group(1).replace(" - Dcard", "").strip()
+            
+        desc_match = re.search(r'name="name"\s+content="([^"]+)"', html) or \
+                     re.search(r'name="description"\s+content="([^"]+)"', html) or \
+                     re.search(r'content="([^"]+)"\s+name="description"', html)
+        if desc_match:
+            res["excerpt"] = desc_match.group(1).strip()
+            
+        comment_match = re.search(r'"commentCount"\s*:\s*(\d+)', html)
+        if comment_match:
+            res["commentCount"] = int(comment_match.group(1))
+            
+        like_match = re.search(r'"likeCount"\s*:\s*(\d+)', html)
+        if like_match:
+            res["likeCount"] = int(like_match.group(1))
+            
+    except Exception as e:
+        print(f"[Dcard Collector] Error fetching metadata for {url}: {e}")
+        
+    return res
+
+def fetch_ptt_published_time(url: str) -> Optional[datetime]:
+    import urllib.request
+    import re
+    
+    if "pttweb.cc" in url.lower():
+        m = re.search(r'/bbs/([^/]+)/([^/]+)', url)
+        if m:
+            board = m.group(1)
+            post_id = m.group(2)
+            url = f"https://www.ptt.cc/bbs/{board}/{post_id}.html"
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Cookie": "over18=1",
+    }
+    req = urllib.request.Request(url, headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=5.0) as r:
+            html = r.read().decode("utf-8", errors="ignore")
+            
+        meta_values = re.findall(r'<span class="article-meta-value">([^<]+)</span>', html)
+        if len(meta_values) >= 4:
+            time_str = meta_values[3].strip()
+            clean_time_str = re.sub(r'\s+', ' ', time_str)
+            return datetime.strptime(clean_time_str, "%a %b %d %H:%M:%S %Y")
+    except Exception as e:
+        print(f"[PTT Parser] Error fetching post page {url}: {e}")
+    return None
+
+def fetch_threads_via_official_api(keyword: str) -> Optional[List[Dict[str, Any]]]:
+    # Placeholder for official Meta Threads API keyword search.
+    # Endpoint: https://graph.threads.net/v1.0/threads/search?q={keyword}
+    # Requires access token. Returns None since no credentials are provided.
+    return None
+
 def fetch_social_via_google_news(keyword: str) -> List[Dict[str, Any]]:
     """
     Uses Google News RSS to find PTT, Threads, Instagram, and Dcard posts
@@ -294,19 +455,27 @@ def fetch_social_via_google_news(keyword: str) -> List[Dict[str, Any]]:
                     print(f"[Google Social] Skipping irrelevant: {title_safe}")
                     continue
 
-                # Parse publish date
-                publish_time = datetime.now()
-                if pub_date_text:
-                    try:
-                        publish_time = email.utils.parsedate_to_datetime(pub_date_text).replace(tzinfo=None)
-                    except Exception:
-                        pass
+                # Determine actual publish time of the post
+                publish_time = None
+                if source == "Dcard":
+                    dcard_meta = fetch_dcard_metadata(resolved_link)
+                    if dcard_meta["publishedAt"]:
+                        publish_time = dcard_meta["publishedAt"]
+                    if dcard_meta["title"]:
+                        title = dcard_meta["title"]
+                elif source == "PTT":
+                    publish_time = fetch_ptt_published_time(resolved_link)
+                elif source == "Threads":
+                    fetch_threads_via_official_api(keyword)
+                elif source == "Instagram":
+                    pass
 
-                # Filter to past 7 days
-                if publish_time < cutoff:
-                    title_safe = title[:50].encode('utf-8', errors='ignore').decode('utf-8')
-                    print(f"[Google Social] Skipping old ({(datetime.now()-publish_time).days}d): {title_safe}")
-                    continue
+                # Filter to past 7 days (only if publish_time is parsed)
+                if publish_time is not None:
+                    if publish_time < cutoff:
+                        title_safe = title[:50].encode('utf-8', errors='ignore').decode('utf-8')
+                        print(f"[Google Social] Skipping old ({(datetime.now()-publish_time).days}d): {title_safe}")
+                        continue
 
                 # Clean title (strip " - PTT" etc)
                 clean_title = title
@@ -382,11 +551,9 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
             print(f"[Social Scraper] Yahoo search error for '{query}': {e}")
             return []
 
-    def try_add(url: str, title: str, date_text, source: str, kw: str,
-                require_relevance: bool = False, date_required: bool = True):
-        """Validate and add an article to items list.
-        date_required=False: accept posts without a date tag (when btf=w already filtered them).
-        """
+    def try_add(url: str, title: str, source: str, kw: str,
+                require_relevance: bool = False):
+        """Validate and add an article to items list."""
         url_lower = url.lower()
         
         # Skip Facebook entirely
@@ -407,17 +574,23 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
             print(f"[Social Scraper] Skipping irrelevant: {title_safe}")
             return
         
-        # Handle date: if no date tag exists
-        if date_text is None:
-            if date_required:
-                # No date and we require one — skip
-                return
-            else:
-                # No date but Yahoo's btf=w filter already limits to past week
-                # Default to now() as an approximation
-                publish_time = datetime.now()
-        else:
-            publish_time = parse_yahoo_date(date_text)
+        # Determine actual publish time of the post
+        publish_time = None
+        if source == "Dcard":
+            dcard_meta = fetch_dcard_metadata(url)
+            if dcard_meta["publishedAt"]:
+                publish_time = dcard_meta["publishedAt"]
+            if dcard_meta["title"]:
+                title = dcard_meta["title"]
+        elif source == "PTT":
+            publish_time = fetch_ptt_published_time(url)
+        elif source == "Threads":
+            fetch_threads_via_official_api(kw)
+        elif source == "Instagram":
+            pass
+
+        # Filter to past 7 days (only if publish_time is parsed)
+        if publish_time is not None:
             age_days = (datetime.now() - publish_time).days
             if age_days > 7:
                 title_safe = title[:50].encode('utf-8', errors='ignore').decode('utf-8')
@@ -434,23 +607,19 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
         })
 
     # ── 1. Dcard: search dedicated NTUE board only ──────────────────────────
-    # No btf=w needed — board is always NTUE-relevant; accept posts even without date tag
     print(f"[Social Scraper] Searching Dcard NTUE board...")
     for url, title, date_text in yahoo_search("site:dcard.tw/f/ntue"):
         if "dcard.tw" not in url.lower():
             continue
-        try_add(url, title, date_text, "Dcard", keyword,
-                require_relevance=False, date_required=False)
+        try_add(url, title, "Dcard", keyword, require_relevance=False)
     time.sleep(1.5)
 
     # ── 2. PTT: keyword + ptt + btf=w, require title relevance ─────────────
-    # Use btf=w so Yahoo pre-filters to past week; accept posts without date tag
     print(f"[Social Scraper] Searching PTT for '{keyword}'...")
     for url, title, date_text in yahoo_search(f"{keyword} ptt", use_btf=True):
         if "ptt.cc" not in url.lower() and "pttweb.cc" not in url.lower():
             continue
-        try_add(url, title, date_text, "PTT", keyword,
-                require_relevance=True, date_required=False)
+        try_add(url, title, "PTT", keyword, require_relevance=True)
     time.sleep(1.5)
 
     # ── 3. Threads: keyword + threads + btf=w, require title relevance ──────
@@ -458,8 +627,7 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
     for url, title, date_text in yahoo_search(f"{keyword} threads", use_btf=True):
         if "threads.com" not in url.lower() and "threads.net" not in url.lower():
             continue
-        try_add(url, title, date_text, "Threads", keyword,
-                require_relevance=True, date_required=False)
+        try_add(url, title, "Threads", keyword, require_relevance=True)
     time.sleep(1.5)
 
     # ── 4. Instagram: keyword + instagram + btf=w, require title relevance ───
@@ -467,8 +635,7 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
     for url, title, date_text in yahoo_search(f"{keyword} instagram", use_btf=True):
         if "instagram.com" not in url.lower():
             continue
-        try_add(url, title, date_text, "Instagram", keyword,
-                require_relevance=True, date_required=False)
+        try_add(url, title, "Instagram", keyword, require_relevance=True)
     time.sleep(1.5)
 
     print(f"[Social Scraper] Found {len(items)} valid social posts for keyword '{keyword}'")

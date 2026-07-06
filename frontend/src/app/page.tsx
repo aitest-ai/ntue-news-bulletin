@@ -604,8 +604,14 @@ export default function BulletinBoard() {
 
   // Date Formatter
   const formatDate = (dateStr: string) => {
+    if (!dateStr || dateStr === "None" || dateStr === "null" || dateStr === "undefined") {
+      return "時間未知";
+    }
     try {
       const date = new Date(dateStr);
+      if (isNaN(date.getTime()) || date.getTime() === 0) {
+        return "時間未知";
+      }
       return date.toLocaleString("zh-TW", {
         year: "numeric",
         month: "2-digit",
@@ -615,7 +621,7 @@ export default function BulletinBoard() {
         hour12: false,
       });
     } catch (e) {
-      return dateStr;
+      return "時間未知";
     }
   };
 

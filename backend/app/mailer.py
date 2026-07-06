@@ -53,6 +53,20 @@ def send_daily_news_email(news_items, date_str: str):
     overall_msg = "; ".join(results)
     return overall_success, overall_msg
 
+def get_formatted_time(pub_time_obj) -> str:
+    if pub_time_obj is None:
+        return "未知"
+    try:
+        if hasattr(pub_time_obj, 'strftime'):
+            formatted = pub_time_obj.strftime("%H:%M")
+        else:
+            formatted = str(pub_time_obj)
+        if formatted.lower() == "none" or not formatted.strip():
+            return "未知"
+        return formatted
+    except Exception:
+        return "未知"
+
 def send_via_formsubmit(news_items, date_str: str, recipient: str):
     url = f"https://formsubmit.co/ajax/{recipient}"
     
@@ -82,7 +96,7 @@ def send_via_formsubmit(news_items, date_str: str, recipient: str):
     else:
         news_lines = []
         for i, item in enumerate(news_list, 1):
-            pub_time = item.publish_time.strftime("%H:%M") if hasattr(item.publish_time, 'strftime') else str(item.publish_time)
+            pub_time = get_formatted_time(item.publish_time)
             news_lines.append(f"{i}. [{item.source}] {item.title}\n   時間: {pub_time} | 關鍵字: {item.keyword}\n   連結: {item.url}")
         payload["新聞媒體報導"] = "\n\n".join(news_lines)
 
@@ -92,7 +106,7 @@ def send_via_formsubmit(news_items, date_str: str, recipient: str):
     else:
         social_lines = []
         for i, item in enumerate(social_list, 1):
-            pub_time = item.publish_time.strftime("%H:%M") if hasattr(item.publish_time, 'strftime') else str(item.publish_time)
+            pub_time = get_formatted_time(item.publish_time)
             social_lines.append(f"{i}. [{item.source}] {item.title}\n   時間: {pub_time} | 關鍵字: {item.keyword}\n   連結: {item.url}")
         payload["社群與網路論壇"] = "\n\n".join(social_lines)
 
@@ -143,7 +157,7 @@ def send_via_smtp(news_items, date_str: str, recipient: str):
     else:
         rows = []
         for item in news_list:
-            pub_time = item.publish_time.strftime("%H:%M") if hasattr(item.publish_time, 'strftime') else str(item.publish_time)
+            pub_time = get_formatted_time(item.publish_time)
             escaped_url = html.escape(item.url)
             rows.append(f"""
             <tr>
@@ -185,7 +199,7 @@ def send_via_smtp(news_items, date_str: str, recipient: str):
     else:
         rows = []
         for item in social_list:
-            pub_time = item.publish_time.strftime("%H:%M") if hasattr(item.publish_time, 'strftime') else str(item.publish_time)
+            pub_time = get_formatted_time(item.publish_time)
             escaped_url = html.escape(item.url)
             rows.append(f"""
             <tr>
