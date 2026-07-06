@@ -73,22 +73,8 @@ async def lifespan(app: FastAPI):
     # Start APScheduler background tasks
     scheduler.start_scheduler()
     
-    # Auto-fetch in a background thread once if the news database is empty on startup.
-    # This prevents blocking the FastAPI lifespan/startup while performing the initial crawl.
-    def bg_initial_fetch():
-        db = SessionLocal()
-        try:
-            news_count = db.query(models.News).count()
-            if news_count == 0:
-                print("[Startup Fetch] Database is empty. Triggering background initial fetch bootstrap...")
-                scheduler.fetch_all_keywords_news()
-                print("[Startup Fetch] Background initial fetch bootstrap completed.")
-        except Exception as e:
-            print(f"[Startup Fetch] Error running initial news fetch: {e}")
-        finally:
-            db.close()
-            
-    threading.Thread(target=bg_initial_fetch, daemon=True).start()
+    # NOTE: Do NOT auto-fetch on startup. The scheduler cron jobs will handle populating data.
+    # Auto-fetching on cold start causes Render free-tier to run out of resources and restart endlessly.
         
     yield
     # Safely shutdown APScheduler on app termination

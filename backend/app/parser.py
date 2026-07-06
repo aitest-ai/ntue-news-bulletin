@@ -452,9 +452,15 @@ def fetch_threads_via_fallback(keyword: str) -> Tuple[List[Dict[str, Any]], List
     Search engine fallback route for Threads using Playwright to query search pages.
     Returns: (list_of_posts, queries_run, source_used, error_reason)
     """
-    from playwright.sync_api import sync_playwright
     import urllib.parse
     import re
+    
+    # Check if playwright is available first
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        print("[Threads Playwright] Playwright is not installed. Skipping.")
+        return [], [], "playwright_crawler", "playwright_not_installed"
     
     results = []
     seen_urls = set()
