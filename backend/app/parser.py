@@ -953,7 +953,7 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
         elif source == "PTT":
             publish_time = fetch_ptt_published_time(url)
         elif source == "Threads":
-            fetch_threads_via_official_api(kw)
+            pass  # publish_time will use date_text fallback or datetime.now()
         elif source == "Instagram":
             pass
 
@@ -995,43 +995,49 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
         try_add(url, title, "Dcard", keyword, date_text=date_text, require_relevance=False)
     time.sleep(2.0 + random.random() * 2.0)
 
-    # ── 2. Threads: Yahoo Search site:threads.net booster (RUN FIRST to bypass rates) ──
+    # ── 2. Threads: Yahoo Search site:threads.net booster ──────────────────────
     print(f"[Social Scraper] Running Yahoo search booster for Threads posts related to '{keyword}'...")
     try:
+        kw_normalized = keyword.replace("臺", "台").lower()
+        EXCLUDE_WORDS = ["市北教", "北市大", "台北市立大學", "台北市立教育大學", "市立台北教育大學", "台北大學", "ntpu", "ntu", "台灣大學"]
         for url, title, date_text in yahoo_search(f"site:threads.net {keyword}"):
             url_lower = url.lower()
+            # Must be a real Threads post URL (not homepage or profile)
             if "threads.net" not in url_lower and "threads.com" not in url_lower:
                 continue
             if "/post/" not in url_lower and "/t/" not in url_lower:
                 continue
-                
-            art_text = title
-            kw_normalized = keyword.replace("臺", "台").lower()
-            text_normalized = art_text.replace("臺", "台").lower()
             
-            if kw_normalized not in text_normalized:
-                continue
-                
-            EXCLUDE_WORDS = ["市北教", "北市大", "台北市立大學", "台北市立教育大學", "市立台北教育大學", "台北大學", "ntpu", "ntu", "台灣大學"]
+            # Clean up the title from HTML artifacts
+            # titles from yahoo_search may contain URL-encoded segments or HTML garbage
+            clean_title = title
+            # Remove URL-encoded fragments (e.g. %2ft%2fXXX/RK=2/RS=...)
+            clean_title = re.sub(r'%[0-9a-fA-F]{2}[\w%/=\-\.]*', '', clean_title)
+            clean_title = re.sub(r'RK=\d+.*', '', clean_title)
+            # Remove generic placeholder words
+            clean_title = clean_title.replace("www.threads.net", "").replace("threads.net", "").replace("Threads", "").strip()
+            # Strip HTML tags if any remain
+            clean_title = re.sub(r'<[^>]+>', ' ', clean_title)
+            clean_title = re.sub(r'\s+', ' ', clean_title).strip()
+            
+            # If title has actual content and contains the keyword, use it directly
+            # If title is too short/empty, use a default
+            text_normalized = clean_title.replace("臺", "台").lower()
+            
+            # Check for exclusion words in title (only if title has content)
             has_exclude = False
-            for ew in EXCLUDE_WORDS:
-                if ew in kw_normalized:
-                    continue
-                if ew in text_normalized:
-                    has_exclude = True
-                    break
+            if clean_title:
+                for ew in EXCLUDE_WORDS:
+                    if ew in kw_normalized:  # Don't exclude if ew is part of our keyword
+                        continue
+                    if ew in text_normalized:
+                        has_exclude = True
+                        break
             if has_exclude:
                 continue
-                
-            username = "@unknown"
-            user_m = re.search(r'threads\.net/(@[^/]+)/post', url)
-            if user_m:
-                username = user_m.group(1)
-                
-            clean_title = title.replace("Threads", "").replace("threads.net", "").replace("貼文", "").strip()
-            if username in clean_title:
-                clean_title = clean_title.replace(username, "").strip()
-            post_title = clean_title[:60] if clean_title else f"Threads 公開貼文 - {username}"
+            
+            # Build final post title (use what we have, or fallback)
+            post_title = clean_title[:80] if len(clean_title) > 5 else f"Threads 貼文 - {url.split('/')[-1][:20]}"
             
             try_add(url, post_title, "Threads", keyword, date_text=date_text, require_relevance=False)
     except Exception as yahoo_threads_err:
