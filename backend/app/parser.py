@@ -447,19 +447,27 @@ def fetch_threads_via_official_api(keyword: str) -> Tuple[Optional[List[Dict[str
         print(f"[Threads Collector] Exception during official API call: {error_msg}")
         return None, "api_error", error_msg
 
+PLAYWRIGHT_AVAILABLE = True
+
 def fetch_threads_via_fallback(keyword: str) -> Tuple[List[Dict[str, Any]], List[str], str, Optional[str]]:
     """
     Search engine fallback route for Threads using Playwright to query search pages.
     Returns: (list_of_posts, queries_run, source_used, error_reason)
     """
+    global PLAYWRIGHT_AVAILABLE
     import urllib.parse
     import re
+    
+    if not PLAYWRIGHT_AVAILABLE:
+        print("[Threads Playwright] Playwright previously failed to initialize. Skipping to avoid hanging.")
+        return [], [], "playwright_crawler", "playwright_not_available"
     
     # Check if playwright is available first
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
         print("[Threads Playwright] Playwright is not installed. Skipping.")
+        PLAYWRIGHT_AVAILABLE = False
         return [], [], "playwright_crawler", "playwright_not_installed"
     
     results = []
@@ -542,6 +550,7 @@ def fetch_threads_via_fallback(keyword: str) -> Tuple[List[Dict[str, Any]], List
             
     except Exception as e:
         print(f"[Threads Playwright] Failed to run Playwright: {e}")
+        PLAYWRIGHT_AVAILABLE = False
         error_reason = f"playwright_init_error: {str(e)}"
         
     if not results and not error_reason:
