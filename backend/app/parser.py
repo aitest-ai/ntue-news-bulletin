@@ -475,8 +475,7 @@ def fetch_threads_via_fallback(keyword: str) -> Tuple[List[Dict[str, Any]], List
     error_reason = None
     
     queries = [
-        f"https://www.threads.com/search?q={urllib.parse.quote(keyword)}",
-        f"https://www.threads.com/search?q={urllib.parse.quote(keyword)}&serp_type=tags"
+        f"https://www.threads.com/search?q={urllib.parse.quote(keyword)}"
     ]
     
     source_used = "playwright_crawler"
@@ -494,7 +493,7 @@ def fetch_threads_via_fallback(keyword: str) -> Tuple[List[Dict[str, Any]], List
             for q_url in queries:
                 print(f"[Threads Playwright] Navigating to: {q_url}")
                 try:
-                    response = page.goto(q_url, wait_until="load", timeout=25000)
+                    response = page.goto(q_url, wait_until="load", timeout=15000)
                     
                     status = response.status if response else 200
                     if status == 429:
@@ -611,6 +610,9 @@ def fetch_threads_via_fallback(keyword: str) -> Tuple[List[Dict[str, Any]], List
     if not results and not error_reason:
         error_reason = "search_result_empty"
         
+    import gc
+    gc.collect()
+    
     return results, queries, source_used, error_reason
 
 def collect_threads_posts(keyword: str) -> Tuple[dict, List[Dict[str, Any]]]:
