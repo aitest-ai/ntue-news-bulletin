@@ -3,7 +3,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 import email.utils
 import urllib.parse
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 import re
 import json
 
