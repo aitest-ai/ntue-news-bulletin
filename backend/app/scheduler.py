@@ -16,7 +16,14 @@ LAST_FETCH_TRACE = {
     "error": None
 }
 
+from threading import Lock
+FETCH_LOCK = Lock()
+
 def fetch_all_keywords_news():
+    if not FETCH_LOCK.acquire(blocking=False):
+        print(f"[{datetime.now()}] Fetch already in progress. Skipping.")
+        return 0
+    
     global LAST_FETCH_TRACE
     LAST_FETCH_TRACE = {
         "status": "running",
@@ -128,6 +135,7 @@ def fetch_all_keywords_news():
         return 0
     finally:
         db.close()
+        FETCH_LOCK.release()
 
 def start_scheduler():
     # Ensure default keywords exist in database before starting
