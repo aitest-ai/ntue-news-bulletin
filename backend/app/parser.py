@@ -472,11 +472,10 @@ def fetch_threads_via_fallback(keyword: str) -> Tuple[List[Dict[str, Any]], List
     
     results = []
     seen_urls = set()
-    # Clean keyword to construct Threads hashtag url and search page url
-    clean_tag = keyword.replace("#", "").strip()
+    error_reason = None
     queries = [
-        f"https://www.threads.net/tags/{urllib.parse.quote(clean_tag)}",
-        f"https://www.threads.net/search?q={urllib.parse.quote(clean_tag)}&serp_type=tags"
+        f"https://www.threads.net/search?q={urllib.parse.quote(keyword)}&serp_type=tags",
+        f"https://www.threads.net/search?q={urllib.parse.quote(keyword)}"
     ]
     
     source_used = "playwright_crawler"
