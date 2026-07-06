@@ -859,27 +859,39 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
         """
         encoded = urllib.parse.quote(query)
         btf_param = "&btf=w" if use_btf else ""
-        search_url = f"https://tw.search.yahoo.com/search?p={encoded}{btf_param}"
-        try:
-            req = urllib.request.Request(search_url, headers=headers)
-            with urllib.request.urlopen(req, timeout=10.0) as resp:
-                html_text = resp.read().decode("utf-8", errors="ignore")
-            segments = html_text.split('href="https://r.search.yahoo.com/')
-            results = []
-            for seg in segments[1:]:
-                ru_match = re.search(r'RU=([^/"]+)/', seg)
-                if not ru_match:
+        
+        urls_to_try = [
+            f"https://tw.search.yahoo.com/search?p={encoded}{btf_param}",
+            f"https://search.yahoo.com/search?p={encoded}{btf_param}"
+        ]
+        
+        for search_url in urls_to_try:
+            try:
+                req = urllib.request.Request(search_url, headers=headers)
+                with urllib.request.urlopen(req, timeout=10.0) as resp:
+                    html_text = resp.read().decode("utf-8", errors="ignore")
+                if 'href="https://r.search.yahoo.com/' not in html_text:
                     continue
-                direct_url = urllib.parse.unquote(ru_match.group(1))
-                title_m = re.search(r'aria-label="([^"]+)"', seg)
-                title = htmllib.unescape(title_m.group(1)) if title_m else ""
-                date_m = re.search(r'<span class="fc-smoke">([^<]+)</span>', seg[:2000])
-                date_text = date_m.group(1).strip() if date_m else None
-                results.append((direct_url, title, date_text))
-            return results
-        except Exception as e:
-            print(f"[Social Scraper] Yahoo search error for '{query}': {e}")
-            return []
+                segments = html_text.split('href="https://r.search.yahoo.com/')
+                results = []
+                for seg in segments[1:]:
+                    ru_match = re.search(r'RU=([^/"]+)/', seg)
+                    if not ru_match:
+                        continue
+                    direct_url = urllib.parse.unquote(ru_match.group(1))
+                    title_m = re.search(r'aria-label="([^"]+)"', seg)
+                    title = htmllib.unescape(title_m.group(1)) if title_m else ""
+                    date_m = re.search(r'<span class="fc-smoke">([^<]+)</span>', seg[:2000])
+                    date_text = date_m.group(1).strip() if date_m else None
+                    results.append((direct_url, title, date_text))
+                
+                if results:
+                    print(f"[Social Scraper] Yahoo search succeeded using: {search_url} (Found {len(results)} results)")
+                    return results
+            except Exception as e:
+                print(f"[Social Scraper] Yahoo search failed for {search_url}: {e}")
+                
+        return []
 
     def try_add(url: str, title: str, source: str, kw: str, date_text: str = None,
                 require_relevance: bool = False):
