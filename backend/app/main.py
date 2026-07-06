@@ -173,9 +173,20 @@ def read_news(
         print(f"Error in read_news: {err_msg}")
         raise HTTPException(status_code=500, detail=f"Database query error: {str(e)}\n{err_msg}")
 
+LAST_MANUAL_FETCH_TIME = None
+
 @app.post("/api/news/fetch")
 def trigger_fetch(background_tasks: BackgroundTasks, user: str = Depends(auth.verify_token)):
-    background_tasks.add_task(scheduler.fetch_all_keywords_news)
+    from datetime import datetime, timedelta
+    global LAST_MANUAL_FETCH_TIME
+    now = datetime.now()
+    
+    if LAST_MANUAL_FETCH_TIME and now - LAST_MANUAL_FETCH_TIME < timedelta(minutes=3):
+        return {"message": "已在背景啟動新聞與輿情抓取任務，請於 3 到 5 分鐘後重新整理網頁！", "new_articles_count": 0}
+        
+    if not scheduler.FETCH_LOCK.locked():
+        LAST_MANUAL_FETCH_TIME = now
+        background_tasks.add_task(scheduler.fetch_all_keywords_news)
     return {"message": "已在背景啟動新聞與輿情抓取任務，請於 3 到 5 分鐘後重新整理網頁！", "new_articles_count": 0}
 
 @app.get("/api/news/fetch-trace")
