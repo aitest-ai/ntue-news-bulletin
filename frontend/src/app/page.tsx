@@ -701,9 +701,13 @@ export default function BulletinBoard() {
               }}>
                 {item.source}
               </span>
-              {isDateValid(item.publish_time) && (
+              {isDateValid(item.publish_time) ? (
                 <span className="news-time" style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
                   {formatDate(item.publish_time)}
+                </span>
+              ) : (
+                <span className="news-time" style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+                  時間未知
                 </span>
               )}
             </div>
