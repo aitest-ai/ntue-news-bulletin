@@ -366,20 +366,13 @@ def create_keyword(
         
     return new_kw
 
-@app.delete("/api/keywords/{kw_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_keyword(
-    kw_id: int, 
-    db: Session = Depends(get_db),
-    user: str = Depends(auth.verify_token)
-):
-    """
-    Delete a monitoring keyword by database ID. (Guarded by Password JWT)
-    """
-    db_kw = db.query(models.Keyword).filter(models.Keyword.id == kw_id).first()
-    if not db_kw:
-        raise HTTPException(status_code=404, detail="找不到此關鍵字")
+@app.delete("/api/keywords/{keyword_id}")
+def delete_keyword(keyword_id: int, db: Session = Depends(get_db), user: str = Depends(auth.verify_token)):
+    kw = db.query(models.Keyword).filter(models.Keyword.id == keyword_id).first()
+    if not kw:
+        raise HTTPException(status_code=404, detail="關鍵字不存在")
     
-    # Protect system default keywords from being deleted
+    # Prevent deleting default keywords
     default_words = [
         "國立臺北教育大學",
         "國北教大",
@@ -387,15 +380,19 @@ def delete_keyword(
         "NTUE",
         "National Taipei University of Education"
     ]
-    if db_kw.word in default_words:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="此關鍵字為系統預設核心追蹤詞，無法刪除！"
-        )
+    if kw.word in default_words:
+        raise HTTPException(status_code=400, detail="此為系統預設核心關鍵字，無法刪除")
         
-    db.delete(db_kw)
+    db.query(models.News).filter(models.News.keyword_id == keyword_id).delete()
+    db.delete(kw)
     db.commit()
-    return None
+    return {"message": "已刪除"}
+
+@app.post("/api/admin/wipe-threads")
+def wipe_threads(db: Session = Depends(get_db), user: str = Depends(auth.verify_token)):
+    deleted = db.query(models.News).filter(models.News.source == 'Threads').delete()
+    db.commit()
+    return {"message": f"Successfully wiped {deleted} old Threads posts!"}
 
 @app.get("/api/scheduler/jobs", response_model=List[schemas.JobResponse])
 def get_scheduler_jobs(user: str = Depends(auth.verify_token)):
