@@ -542,6 +542,37 @@ def reset_scheduler_jobs(user: str = Depends(auth.verify_token)):
     
     return {"message": "系統已成功還原預設定時排程。"}
 
+@app.get("/api/debug/install-playwright")
+def debug_install_playwright():
+    """
+    Manually trigger Playwright Chromium installation and return console output.
+    """
+    import subprocess
+    import sys
+    try:
+        print("[Playwright Trigger] Running manual install of Chromium...")
+        res = subprocess.run(
+            [sys.executable, "-m", "playwright", "install", "chromium"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=True
+        )
+        return {
+            "status": "success",
+            "stdout": res.stdout,
+            "stderr": res.stderr
+        }
+    except Exception as e:
+        stdout_err = getattr(e, "stdout", "")
+        stderr_err = getattr(e, "stderr", "")
+        return {
+            "status": "failed",
+            "error": str(e),
+            "stdout": stdout_err,
+            "stderr": stderr_err
+        }
+
 @app.get("/api/debug/threads")
 def debug_threads(keyword: str, db: Session = Depends(get_db)):
     """
