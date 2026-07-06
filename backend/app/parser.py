@@ -800,8 +800,8 @@ def fetch_social_via_google_news(keyword: str) -> List[Dict[str, Any]]:
                 elif source == "Instagram":
                     pass
 
-                # Filter to past 7 days (only if publish_time is parsed)
-                if publish_time is not None:
+                # Filter to past 30 days (only if publish_time is parsed and NOT Threads)
+                if source != "Threads" and publish_time is not None:
                     if publish_time < cutoff:
                         title_safe = title[:50].encode('utf-8', errors='ignore').decode('utf-8')
                         print(f"[Google Social] Skipping old ({(datetime.now()-publish_time).days}d): {title_safe}")
@@ -930,8 +930,8 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
         if publish_time is None:
             publish_time = datetime.now()
 
-        # Filter to past 30 days (only if publish_time is parsed)
-        if publish_time is not None:
+        # Filter to past 30 days (only if publish_time is parsed and NOT Threads)
+        if source != "Threads" and publish_time is not None:
             age_days = (datetime.now() - publish_time).days
             if age_days > 30:
                 title_safe = title[:50].encode('utf-8', errors='ignore').decode('utf-8')
