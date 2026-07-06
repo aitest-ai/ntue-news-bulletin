@@ -107,6 +107,8 @@ def login(req: schemas.LoginRequest):
     token = auth.create_access_token(data={"sub": "admin"})
     return {"access_token": token, "token_type": "bearer"}
 
+from sqlalchemy import func
+
 @app.get("/api/news", response_model=schemas.NewsResponse)
 def read_news(
     skip: int = 0,
@@ -123,7 +125,7 @@ def read_news(
         query = query.filter(models.News.keyword == keyword)
     
     total = query.count()
-    items = query.order_by(models.News.publish_time.desc()).offset(skip).limit(limit).all()
+    items = query.order_by(func.coalesce(models.News.publish_time, models.News.crawled_at).desc()).offset(skip).limit(limit).all()
     return {"total": total, "items": items}
 
 @app.post("/api/news/fetch")
