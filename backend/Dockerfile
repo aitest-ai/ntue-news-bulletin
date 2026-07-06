@@ -4,8 +4,7 @@ WORKDIR /app
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-RUN playwright install chromium
-RUN playwright install-deps chromium
+RUN apt-get update && python -m playwright install chromium && python -m playwright install-deps chromium
 
 COPY . .
 
