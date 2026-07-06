@@ -472,10 +472,11 @@ def fetch_threads_via_fallback(keyword: str) -> Tuple[List[Dict[str, Any]], List
     
     results = []
     seen_urls = set()
-    error_reason = None
-    
+    # Clean keyword to construct Threads hashtag url and search page url
+    clean_tag = keyword.replace("#", "").strip()
     queries = [
-        f"https://www.threads.com/search?q={urllib.parse.quote(keyword)}"
+        f"https://www.threads.net/tags/{urllib.parse.quote(clean_tag)}",
+        f"https://www.threads.net/search?q={urllib.parse.quote(clean_tag)}&serp_type=tags"
     ]
     
     source_used = "playwright_crawler"
@@ -518,12 +519,30 @@ def fetch_threads_via_fallback(keyword: str) -> Tuple[List[Dict[str, Any]], List
                         # Wait for article selectors to load
                         page.wait_for_selector("article", timeout=6000)
                         articles = page.query_selector_all("article")
-                        print(f"[Threads Playwright] Found {len(articles)} article cards. Filtering by keyword '{keyword}'...")
+                        print(f"[Threads Playwright] Found {len(articles)} article cards. Filtering strictly by keyword '{keyword}'...")
                         
                         for art in articles:
                             art_text = art.inner_text() or ""
-                            # Strict match: Keyword must be contained in the post text
-                            if keyword.lower() not in art_text.lower():
+                            
+                            # Normalize text for robust comparison
+                            kw_normalized = keyword.replace("臺", "台").lower()
+                            text_normalized = art_text.replace("臺", "台").lower()
+                            
+                            # 1. Check if the normalized keyword is fully contained in the text in correct order
+                            if kw_normalized not in text_normalized:
+                                continue
+                                
+                            # 2. Exclude posts from other schools
+                            EXCLUDE_WORDS = ["市北教", "北市大", "台北市立大學", "台北市立教育大學", "市立台北教育大學", "台北大學", "ntpu", "ntu", "台灣大學"]
+                            has_exclude = False
+                            for ew in EXCLUDE_WORDS:
+                                if ew in kw_normalized:
+                                    continue
+                                if ew in text_normalized:
+                                    has_exclude = True
+                                    break
+                            if has_exclude:
+                                print(f"[Threads Playwright] Filtered out post from other university: {art_text[:40]}...")
                                 continue
                                 
                             link_elem = art.query_selector("a[href*='/post/']")
@@ -554,8 +573,8 @@ def fetch_threads_via_fallback(keyword: str) -> Tuple[List[Dict[str, Any]], List
                                 clean_text = clean_text.replace(username, "").strip()
                                 
                             # Use actual post snippet as title & excerpt
-                            post_title = clean_text[:40] if clean_text else f"Threads 貼文 - {username}"
-                            post_excerpt = clean_text[:120] if clean_text else f"從 Threads 搜尋取得之公開貼文。作者: {username}"
+                            post_title = clean_text[:60] if clean_text else f"Threads 貼文 - {username}"
+                            post_excerpt = clean_text[:160] if clean_text else f"從 Threads 搜尋取得之公開貼文。作者: {username}"
                             
                             seen_urls.add(l)
                             results.append({
@@ -569,33 +588,6 @@ def fetch_threads_via_fallback(keyword: str) -> Tuple[List[Dict[str, Any]], List
                             })
                     except Exception as select_err:
                         print(f"[Threads Playwright] Selector query failed or timed out: {select_err}")
-                        # Fallback to regex URL extraction as a last resort, but only keep if title/url matches
-                        pattern = r'(?:https://(?:www\.)?threads\.(?:net|com))?/(?:@|%40)[a-zA-Z0-9_\.]+/post/[a-zA-Z0-9_-]+'
-                        links = re.findall(pattern, content)
-                        for l in links:
-                            if l.startswith("/"):
-                                l = "https://www.threads.net" + l
-                            elif "threads.com" in l:
-                                l = l.replace("threads.com", "threads.net")
-                                
-                            if l in seen_urls:
-                                continue
-                                
-                            username = "@unknown"
-                            user_m = re.search(r'threads\.net/(@[^/]+)/post', l)
-                            if user_m:
-                                username = user_m.group(1)
-                                
-                            seen_urls.add(l)
-                            results.append({
-                                "title": f"Threads 貼文 - {username}",
-                                "url": l,
-                                "source": "Threads",
-                                "publish_time": None,
-                                "keyword": keyword,
-                                "excerpt": f"從 Threads 搜尋取得之公開貼文連結。作者: {username}",
-                                "engagement_count": None
-                            })
                 except Exception as page_err:
                     print(f"[Threads Playwright] Error loading {q_url}: {page_err}")
                     error_reason = f"page_error: {str(page_err)}"
@@ -931,10 +923,10 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
         if publish_time is None:
             publish_time = datetime.now()
 
-        # Filter to past 7 days (only if publish_time is parsed)
+        # Filter to past 30 days (only if publish_time is parsed)
         if publish_time is not None:
             age_days = (datetime.now() - publish_time).days
-            if age_days > 7:
+            if age_days > 30:
                 title_safe = title[:50].encode('utf-8', errors='ignore').decode('utf-8')
                 print(f"[Social Scraper] Skipping old post ({age_days}d): {title_safe}")
                 return

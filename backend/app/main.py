@@ -139,7 +139,7 @@ def read_news(
             
         # Try using timezone-aware UTC datetime
         now = datetime.now(timezone.utc)
-        one_week_ago = now - timedelta(days=7)
+        one_month_ago = now - timedelta(days=30)
         SOCIAL_SOURCES = ["Dcard", "PTT", "Threads", "Instagram"]
         
         is_social = models.News.source.in_(SOCIAL_SOURCES)
@@ -147,11 +147,11 @@ def read_news(
         
         social_valid_crawled = and_(
             models.News.crawled_at.isnot(None),
-            models.News.crawled_at >= one_week_ago
+            models.News.crawled_at >= one_month_ago
         )
         social_valid_created = and_(
             models.News.crawled_at.is_(None),
-            models.News.created_at >= one_week_ago
+            models.News.created_at >= one_month_ago
         )
         
         social_filter = and_(
