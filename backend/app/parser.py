@@ -850,7 +850,11 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
     
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                      "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                      "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "X-Forwarded-For": "114.36.210.88",
+        "X-Real-IP": "114.36.210.88",
+        "Client-IP": "114.36.210.88",
+        "Accept-Language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
     }
 
     def yahoo_search(query: str, use_btf: bool = False) -> list:
