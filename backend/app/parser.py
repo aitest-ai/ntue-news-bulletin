@@ -530,13 +530,13 @@ def fetch_threads_via_fallback(keyword: str) -> Tuple[List[Dict[str, Any]], List
                         })
                 except Exception as page_err:
                     print(f"[Threads Playwright] Error loading {q_url}: {page_err}")
-                    error_reason = "parser_error"
+                    error_reason = f"page_error: {str(page_err)}"
                     
             browser.close()
             
     except Exception as e:
         print(f"[Threads Playwright] Failed to run Playwright: {e}")
-        error_reason = "parser_error"
+        error_reason = f"playwright_init_error: {str(e)}"
         
     if not results and not error_reason:
         error_reason = "search_result_empty"
