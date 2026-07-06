@@ -170,6 +170,13 @@ def trigger_fetch(background_tasks: BackgroundTasks, user: str = Depends(auth.ve
     background_tasks.add_task(scheduler.fetch_all_keywords_news)
     return {"message": "已在背景啟動新聞與輿情抓取任務，請於 30 秒至 1 分鐘後重新整理網頁！", "new_articles_count": 0}
 
+@app.get("/api/news/fetch-trace")
+def get_fetch_trace(user: str = Depends(auth.verify_token)):
+    """
+    Retrieve the status and trace details of the last background news fetch task. (Guarded by Password JWT)
+    """
+    return scheduler.LAST_FETCH_TRACE
+
 @app.post("/api/news/cleanup-social")
 def cleanup_social(db: Session = Depends(get_db), user: str = Depends(auth.verify_token)):
     """

@@ -8,7 +8,23 @@ from . import models, parser
 
 scheduler = BackgroundScheduler()
 
+LAST_FETCH_TRACE = {
+    "status": "never_run",
+    "timestamp": None,
+    "total_keywords": 0,
+    "details": [],
+    "error": None
+}
+
 def fetch_all_keywords_news():
+    global LAST_FETCH_TRACE
+    LAST_FETCH_TRACE = {
+        "status": "running",
+        "timestamp": str(datetime.now()),
+        "total_keywords": 0,
+        "details": [],
+        "error": None
+    }
     db = SessionLocal()
     try:
         keywords = db.query(models.Keyword).all()
@@ -25,6 +41,7 @@ def fetch_all_keywords_news():
             db.commit()
             keywords = db.query(models.Keyword).all()
             
+        LAST_FETCH_TRACE["total_keywords"] = len(keywords)
         print(f"[{datetime.now()}] Starting scheduled news fetch for {len(keywords)} keywords...")
         
         total_new = 0
@@ -36,6 +53,12 @@ def fetch_all_keywords_news():
             social_items = parser.fetch_social_posts(kw.word)
             
             all_items = items + social_items
+            
+            LAST_FETCH_TRACE["details"].append({
+                "keyword": kw.word,
+                "traditional_fetched": len(items),
+                "social_fetched": len(social_items)
+            })
             
             import hashlib
             for item in all_items:
@@ -67,6 +90,8 @@ def fetch_all_keywords_news():
 
             
         print(f"[{datetime.now()}] Finished scheduled news fetch. Saved {total_new} new articles.")
+        LAST_FETCH_TRACE["status"] = "success"
+        LAST_FETCH_TRACE["saved_articles"] = total_new
         
         # Trigger daily news email dispatch
         try:
@@ -92,10 +117,13 @@ def fetch_all_keywords_news():
             send_daily_news_email(news_today, date_str)
         except Exception as mail_err:
             print(f"Error preparing or sending news email: {mail_err}")
+            LAST_FETCH_TRACE["email_dispatch_error"] = str(mail_err)
 
         return total_new
     except Exception as e:
         print(f"Error in scheduled news fetch: {e}")
+        LAST_FETCH_TRACE["status"] = "failed"
+        LAST_FETCH_TRACE["error"] = str(e)
         db.rollback()
         return 0
     finally:
