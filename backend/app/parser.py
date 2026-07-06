@@ -816,7 +816,7 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
             print(f"[Social Scraper] Yahoo search error for '{query}': {e}")
             return []
 
-    def try_add(url: str, title: str, source: str, kw: str,
+    def try_add(url: str, title: str, source: str, kw: str, date_text: str = None,
                 require_relevance: bool = False):
         """Validate and add an article to items list."""
         url_lower = url.lower()
@@ -854,6 +854,17 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
         elif source == "Instagram":
             pass
 
+        # Fallback to Yahoo search result's date_text if detailed page fetch fails
+        if publish_time is None and date_text:
+            try:
+                publish_time = parse_yahoo_date(date_text)
+            except Exception:
+                pass
+                
+        # Final fallback: default to current time to avoid None (shows as 1970/1/1 or Time Unknown)
+        if publish_time is None:
+            publish_time = datetime.now()
+
         # Filter to past 7 days (only if publish_time is parsed)
         if publish_time is not None:
             age_days = (datetime.now() - publish_time).days
@@ -876,7 +887,7 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
     for url, title, date_text in yahoo_search("site:dcard.tw/f/ntue"):
         if "dcard.tw" not in url.lower():
             continue
-        try_add(url, title, "Dcard", keyword, require_relevance=False)
+        try_add(url, title, "Dcard", keyword, date_text=date_text, require_relevance=False)
     time.sleep(1.5)
 
     # ── 2. PTT: keyword + ptt + btf=w, require title relevance ─────────────
@@ -884,7 +895,7 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
     for url, title, date_text in yahoo_search(f"{keyword} ptt", use_btf=True):
         if "ptt.cc" not in url.lower() and "pttweb.cc" not in url.lower():
             continue
-        try_add(url, title, "PTT", keyword, require_relevance=True)
+        try_add(url, title, "PTT", keyword, date_text=date_text, require_relevance=True)
     time.sleep(1.5)
 
     # ── 3. Instagram: keyword + instagram + btf=w, require title relevance ───
@@ -892,7 +903,7 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
     for url, title, date_text in yahoo_search(f"{keyword} instagram", use_btf=True):
         if "instagram.com" not in url.lower():
             continue
-        try_add(url, title, "Instagram", keyword, require_relevance=True)
+        try_add(url, title, "Instagram", keyword, date_text=date_text, require_relevance=True)
     time.sleep(1.5)
 
     # ── 4. Threads: Dedicated official API & fallback search collector ──────
