@@ -240,10 +240,11 @@ def fetch_social_via_google_news(keyword: str) -> List[Dict[str, Any]]:
 
     # Search queries: keyword + platform name (helps Google surface those results)
     queries = [
-        f"{keyword} site:ptt.cc",
-        f"{keyword} site:dcard.tw/f/ntue",
-        f"{keyword} threads",
-        f"{keyword} site:threads.net",
+        f"{keyword} site:ptt.cc when:7d",
+        f"{keyword} site:dcard.tw/f/ntue when:7d",
+        f"{keyword} threads when:7d",
+        f"{keyword} site:threads.net when:7d",
+        f"{keyword} instagram when:7d",
     ]
 
     for query in queries:
@@ -267,8 +268,9 @@ def fetch_social_via_google_news(keyword: str) -> List[Dict[str, Any]]:
                 if not link or not title:
                     continue
 
-                # Determine if link is a social platform we care about
-                link_lower = link.lower()
+                # Resolve redirect URL to get direct domain/URL info
+                resolved_link = resolve_google_news_link(link)
+                link_lower = resolved_link.lower()
                 source = None
                 for domain, src_name in SOCIAL_DOMAIN_MAP.items():
                     if domain in link_lower:
@@ -279,16 +281,17 @@ def fetch_social_via_google_news(keyword: str) -> List[Dict[str, Any]]:
                     continue  # Not a social post link
 
                 # Dedup
-                if link in seen_urls:
+                if resolved_link in seen_urls:
                     continue
 
                 # Must be a real post (not a board/profile page)
-                if not is_real_social_post(link):
+                if not is_real_social_post(resolved_link):
                     continue
 
                 # Title relevance check (for PTT/Threads/IG — Dcard board URL is self-validating)
                 if source != "Dcard" and not title_mentions_ntue(title):
-                    print(f"[Google Social] Skipping irrelevant: {title[:50]}")
+                    title_safe = title[:50].encode('utf-8', errors='ignore').decode('utf-8')
+                    print(f"[Google Social] Skipping irrelevant: {title_safe}")
                     continue
 
                 # Parse publish date
@@ -301,7 +304,8 @@ def fetch_social_via_google_news(keyword: str) -> List[Dict[str, Any]]:
 
                 # Filter to past 7 days
                 if publish_time < cutoff:
-                    print(f"[Google Social] Skipping old ({(datetime.now()-publish_time).days}d): {title[:50]}")
+                    title_safe = title[:50].encode('utf-8', errors='ignore').decode('utf-8')
+                    print(f"[Google Social] Skipping old ({(datetime.now()-publish_time).days}d): {title_safe}")
                     continue
 
                 # Clean title (strip " - PTT" etc)
@@ -309,16 +313,17 @@ def fetch_social_via_google_news(keyword: str) -> List[Dict[str, Any]]:
                 if " - " in title:
                     clean_title = title.rsplit(" - ", 1)[0]
 
-                seen_urls.add(link)
+                seen_urls.add(resolved_link)
                 items.append({
                     "title": clean_title.strip(),
-                    "url": link,
+                    "url": resolved_link,
                     "source": source,
                     "publish_time": publish_time,
                     "keyword": keyword,
                 })
         except Exception as e:
-            print(f"[Google Social] Error searching '{query}': {e}")
+            err_safe = str(e).encode('utf-8', errors='ignore').decode('utf-8')
+            print(f"[Google Social] Error searching: {err_safe}")
 
     print(f"[Google Social] Found {len(items)} social posts via Google News for keyword '{keyword}'")
     return items
@@ -398,7 +403,8 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
         
         # For PTT/Threads/IG: title must mention NTUE-related terms
         if require_relevance and not title_mentions_ntue(title):
-            print(f"[Social Scraper] Skipping irrelevant: {title[:50]}")
+            title_safe = title[:50].encode('utf-8', errors='ignore').decode('utf-8')
+            print(f"[Social Scraper] Skipping irrelevant: {title_safe}")
             return
         
         # Handle date: if no date tag exists
@@ -414,7 +420,8 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
             publish_time = parse_yahoo_date(date_text)
             age_days = (datetime.now() - publish_time).days
             if age_days > 7:
-                print(f"[Social Scraper] Skipping old post ({age_days}d): {title[:50]}")
+                title_safe = title[:50].encode('utf-8', errors='ignore').decode('utf-8')
+                print(f"[Social Scraper] Skipping old post ({age_days}d): {title_safe}")
                 return
         
         seen_urls.add(url)
