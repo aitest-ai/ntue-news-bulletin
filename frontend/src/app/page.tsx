@@ -121,11 +121,10 @@ export default function BulletinBoard() {
     }, 4000);
   };
 
-  // Silent safe fetch with automatic direct-to-Render fallback + 20s timeout
+  // Silent safe fetch - directly to Render to bypass Vercel proxy issues + 20s timeout
   const safeFetch = async (path: string, options: RequestInit = {}, timeoutMs = 20000) => {
     const cleanPath = path.startsWith("/") ? path : `/${path}`;
     const directUrl = `${RENDER_BACKEND_URL}${cleanPath}`;
-    const proxyUrl = cleanPath;
 
     // Helper: fetch with AbortController timeout
     const fetchWithTimeout = async (url: string, opts: RequestInit) => {
@@ -144,50 +143,18 @@ export default function BulletinBoard() {
       }
     };
 
-    // Case 1: Already detected proxy failure in this session -> go direct
-    if (useDirectBackend) {
-      return await fetchWithTimeout(directUrl, options);
-    }
-
-    // Case 2: Try Vercel's proxy first
     try {
-      const res = await fetchWithTimeout(proxyUrl, options);
-
-      // If Vercel returns 502/503/504 -> fallback to direct
-      if (res.status === 502 || res.status === 503 || res.status === 504) {
-        console.warn(`Vercel proxy returned ${res.status}. Falling back to Render directly...`);
-        const fallbackRes = await fetchWithTimeout(directUrl, options);
-        if (fallbackRes.ok || fallbackRes.status < 500) {
-          setUseDirectBackend(true);
-          sessionStorage.setItem("use_direct_backend", "true");
-        }
-        return fallbackRes;
-      }
-
-      return res;
+      // Direct call to Render backend (CORS is supported)
+      return await fetchWithTimeout(directUrl, options);
     } catch (err: any) {
       const isTimeout = err?.message === "TIMEOUT";
       if (isTimeout) {
-        // Try direct with same timeout
-        try {
-          const fallbackRes = await fetchWithTimeout(directUrl, options);
-          setUseDirectBackend(true);
-          sessionStorage.setItem("use_direct_backend", "true");
-          return fallbackRes;
-        } catch (innerErr: any) {
-          if (innerErr?.message === "TIMEOUT") {
-            throw new Error("伺服器回應超時，Render 可能正在冷啟動（約需 30-60 秒），請稍候再重新整理頁面。");
-          }
-          throw innerErr;
-        }
+        throw new Error("伺服器回應超時，Render 可能正在冷啟動（約需 30-60 秒），請稍候再重新整理頁面。");
       }
-      // Network error -> retry directly
-      console.warn("Proxy connection error. Falling back to Render directly...", err);
+      // If direct call fails, try proxy as last-resort fallback (e.g. local development)
       try {
-        const fallbackRes = await fetchWithTimeout(directUrl, options);
-        setUseDirectBackend(true);
-        sessionStorage.setItem("use_direct_backend", "true");
-        return fallbackRes;
+        console.warn("Direct connection failed. Trying proxy fallback...", err);
+        return await fetchWithTimeout(cleanPath, options);
       } catch {
         throw err;
       }
