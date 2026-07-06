@@ -3,7 +3,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 import email.utils
 import urllib.parse
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
 import re
 import json
 
@@ -370,11 +370,286 @@ def fetch_ptt_published_time(url: str) -> Optional[datetime]:
         print(f"[PTT Parser] Error fetching post page {url}: {e}")
     return None
 
-def fetch_threads_via_official_api(keyword: str) -> Optional[List[Dict[str, Any]]]:
-    # Placeholder for official Meta Threads API keyword search.
-    # Endpoint: https://graph.threads.net/v1.0/threads/search?q={keyword}
-    # Requires access token. Returns None since no credentials are provided.
-    return None
+def fetch_threads_via_official_api(keyword: str) -> Tuple[Optional[List[Dict[str, Any]]], str, Optional[str]]:
+    """
+    Calls Meta's official Threads /keyword_search endpoint if access token is set.
+    Returns: (list_of_posts, status_string, error_message)
+    """
+    from .config import settings
+    token = settings.THREADS_ACCESS_TOKEN
+    version = settings.THREADS_API_VERSION or "v1.0"
+    
+    if not token:
+        print("[Threads Collector] Warning: THREADS_ACCESS_TOKEN is not configured.")
+        return None, "no_token", "Access token is missing in configuration."
+        
+    url = f"https://graph.threads.net/{version}/keyword_search"
+    params = {
+        "q": keyword,
+        "search_type": "RECENT",
+        "fields": "id,text,permalink,timestamp,username,like_count,reply_count,repost_count",
+        "access_token": token
+    }
+    
+    try:
+        response = httpx.get(url, params=params, timeout=10.0)
+        if response.status_code != 200:
+            try:
+                err_data = response.json()
+                error_msg = err_data.get("error", {}).get("message", "Unknown API error")
+                code = err_data.get("error", {}).get("code")
+            except Exception:
+                error_msg = response.text
+                code = None
+            
+            # Check for permission errors
+            if code == 10 or "permission" in error_msg.lower() or "threads_keyword_search" in error_msg.lower():
+                print(f"[Threads Collector] Permission missing error: {error_msg}")
+                return None, "permission_missing", error_msg
+                
+            print(f"[Threads Collector] API returned error status {response.status_code}: {error_msg}")
+            return None, "api_error", error_msg
+            
+        data = response.json()
+        posts_data = data.get("data", [])
+        
+        results = []
+        for post in posts_data:
+            text = post.get("text", "")
+            title = text[:40] if text else "Threads 貼文"
+            excerpt = text[:120] if text else ""
+            
+            likes = post.get("like_count", 0) or 0
+            replies = post.get("reply_count", 0) or 0
+            reposts = post.get("repost_count", 0) or 0
+            engagement = likes + replies + reposts
+            
+            publish_time = None
+            timestamp_str = post.get("timestamp")
+            if timestamp_str:
+                publish_time = parse_iso_datetime(timestamp_str)
+                
+            results.append({
+                "title": title.strip(),
+                "url": post.get("permalink", f"https://www.threads.net/post/{post.get('id')}"),
+                "source": "Threads",
+                "publish_time": publish_time,
+                "keyword": keyword,
+                "excerpt": excerpt,
+                "engagement_count": engagement
+            })
+            
+        print(f"[Threads Collector] Official API returned {len(results)} posts.")
+        return results, "success", None
+        
+    except Exception as e:
+        error_msg = str(e)
+        print(f"[Threads Collector] Exception during official API call: {error_msg}")
+        return None, "api_error", error_msg
+
+def fetch_threads_via_fallback(keyword: str) -> Tuple[List[Dict[str, Any]], List[str], str]:
+    """
+    Search engine fallback route for Threads.
+    Returns: (list_of_posts, queries_run, source_used)
+    """
+    import time
+    
+    queries = [
+        f"site:threads.net {keyword}",
+        f"site:threads.com {keyword}"
+    ]
+    
+    results = []
+    seen_urls = set()
+    
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+    
+    source_used = "google_search_fallback"
+    
+    # 1. Google News RSS site search
+    for q in queries:
+        rss_query = f"{q} when:7d"
+        encoded = urllib.parse.quote(rss_query)
+        rss_url = f"https://news.google.com/rss/search?q={encoded}&hl=zh-TW&gl=TW&ceid=TW:zh-Hant"
+        try:
+            response = httpx.get(rss_url, headers=headers, timeout=10.0)
+            if response.status_code == 200:
+                root = ET.fromstring(response.content)
+                for item in root.findall(".//item")[:20]:
+                    link = item.findtext("link", "")
+                    title = item.findtext("title", "")
+                    if not link or not title:
+                        continue
+                        
+                    resolved_link = resolve_google_news_link(link)
+                    link_lower = resolved_link.lower()
+                    
+                    if "threads.net" not in link_lower and "threads.com" not in link_lower:
+                        continue
+                        
+                    if resolved_link in seen_urls:
+                        continue
+                        
+                    if not is_real_social_post(resolved_link):
+                        continue
+                        
+                    clean_title = title
+                    if " - " in title:
+                        clean_title = title.rsplit(" - ", 1)[0]
+                        
+                    seen_urls.add(resolved_link)
+                    results.append({
+                        "title": clean_title.strip(),
+                        "url": resolved_link,
+                        "source": "Threads",
+                        "publish_time": None,  # Always set to null for search results
+                        "keyword": keyword,
+                        "excerpt": "",
+                        "engagement_count": None
+                    })
+        except Exception as e:
+            print(f"[Threads Fallback] Google News RSS error for '{rss_query}': {e}")
+            
+    # 2. Yahoo search fallback
+    if not results:
+        source_used = "yahoo_search_fallback"
+        for q in queries:
+            encoded = urllib.parse.quote(q)
+            search_url = f"https://tw.search.yahoo.com/search?p={encoded}&btf=w"
+            try:
+                req = urllib.request.Request(search_url, headers=headers)
+                with urllib.request.urlopen(req, timeout=10.0) as resp:
+                    html_text = resp.read().decode("utf-8", errors="ignore")
+                segments = html_text.split('href="https://r.search.yahoo.com/')
+                for seg in segments[1:]:
+                    ru_match = re.search(r'RU=([^/"]+)/', seg)
+                    if not ru_match:
+                        continue
+                    direct_url = urllib.parse.unquote(ru_match.group(1))
+                    link_lower = direct_url.lower()
+                    
+                    if "threads.net" not in link_lower and "threads.com" not in link_lower:
+                        continue
+                        
+                    if direct_url in seen_urls:
+                        continue
+                        
+                    if not is_real_social_post(direct_url):
+                        continue
+                        
+                    title_m = re.search(r'aria-label="([^"]+)"', seg)
+                    title = title_m.group(1) if title_m else "Threads 貼文"
+                    
+                    seen_urls.add(direct_url)
+                    results.append({
+                        "title": title.strip(),
+                        "url": direct_url,
+                        "source": "Threads",
+                        "publish_time": None,
+                        "keyword": keyword,
+                        "excerpt": "",
+                        "engagement_count": None
+                    })
+                time.sleep(1.5)
+            except Exception as e:
+                print(f"[Threads Fallback] Yahoo search error for '{q}': {e}")
+                
+    return results, queries, source_used
+
+def collect_threads_posts(keyword: str) -> Tuple[dict, List[Dict[str, Any]]]:
+    """
+    Dedicated Threads collector with detailed metadata and logging.
+    """
+    from .database import SessionLocal
+    from .models import News
+    
+    trace = {
+        "keyword": keyword,
+        "official_api_enabled": False,
+        "official_api_status": "no_token",
+        "fallback_enabled": True,
+        "queries": [],
+        "raw_result_count": 0,
+        "threads_url_count": 0,
+        "inserted_count": 0,
+        "skipped_duplicate_count": 0,
+        "failure_reason": None,
+        "sample_results": []
+    }
+    
+    posts, api_status, api_error = fetch_threads_via_official_api(keyword)
+    trace["official_api_status"] = api_status
+    if api_status != "no_token":
+        trace["official_api_enabled"] = True
+        
+    if posts is not None:
+        trace["queries"].append(f"Official API keyword_search?q={keyword}")
+        trace["raw_result_count"] = len(posts)
+        trace["threads_url_count"] = len(posts)
+        source_used = "official_api"
+    else:
+        if api_status == "api_error":
+            trace["failure_reason"] = "api_error"
+        elif api_status == "permission_missing":
+            trace["failure_reason"] = "api_permission_missing"
+        else:
+            trace["failure_reason"] = "no_api_token"
+            
+        posts, queries, fallback_source = fetch_threads_via_fallback(keyword)
+        trace["queries"].extend(queries)
+        trace["raw_result_count"] = len(posts)
+        trace["threads_url_count"] = len(posts)
+        source_used = fallback_source
+        
+    db = SessionLocal()
+    final_posts = []
+    try:
+        for p in posts or []:
+            url_val = p["url"]
+            exists = db.query(News).filter(News.url == url_val).first()
+            if exists:
+                trace["skipped_duplicate_count"] += 1
+            else:
+                trace["inserted_count"] += 1
+                final_posts.append(p)
+    finally:
+        db.close()
+        
+    if len(final_posts) == 0:
+        if trace["raw_result_count"] == 0:
+            if api_status == "no_token":
+                trace["failure_reason"] = "no_api_token"
+            elif api_status == "permission_missing":
+                trace["failure_reason"] = "api_permission_missing"
+            else:
+                trace["failure_reason"] = "search_result_empty"
+        elif trace["threads_url_count"] == 0:
+            trace["failure_reason"] = "result_not_threads_url"
+        elif trace["skipped_duplicate_count"] > 0:
+            trace["failure_reason"] = "duplicate_all"
+            
+    trace["sample_results"] = [{
+        "title": p["title"],
+        "url": p["url"],
+        "publish_time": str(p["publish_time"]) if p["publish_time"] else None
+    } for p in final_posts[:5]]
+    
+    print(f"--- [Threads Collector Log] ---")
+    print(f"Keyword: {keyword}")
+    print(f"使用來源: {source_used}")
+    for idx, q in enumerate(trace["queries"], 1):
+        print(f"實際送出的 query {idx}: {q}")
+    print(f"raw_result_count: {trace['raw_result_count']}")
+    print(f"threads_url_count: {trace['threads_url_count']}")
+    print(f"inserted_count: {trace['inserted_count']}")
+    print(f"skipped_duplicate_count: {trace['skipped_duplicate_count']}")
+    if len(final_posts) == 0:
+        print(f"原因: {trace['failure_reason']}")
+    print(f"-------------------------------")
+    
+    return trace, final_posts
 
 def fetch_social_via_google_news(keyword: str) -> List[Dict[str, Any]]:
     """
@@ -389,8 +664,6 @@ def fetch_social_via_google_news(keyword: str) -> List[Dict[str, Any]]:
     SOCIAL_DOMAIN_MAP = {
         "ptt.cc": "PTT",
         "pttweb.cc": "PTT",
-        "threads.net": "Threads",
-        "threads.com": "Threads",
         "instagram.com": "Instagram",
         "dcard.tw": "Dcard",
     }
@@ -403,8 +676,6 @@ def fetch_social_via_google_news(keyword: str) -> List[Dict[str, Any]]:
     queries = [
         f"{keyword} site:ptt.cc when:7d",
         f"{keyword} site:dcard.tw/f/ntue when:7d",
-        f"{keyword} threads when:7d",
-        f"{keyword} site:threads.net when:7d",
         f"{keyword} instagram when:7d",
     ]
 
@@ -622,21 +893,24 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
         try_add(url, title, "PTT", keyword, require_relevance=True)
     time.sleep(1.5)
 
-    # ── 3. Threads: keyword + threads + btf=w, require title relevance ──────
-    print(f"[Social Scraper] Searching Threads for '{keyword}'...")
-    for url, title, date_text in yahoo_search(f"{keyword} threads", use_btf=True):
-        if "threads.com" not in url.lower() and "threads.net" not in url.lower():
-            continue
-        try_add(url, title, "Threads", keyword, require_relevance=True)
-    time.sleep(1.5)
-
-    # ── 4. Instagram: keyword + instagram + btf=w, require title relevance ───
+    # ── 3. Instagram: keyword + instagram + btf=w, require title relevance ───
     print(f"[Social Scraper] Searching Instagram for '{keyword}'...")
     for url, title, date_text in yahoo_search(f"{keyword} instagram", use_btf=True):
         if "instagram.com" not in url.lower():
             continue
         try_add(url, title, "Instagram", keyword, require_relevance=True)
     time.sleep(1.5)
+
+    # ── 4. Threads: Dedicated official API & fallback search collector ──────
+    print(f"[Social Scraper] Running dedicated Threads collector for '{keyword}'...")
+    try:
+        trace_data, threads_posts = collect_threads_posts(keyword)
+        for p in threads_posts:
+            if p["url"] not in seen_urls:
+                seen_urls.add(p["url"])
+                items.append(p)
+    except Exception as threads_err:
+        print(f"[Social Scraper] Error in Threads collector: {threads_err}")
 
     print(f"[Social Scraper] Found {len(items)} valid social posts for keyword '{keyword}'")
     return items

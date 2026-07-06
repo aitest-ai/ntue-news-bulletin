@@ -602,16 +602,35 @@ export default function BulletinBoard() {
     }
   };
 
-  // Date Formatter
-  const formatDate = (dateStr: string) => {
-    if (!dateStr || dateStr === "None" || dateStr === "null" || dateStr === "undefined") {
-      return "時間未知";
+  // Date Validity Checker
+  const isDateValid = (dateStr: any) => {
+    if (!dateStr || dateStr === "None" || dateStr === "null" || dateStr === "undefined" || dateStr === "" || dateStr === "0" || dateStr === 0) {
+      return false;
     }
     try {
       const date = new Date(dateStr);
       if (isNaN(date.getTime()) || date.getTime() === 0) {
-        return "時間未知";
+        return false;
       }
+      if (date.getFullYear() <= 1971) {
+        return false;
+      }
+      if (typeof dateStr === "string" && dateStr.startsWith("1970-01-01")) {
+        return false;
+      }
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  // Date Formatter
+  const formatDate = (dateStr: string) => {
+    if (!isDateValid(dateStr)) {
+      return "";
+    }
+    try {
+      const date = new Date(dateStr);
       return date.toLocaleString("zh-TW", {
         year: "numeric",
         month: "2-digit",
@@ -621,7 +640,7 @@ export default function BulletinBoard() {
         hour12: false,
       });
     } catch (e) {
-      return "時間未知";
+      return "";
     }
   };
 
@@ -682,9 +701,11 @@ export default function BulletinBoard() {
               }}>
                 {item.source}
               </span>
-              <span className="news-time" style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
-                {formatDate(item.publish_time)}
-              </span>
+              {isDateValid(item.publish_time) && (
+                <span className="news-time" style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+                  {formatDate(item.publish_time)}
+                </span>
+              )}
             </div>
             <h4 style={{ 
               fontSize: "0.9rem", 

@@ -120,12 +120,42 @@ def read_news(
     """
     Fetch paginated news collected from RSS. (Guarded by Password JWT)
     """
+    from datetime import datetime, timedelta
+    from sqlalchemy import or_, and_
+    
     query = db.query(models.News)
     if keyword:
         query = query.filter(models.News.keyword == keyword)
+        
+    # Recency filter: Keep all traditional news, but filter social posts to past 7 days
+    # criteria: crawled_at >= now - 7 days, or created_at >= now - 7 days if crawled_at is null
+    now = datetime.utcnow()
+    one_week_ago = now - timedelta(days=7)
+    SOCIAL_SOURCES = ["Dcard", "PTT", "Threads", "Instagram"]
+    
+    is_social = models.News.source.in_(SOCIAL_SOURCES)
+    is_news = ~models.News.source.in_(SOCIAL_SOURCES)
+    
+    social_valid_crawled = and_(
+        models.News.crawled_at.isnot(None),
+        models.News.crawled_at >= one_week_ago
+    )
+    social_valid_created = and_(
+        models.News.crawled_at.is_(None),
+        models.News.created_at >= one_week_ago
+    )
+    
+    social_filter = and_(
+        is_social,
+        or_(social_valid_crawled, social_valid_created)
+    )
+    
+    query = query.filter(or_(is_news, social_filter))
     
     total = query.count()
-    items = query.order_by(func.coalesce(models.News.publish_time, models.News.crawled_at).desc()).offset(skip).limit(limit).all()
+    items = query.order_by(
+        func.coalesce(models.News.publish_time, models.News.crawled_at, models.News.created_at).desc()
+    ).offset(skip).limit(limit).all()
     return {"total": total, "items": items}
 
 @app.post("/api/news/fetch")
@@ -501,3 +531,65 @@ def reset_scheduler_jobs(user: str = Depends(auth.verify_token)):
         )
     
     return {"message": "系統已成功還原預設定時排程。"}
+
+@app.get("/api/debug/threads")
+def debug_threads(keyword: str, db: Session = Depends(get_db)):
+    """
+    Debug endpoint to test Threads keyword collection and view metadata logs.
+    """
+    from .parser import collect_threads_posts
+    trace, posts = collect_threads_posts(keyword)
+    return trace
+
+@app.get("/api/debug/social-time")
+def debug_social_time(db: Session = Depends(get_db)):
+    """
+    Debug endpoint to check social post timestamps and filtering.
+    """
+    from datetime import datetime, timedelta
+    
+    now = datetime.utcnow()
+    one_week_ago = now - timedelta(days=7)
+    SOCIAL_SOURCES = ["Dcard", "PTT", "Threads", "Instagram"]
+    
+    posts = db.query(models.News).filter(
+        models.News.source.in_(SOCIAL_SOURCES)
+    ).order_by(
+        func.coalesce(models.News.publish_time, models.News.crawled_at, models.News.created_at).desc()
+    ).limit(20).all()
+    
+    results = []
+    for p in posts:
+        is_valid = True
+        p_time = p.publish_time
+        if p_time is None:
+            is_valid = False
+        else:
+            if p_time.year <= 1971:
+                is_valid = False
+                
+        display_time = p_time.isoformat() if (p_time and is_valid) else None
+        
+        crawled = p.crawled_at
+        created = p.created_at
+        
+        included = False
+        if crawled is not None:
+            included = (crawled >= one_week_ago)
+        else:
+            if created is not None:
+                included = (created >= one_week_ago)
+                
+        results.append({
+            "id": p.id,
+            "source": p.source,
+            "title": p.title,
+            "publish_time": p.publish_time.isoformat() if p.publish_time else None,
+            "crawled_at": p.crawled_at.isoformat() if p.crawled_at else None,
+            "created_at": p.created_at.isoformat() if p.created_at else None,
+            "display_time": display_time,
+            "is_publish_time_valid": is_valid,
+            "included_by_recent_filter": included
+        })
+        
+    return results

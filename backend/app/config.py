@@ -14,6 +14,10 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
     EMAIL_RECIPIENT: str = os.getenv("EMAIL_RECIPIENT", "kancollect126@gmail.com")
 
+    # Threads API Settings
+    THREADS_ACCESS_TOKEN: str = os.getenv("THREADS_ACCESS_TOKEN", "")
+    THREADS_API_VERSION: str = os.getenv("THREADS_API_VERSION", "v1.0")
+
 
     class Config:
         env_file = ".env"
