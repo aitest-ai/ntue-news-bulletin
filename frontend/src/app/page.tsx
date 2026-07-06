@@ -430,7 +430,12 @@ export default function BulletinBoard() {
             fetchJobs();
           }
         } else {
-          showToast("手動抓取新聞失敗", "error");
+          let errMsg = "手動抓取新聞失敗";
+          try {
+            const errData = await res.json();
+            if (errData && errData.detail) errMsg = errData.detail;
+          } catch (e) {}
+          showToast(errMsg, "error");
         }
       }
     } catch (err) {
