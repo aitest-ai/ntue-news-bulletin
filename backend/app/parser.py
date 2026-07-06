@@ -447,116 +447,101 @@ def fetch_threads_via_official_api(keyword: str) -> Tuple[Optional[List[Dict[str
         print(f"[Threads Collector] Exception during official API call: {error_msg}")
         return None, "api_error", error_msg
 
-def fetch_threads_via_fallback(keyword: str) -> Tuple[List[Dict[str, Any]], List[str], str]:
+def fetch_threads_via_fallback(keyword: str) -> Tuple[List[Dict[str, Any]], List[str], str, Optional[str]]:
     """
-    Search engine fallback route for Threads.
-    Returns: (list_of_posts, queries_run, source_used)
+    Search engine fallback route for Threads using Playwright to query search pages.
+    Returns: (list_of_posts, queries_run, source_used, error_reason)
     """
-    import time
-    
-    queries = [
-        f"site:threads.net {keyword}",
-        f"site:threads.com {keyword}"
-    ]
+    from playwright.sync_api import sync_playwright
+    import urllib.parse
+    import re
     
     results = []
     seen_urls = set()
+    error_reason = None
     
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    }
+    queries = [
+        f"https://www.threads.com/search?q={urllib.parse.quote(keyword)}",
+        f"https://www.threads.com/search?q={urllib.parse.quote(keyword)}&serp_type=tags"
+    ]
     
-    source_used = "google_search_fallback"
+    source_used = "playwright_crawler"
     
-    # 1. Google News RSS site search
-    for q in queries:
-        rss_query = f"{q} when:7d"
-        encoded = urllib.parse.quote(rss_query)
-        rss_url = f"https://news.google.com/rss/search?q={encoded}&hl=zh-TW&gl=TW&ceid=TW:zh-Hant"
-        try:
-            response = httpx.get(rss_url, headers=headers, timeout=10.0)
-            if response.status_code == 200:
-                root = ET.fromstring(response.content)
-                for item in root.findall(".//item")[:5]:
-                    link = item.findtext("link", "")
-                    title = item.findtext("title", "")
-                    if not link or not title:
-                        continue
-                        
-                    resolved_link = resolve_google_news_link(link)
-                    link_lower = resolved_link.lower()
-                    
-                    if "threads.net" not in link_lower and "threads.com" not in link_lower:
-                        continue
-                        
-                    if resolved_link in seen_urls:
-                        continue
-                        
-                    if not is_real_social_post(resolved_link):
-                        continue
-                        
-                    clean_title = title
-                    if " - " in title:
-                        clean_title = title.rsplit(" - ", 1)[0]
-                        
-                    seen_urls.add(resolved_link)
-                    results.append({
-                        "title": clean_title.strip(),
-                        "url": resolved_link,
-                        "source": "Threads",
-                        "publish_time": None,  # Always set to null for search results
-                        "keyword": keyword,
-                        "excerpt": "",
-                        "engagement_count": None
-                    })
-        except Exception as e:
-            print(f"[Threads Fallback] Google News RSS error for '{rss_query}': {e}")
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            context = browser.new_context(
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                locale="zh-TW",
+                viewport={"width": 1280, "height": 800}
+            )
+            page = context.new_page()
             
-    # 2. Yahoo search fallback
-    if not results:
-        source_used = "yahoo_search_fallback"
-        for q in queries:
-            encoded = urllib.parse.quote(q)
-            search_url = f"https://tw.search.yahoo.com/search?p={encoded}&btf=w"
-            try:
-                req = urllib.request.Request(search_url, headers=headers)
-                with urllib.request.urlopen(req, timeout=10.0) as resp:
-                    html_text = resp.read().decode("utf-8", errors="ignore")
-                segments = html_text.split('href="https://r.search.yahoo.com/')
-                for seg in segments[1:]:
-                    ru_match = re.search(r'RU=([^/"]+)/', seg)
-                    if not ru_match:
-                        continue
-                    direct_url = urllib.parse.unquote(ru_match.group(1))
-                    link_lower = direct_url.lower()
+            for q_url in queries:
+                print(f"[Threads Playwright] Navigating to: {q_url}")
+                try:
+                    response = page.goto(q_url, wait_until="load", timeout=25000)
                     
-                    if "threads.net" not in link_lower and "threads.com" not in link_lower:
+                    status = response.status if response else 200
+                    if status == 429:
+                        print(f"[Threads Playwright] Error: 429 Blocked on {q_url}")
+                        error_reason = "request_blocked"
                         continue
                         
-                    if direct_url in seen_urls:
+                    current_url = page.url
+                    if "/login" in current_url:
+                        print(f"[Threads Playwright] Warning: Redirected to login page on {q_url}")
+                        error_reason = "login_required"
                         continue
                         
-                    if not is_real_social_post(direct_url):
-                        continue
-                        
-                    title_m = re.search(r'aria-label="([^"]+)"', seg)
-                    title = title_m.group(1) if title_m else "Threads 貼文"
+                    content = page.content()
                     
-                    seen_urls.add(direct_url)
-                    results.append({
-                        "title": title.strip(),
-                        "url": direct_url,
-                        "source": "Threads",
-                        "publish_time": None,
-                        "keyword": keyword,
-                        "excerpt": "",
-                        "engagement_count": None
-                    })
-                time.sleep(1.5)
-            except Exception as e:
-                print(f"[Threads Fallback] Yahoo search error for '{q}': {e}")
-                
-    return results, queries, source_used
+                    if "too many requests" in content.lower():
+                        print(f"[Threads Playwright] Error: 429 text detected on {q_url}")
+                        error_reason = "request_blocked"
+                        continue
+                        
+                    pattern = r'(?:https://(?:www\.)?threads\.(?:net|com))?/(?:@|%40)[a-zA-Z0-9_\.]+/post/[a-zA-Z0-9_-]+'
+                    links = re.findall(pattern, content)
+                    
+                    for l in links:
+                        if l.startswith("/"):
+                            l = "https://www.threads.net" + l
+                        elif "threads.com" in l:
+                            l = l.replace("threads.com", "threads.net")
+                            
+                        if l in seen_urls:
+                            continue
+                            
+                        username = "@unknown"
+                        user_m = re.search(r'threads\.net/(@[^/]+)/post', l)
+                        if user_m:
+                            username = user_m.group(1)
+                            
+                        seen_urls.add(l)
+                        results.append({
+                            "title": f"Threads 貼文 - {username}",
+                            "url": l,
+                            "source": "Threads",
+                            "publish_time": None,
+                            "keyword": keyword,
+                            "excerpt": f"從 Threads 搜尋取得之公開貼文連結。作者: {username}",
+                            "engagement_count": None
+                        })
+                except Exception as page_err:
+                    print(f"[Threads Playwright] Error loading {q_url}: {page_err}")
+                    error_reason = "parser_error"
+                    
+            browser.close()
+            
+    except Exception as e:
+        print(f"[Threads Playwright] Failed to run Playwright: {e}")
+        error_reason = "parser_error"
+        
+    if not results and not error_reason:
+        error_reason = "search_result_empty"
+        
+    return results, queries, source_used, error_reason
 
 def collect_threads_posts(keyword: str) -> Tuple[dict, List[Dict[str, Any]]]:
     """
@@ -590,18 +575,20 @@ def collect_threads_posts(keyword: str) -> Tuple[dict, List[Dict[str, Any]]]:
         trace["threads_url_count"] = len(posts)
         source_used = "official_api"
     else:
-        if api_status == "api_error":
-            trace["failure_reason"] = "api_error"
-        elif api_status == "permission_missing":
-            trace["failure_reason"] = "api_permission_missing"
-        else:
-            trace["failure_reason"] = "no_api_token"
-            
-        posts, queries, fallback_source = fetch_threads_via_fallback(keyword)
+        posts, queries, fallback_source, fallback_reason = fetch_threads_via_fallback(keyword)
         trace["queries"].extend(queries)
         trace["raw_result_count"] = len(posts)
         trace["threads_url_count"] = len(posts)
         source_used = fallback_source
+        if fallback_reason:
+            trace["failure_reason"] = fallback_reason
+        else:
+            if api_status == "api_error":
+                trace["failure_reason"] = "api_error"
+            elif api_status == "permission_missing":
+                trace["failure_reason"] = "api_permission_missing"
+            else:
+                trace["failure_reason"] = "no_api_token"
         
     db = SessionLocal()
     final_posts = []
@@ -619,12 +606,13 @@ def collect_threads_posts(keyword: str) -> Tuple[dict, List[Dict[str, Any]]]:
         
     if len(final_posts) == 0:
         if trace["raw_result_count"] == 0:
-            if api_status == "no_token":
-                trace["failure_reason"] = "no_api_token"
-            elif api_status == "permission_missing":
-                trace["failure_reason"] = "api_permission_missing"
-            else:
-                trace["failure_reason"] = "search_result_empty"
+            if not trace["failure_reason"]:
+                if api_status == "no_token":
+                    trace["failure_reason"] = "no_api_token"
+                elif api_status == "permission_missing":
+                    trace["failure_reason"] = "api_permission_missing"
+                else:
+                    trace["failure_reason"] = "search_result_empty"
         elif trace["threads_url_count"] == 0:
             trace["failure_reason"] = "result_not_threads_url"
         elif trace["skipped_duplicate_count"] > 0:
