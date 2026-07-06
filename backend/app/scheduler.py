@@ -112,16 +112,29 @@ def fetch_all_keywords_news():
             # Convert to UTC naive datetimes to match SQLite database datetime formats
             utc_start = start_of_today.astimezone(pytz.utc).replace(tzinfo=None)
             utc_end = end_of_today.astimezone(pytz.utc).replace(tzinfo=None)
-            
+            now = datetime.now()
+            # Actually, we want to send the items published today
+            # But the requirement says "當日新資料" (today's new data)
             news_today = db.query(models.News).filter(
-                models.News.publish_time >= utc_start,
-                models.News.publish_time <= utc_end
-            ).order_by(models.News.publish_time.desc()).all()
-
+                models.News.created_at >= now.replace(hour=0, minute=0, second=0, microsecond=0)
+            ).all()
+            
+            is_empty_today = len(news_today) == 0
+            if is_empty_today:
+                # Fetch latest 3 news and 3 social posts
+                latest_news = db.query(models.News).filter(
+                    models.News.source.notin_(["Dcard", "PTT", "Threads", "Instagram"])
+                ).order_by(models.News.publish_time.desc()).limit(3).all()
+                
+                latest_social = db.query(models.News).filter(
+                    models.News.source.in_(["Dcard", "PTT", "Threads", "Instagram"])
+                ).order_by(models.News.publish_time.desc()).limit(3).all()
+                
+                news_today = latest_news + latest_social
             
             date_str = now.strftime("%Y/%m/%d")
             from .mailer import send_daily_news_email
-            send_daily_news_email(news_today, date_str)
+            send_daily_news_email(news_today, date_str, is_empty_today=is_empty_today)
         except Exception as mail_err:
             print(f"Error preparing or sending news email: {mail_err}")
             LAST_FETCH_TRACE["email_dispatch_error"] = str(mail_err)

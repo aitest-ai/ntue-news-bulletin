@@ -8,7 +8,7 @@ from .config import settings
 
 SOCIAL_DOMAINS = ["dcard.tw", "ptt.cc", "pttweb.cc", "threads.net", "threads.com", "instagram.com"]
 
-def send_daily_news_email(news_items, date_str: str):
+def send_daily_news_email(news_items, date_str: str, is_empty_today: bool = False):
     # Query database for custom recipient email
     from .database import SessionLocal
     from . import models
@@ -40,10 +40,10 @@ def send_daily_news_email(news_items, date_str: str):
     for recipient in recipients:
         if settings.SMTP_USERNAME and settings.SMTP_PASSWORD:
             print(f"[Mailer] Sending daily news email to {recipient} via SMTP...")
-            success, msg = send_via_smtp(news_items, date_str, recipient)
+            success, msg = send_via_smtp(news_items, date_str, recipient, is_empty_today)
         else:
             print(f"[Mailer] Sending daily news email to {recipient} via FormSubmit.co AJAX fallback...")
-            success, msg = send_via_formsubmit(news_items, date_str, recipient)
+            success, msg = send_via_formsubmit(news_items, date_str, recipient, is_empty_today)
         
         if success:
             success_count += 1
@@ -67,7 +67,7 @@ def get_formatted_time(pub_time_obj) -> str:
     except Exception:
         return "未知"
 
-def send_via_formsubmit(news_items, date_str: str, recipient: str):
+def send_via_formsubmit(news_items, date_str: str, recipient: str, is_empty_today: bool = False):
     url = f"https://formsubmit.co/ajax/{recipient}"
     
     # Split list into news and social
@@ -90,9 +90,12 @@ def send_via_formsubmit(news_items, date_str: str, recipient: str):
         "_template": "table"
     }
 
+    if is_empty_today:
+        payload["本日總結"] = "經過排程掃描，今日沒有發現任何新的新聞或社群貼文。以下為您列出系統中最近期的幾則資料供您參考。"
+
     # Format News section
     if not news_list:
-        payload["新聞媒體報導"] = "今日未監測到任何媒體新聞。"
+        payload["新聞媒體報導"] = "無最近的媒體新聞。"
     else:
         news_lines = []
         for i, item in enumerate(news_list, 1):
@@ -102,7 +105,7 @@ def send_via_formsubmit(news_items, date_str: str, recipient: str):
 
     # Format Social/Forum section
     if not social_list:
-        payload["社群與網路論壇"] = "今日未監測到任何社群貼文或論壇討論。"
+        payload["社群與網路論壇"] = "無最近的社群貼文或論壇討論。"
     else:
         social_lines = []
         for i, item in enumerate(social_list, 1):
@@ -132,7 +135,7 @@ def send_via_formsubmit(news_items, date_str: str, recipient: str):
         print(f"[Mailer] {msg}")
         return False, msg
 
-def send_via_smtp(news_items, date_str: str, recipient: str):
+def send_via_smtp(news_items, date_str: str, recipient: str, is_empty_today: bool = False):
     # Split list into news and social
     SOCIAL_SOURCES = ["dcard", "ptt", "threads", "instagram"]
     news_list = []
@@ -147,11 +150,23 @@ def send_via_smtp(news_items, date_str: str, recipient: str):
         else:
             news_list.append(item)
 
+    if is_empty_today:
+        empty_msg_html = """
+        <div style="background-color: #fffbeb; color: #b45309; padding: 12px 16px; border-radius: 8px; margin-bottom: 24px; border: 1px solid #fef3c7; font-size: 14px;">
+            <strong>📢 本日總結：</strong> 經過排程掃描，今日沒有發現任何新的新聞或社群貼文。<br>
+            為了讓您掌握近期動態，下方列出系統中最近期的幾則資料供您參考。
+        </div>
+        """
+        empty_msg_text = "📢 本日總結：經過排程掃描，今日沒有發現任何新的新聞或社群貼文。以下為您列出系統中最近期的幾則資料供您參考。\n\n"
+    else:
+        empty_msg_html = ""
+        empty_msg_text = ""
+
     # 1. Build Traditional News HTML Section
     if not news_list:
         news_html = """
         <div class="empty-state">
-          <p style="margin: 0; font-size: 13px; color: #64748b;">今日未監測到傳統媒體新聞報導。</p>
+          <p style="margin: 0; font-size: 13px; color: #64748b;">無最近的媒體新聞報導。</p>
         </div>
         """
     else:
@@ -193,7 +208,7 @@ def send_via_smtp(news_items, date_str: str, recipient: str):
     if not social_list:
         social_html = """
         <div class="empty-state" style="background-color: #faf5ff;">
-          <p style="margin: 0; font-size: 13px; color: #7c3aed;">今日未監測到社群或網路論壇貼文。</p>
+          <p style="margin: 0; font-size: 13px; color: #7c3aed;">無最近的社群或網路論壇貼文。</p>
         </div>
         """
     else:
@@ -357,6 +372,7 @@ def send_via_smtp(news_items, date_str: str, recipient: str):
       <p>監測日期：{date_str}</p>
     </div>
     <div class="content">
+      {empty_msg_html}
       <!-- News Section -->
       <h2 class="section-title" style="color: #1d2a4a; border-bottom: 2px solid #1d2a4a;">📰 新聞媒體報導 ({len(news_list)} 則)</h2>
       {news_html}
@@ -374,10 +390,11 @@ def send_via_smtp(news_items, date_str: str, recipient: str):
 
     # Plain text version fallback
     plain_text = f"國北教大新聞與社群監測日報 ({date_str})\n\n"
+    plain_text += empty_msg_text
     
     plain_text += f"📰 傳統新聞媒體報導 ({len(news_list)} 則)：\n"
     if not news_list:
-        plain_text += "今日無最新新聞。\n"
+        plain_text += "無最近的新聞。\n"
     else:
         for item in news_list:
             plain_text += f"- [{item.source}] {item.title} ({item.url})\n"

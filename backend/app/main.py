@@ -175,8 +175,6 @@ def read_news(
 
 @app.post("/api/news/fetch")
 def trigger_fetch(background_tasks: BackgroundTasks, user: str = Depends(auth.verify_token)):
-    if scheduler.FETCH_LOCK.locked():
-        raise HTTPException(status_code=429, detail="背景抓取任務已經在進行中，請稍候幾分鐘再試。")
     background_tasks.add_task(scheduler.fetch_all_keywords_news)
     return {"message": "已在背景啟動新聞與輿情抓取任務，請於 3 到 5 分鐘後重新整理網頁！", "new_articles_count": 0}
 
