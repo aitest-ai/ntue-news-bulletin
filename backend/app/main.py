@@ -16,6 +16,16 @@ async def lifespan(app: FastAPI):
     # Ensure SQLite tables exist
     Base.metadata.create_all(bind=engine)
     
+    # Auto install playwright chromium if needed
+    import subprocess
+    import sys
+    try:
+        print("[Playwright Startup] Running auto-install of Chromium browser binaries...")
+        subprocess.run([sys.executable, "-m", "playwright", "install", "chromium"], check=True)
+        print("[Playwright Startup] Chromium auto-installation completed successfully.")
+    except Exception as install_err:
+        print(f"[Playwright Startup] Warning: Auto-installation of Chromium failed: {install_err}")
+    
     # Run automatic SQLite migration if crawled_at column is missing
     from sqlalchemy import text
     db_mig = SessionLocal()
