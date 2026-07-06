@@ -386,24 +386,24 @@ export default function BulletinBoard() {
   // Trigger automatic initial fetch
   const triggerAutoFetch = async () => {
     setIsFetching(true);
-    showToast("公佈欄內容目前為空，正在為您自動抓取最新新聞...", "success");
+    showToast("公佈欄內容目前為空，正在背景抓取最新新聞...", "success");
     try {
-      // Use longer timeout (90s) for fetch since it crawls multiple sources
-      const res = await safeFetch("/api/news/fetch", { method: "POST", headers: getHeaders() }, 90000);
+      const res = await safeFetch("/api/news/fetch", { method: "POST", headers: getHeaders() }, 20000);
       if (await handleResponse(res)) {
         if (res.ok) {
           const data = await res.json();
-          showToast(`自動初始化完成！已抓取並新增 ${data.new_articles_count} 則新聞`, "success");
-          fetchNews();
+          showToast(data.message || "自動初始化已啟動！資料正於背景抓取並在 1 分鐘內更新", "success");
+          // Poll to refresh list
+          setTimeout(() => fetchNews(), 5000);
+          setTimeout(() => fetchNews(), 15000);
+          setTimeout(() => fetchNews(), 30000);
         }
       }
     } catch (err: any) {
-      // 502 from Render means the crawl is still running in background
       const msg = err?.message || "";
       if (msg.includes("超時") || msg.includes("TIMEOUT")) {
         showToast("伺服器冷啟動中，請稍後 30 秒後重新整理頁面", "error");
       }
-      // Retry fetching news after a delay (crawl may have completed server-side)
       setTimeout(() => fetchNews(), 5000);
     } finally {
       setIsFetching(false);
@@ -485,15 +485,18 @@ export default function BulletinBoard() {
   // Force fetch
   const handleForceFetch = async () => {
     setIsFetching(true);
-    showToast("正在抓取最新新聞...", "success");
+    showToast("正在傳送抓取指令...", "success");
     try {
       const res = await safeFetch("/api/news/fetch", { method: "POST", headers: getHeaders() });
       if (await handleResponse(res)) {
         if (res.ok) {
           const data = await res.json();
-          showToast(`抓取完成！共新增 ${data.new_articles_count} 則新聞`, "success");
+          showToast(data.message || "已在背景啟動新聞與輿情抓取任務，請於 30 秒至 1 分鐘後重新整理網頁！", "success");
           setPage(1);
-          fetchNews();
+          // Poll to refresh news
+          setTimeout(() => fetchNews(), 5000);
+          setTimeout(() => fetchNews(), 15000);
+          setTimeout(() => fetchNews(), 30000);
           if (activeTab === "jobs") {
             fetchJobs();
           }

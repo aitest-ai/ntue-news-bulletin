@@ -73,18 +73,22 @@ async def lifespan(app: FastAPI):
     # Start APScheduler background tasks
     scheduler.start_scheduler()
     
-    # Auto-fetch synchronously once if the news database is empty on startup.
-    # This prevents the race condition where the frontend requests news before the async bootstrapper runs.
-    db = SessionLocal()
-    try:
-        news_count = db.query(models.News).count()
-        if news_count == 0:
-            print("Database is empty on startup. Triggering synchronous initial fetch bootstrap...")
-            scheduler.fetch_all_keywords_news()
-    except Exception as e:
-        print(f"Error running initial news fetch on startup: {e}")
-    finally:
-        db.close()
+    # Auto-fetch in a background thread once if the news database is empty on startup.
+    # This prevents blocking the FastAPI lifespan/startup while performing the initial crawl.
+    def bg_initial_fetch():
+        db = SessionLocal()
+        try:
+            news_count = db.query(models.News).count()
+            if news_count == 0:
+                print("[Startup Fetch] Database is empty. Triggering background initial fetch bootstrap...")
+                scheduler.fetch_all_keywords_news()
+                print("[Startup Fetch] Background initial fetch bootstrap completed.")
+        except Exception as e:
+            print(f"[Startup Fetch] Error running initial news fetch: {e}")
+        finally:
+            db.close()
+            
+    threading.Thread(target=bg_initial_fetch, daemon=True).start()
         
     yield
     # Safely shutdown APScheduler on app termination
@@ -173,12 +177,12 @@ def read_news(
     return {"total": total, "items": items}
 
 @app.post("/api/news/fetch")
-def trigger_fetch(user: str = Depends(auth.verify_token)):
+def trigger_fetch(background_tasks: BackgroundTasks, user: str = Depends(auth.verify_token)):
     """
-    Manually triggers RSS fetch of news for all active keywords. (Guarded by Password JWT)
+    Manually triggers RSS fetch of news for all active keywords in the background. (Guarded by Password JWT)
     """
-    new_count = scheduler.fetch_all_keywords_news()
-    return {"message": "新聞重新抓取完成！", "new_articles_count": new_count}
+    background_tasks.add_task(scheduler.fetch_all_keywords_news)
+    return {"message": "已在背景啟動新聞與輿情抓取任務，請於 30 秒至 1 分鐘後重新整理網頁！", "new_articles_count": 0}
 
 @app.post("/api/news/cleanup-social")
 def cleanup_social(db: Session = Depends(get_db), user: str = Depends(auth.verify_token)):
