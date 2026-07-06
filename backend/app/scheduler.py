@@ -103,20 +103,11 @@ def fetch_all_keywords_news():
         # Trigger daily news email dispatch
         try:
             tz = pytz.timezone("Asia/Taipei")
-            now = datetime.now(tz)
+            now_local = datetime.now(tz)
+            start_of_today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
             
-            # Localize dates in Taipei timezone first
-            start_of_today = tz.localize(datetime(now.year, now.month, now.day, 0, 0, 0))
-            end_of_today = tz.localize(datetime(now.year, now.month, now.day, 23, 59, 59))
-            
-            # Convert to UTC naive datetimes to match SQLite database datetime formats
-            utc_start = start_of_today.astimezone(pytz.utc).replace(tzinfo=None)
-            utc_end = end_of_today.astimezone(pytz.utc).replace(tzinfo=None)
-            now = datetime.now()
-            # Actually, we want to send the items published today
-            # But the requirement says "當日新資料" (today's new data)
             news_today = db.query(models.News).filter(
-                models.News.created_at >= now.replace(hour=0, minute=0, second=0, microsecond=0)
+                models.News.publish_time >= start_of_today
             ).all()
             
             is_empty_today = len(news_today) == 0
@@ -132,7 +123,7 @@ def fetch_all_keywords_news():
                 
                 news_today = latest_news + latest_social
             
-            date_str = now.strftime("%Y/%m/%d")
+            date_str = now_local.strftime("%Y/%m/%d")
             from .mailer import send_daily_news_email
             send_daily_news_email(news_today, date_str, is_empty_today=is_empty_today)
         except Exception as mail_err:
