@@ -477,7 +477,7 @@ def fetch_threads_via_fallback(keyword: str) -> Tuple[List[Dict[str, Any]], List
             response = httpx.get(rss_url, headers=headers, timeout=10.0)
             if response.status_code == 200:
                 root = ET.fromstring(response.content)
-                for item in root.findall(".//item")[:20]:
+                for item in root.findall(".//item")[:5]:
                     link = item.findtext("link", "")
                     title = item.findtext("title", "")
                     if not link or not title:
