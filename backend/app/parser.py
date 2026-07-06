@@ -509,39 +509,94 @@ def fetch_threads_via_fallback(keyword: str) -> Tuple[List[Dict[str, Any]], List
                         continue
                         
                     content = page.content()
-                    
                     if "too many requests" in content.lower():
                         print(f"[Threads Playwright] Error: 429 text detected on {q_url}")
                         error_reason = "request_blocked"
                         continue
                         
-                    pattern = r'(?:https://(?:www\.)?threads\.(?:net|com))?/(?:@|%40)[a-zA-Z0-9_\.]+/post/[a-zA-Z0-9_-]+'
-                    links = re.findall(pattern, content)
-                    
-                    for l in links:
-                        if l.startswith("/"):
-                            l = "https://www.threads.net" + l
-                        elif "threads.com" in l:
-                            l = l.replace("threads.com", "threads.net")
+                    # Precise card text matching: only pull posts that contain the keyword in innerText
+                    try:
+                        # Wait for article selectors to load
+                        page.wait_for_selector("article", timeout=6000)
+                        articles = page.query_selector_all("article")
+                        print(f"[Threads Playwright] Found {len(articles)} article cards. Filtering by keyword '{keyword}'...")
+                        
+                        for art in articles:
+                            art_text = art.inner_text() or ""
+                            # Strict match: Keyword must be contained in the post text
+                            if keyword.lower() not in art_text.lower():
+                                continue
+                                
+                            link_elem = art.query_selector("a[href*='/post/']")
+                            if not link_elem:
+                                continue
+                                
+                            l = link_elem.get_attribute("href") or ""
+                            if not l:
+                                continue
+                                
+                            if l.startswith("/"):
+                                l = "https://www.threads.net" + l
+                            elif "threads.com" in l:
+                                l = l.replace("threads.com", "threads.net")
+                                
+                            if l in seen_urls:
+                                continue
+                                
+                            username = "@unknown"
+                            user_m = re.search(r'threads\.net/(@[^/]+)/post', l)
+                            if user_m:
+                                username = user_m.group(1)
+                                
+                            # Clean text for preview
+                            clean_text = art_text.replace("\n", " ").strip()
+                            # Strip out user handle or boilerplate from title if present
+                            if username in clean_text:
+                                clean_text = clean_text.replace(username, "").strip()
+                                
+                            # Use actual post snippet as title & excerpt
+                            post_title = clean_text[:40] if clean_text else f"Threads 貼文 - {username}"
+                            post_excerpt = clean_text[:120] if clean_text else f"從 Threads 搜尋取得之公開貼文。作者: {username}"
                             
-                        if l in seen_urls:
-                            continue
-                            
-                        username = "@unknown"
-                        user_m = re.search(r'threads\.net/(@[^/]+)/post', l)
-                        if user_m:
-                            username = user_m.group(1)
-                            
-                        seen_urls.add(l)
-                        results.append({
-                            "title": f"Threads 貼文 - {username}",
-                            "url": l,
-                            "source": "Threads",
-                            "publish_time": None,
-                            "keyword": keyword,
-                            "excerpt": f"從 Threads 搜尋取得之公開貼文連結。作者: {username}",
-                            "engagement_count": None
-                        })
+                            seen_urls.add(l)
+                            results.append({
+                                "title": post_title.strip(),
+                                "url": l,
+                                "source": "Threads",
+                                "publish_time": None,
+                                "keyword": keyword,
+                                "excerpt": post_excerpt,
+                                "engagement_count": None
+                            })
+                    except Exception as select_err:
+                        print(f"[Threads Playwright] Selector query failed or timed out: {select_err}")
+                        # Fallback to regex URL extraction as a last resort, but only keep if title/url matches
+                        pattern = r'(?:https://(?:www\.)?threads\.(?:net|com))?/(?:@|%40)[a-zA-Z0-9_\.]+/post/[a-zA-Z0-9_-]+'
+                        links = re.findall(pattern, content)
+                        for l in links:
+                            if l.startswith("/"):
+                                l = "https://www.threads.net" + l
+                            elif "threads.com" in l:
+                                l = l.replace("threads.com", "threads.net")
+                                
+                            if l in seen_urls:
+                                continue
+                                
+                            username = "@unknown"
+                            user_m = re.search(r'threads\.net/(@[^/]+)/post', l)
+                            if user_m:
+                                username = user_m.group(1)
+                                
+                            seen_urls.add(l)
+                            results.append({
+                                "title": f"Threads 貼文 - {username}",
+                                "url": l,
+                                "source": "Threads",
+                                "publish_time": None,
+                                "keyword": keyword,
+                                "excerpt": f"從 Threads 搜尋取得之公開貼文連結。作者: {username}",
+                                "engagement_count": None
+                            })
                 except Exception as page_err:
                     print(f"[Threads Playwright] Error loading {q_url}: {page_err}")
                     error_reason = f"page_error: {str(page_err)}"
