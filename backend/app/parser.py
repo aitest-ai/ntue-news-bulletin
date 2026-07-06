@@ -7,10 +7,16 @@ from typing import List, Dict, Any, Tuple, Optional
 import re
 import json
 
+RPC_FAIL_COUNT = 0
+
 def resolve_google_news_link(url: str) -> str:
     """
     Decodes Google News RSS redirect URL into the original target URL using the internal RPC API.
     """
+    global RPC_FAIL_COUNT
+    if RPC_FAIL_COUNT >= 3:
+        return url
+        
     if not url or "news.google.com" not in url:
         return url
         
@@ -27,11 +33,11 @@ def resolve_google_news_link(url: str) -> str:
         
         # 2. Fetch parameters from the google articles URL
         articles_url = f"https://news.google.com/articles/{base64_str}"
-        response = httpx.get(articles_url, headers=headers, follow_redirects=True, timeout=5.0)
+        response = httpx.get(articles_url, headers=headers, follow_redirects=True, timeout=2.0)
         if response.status_code != 200:
             # Fallback to RSS articles URL
             articles_url = f"https://news.google.com/rss/articles/{base64_str}"
-            response = httpx.get(articles_url, headers=headers, follow_redirects=True, timeout=5.0)
+            response = httpx.get(articles_url, headers=headers, follow_redirects=True, timeout=2.0)
             response.raise_for_status()
             
         html_text = response.text
@@ -41,6 +47,7 @@ def resolve_google_news_link(url: str) -> str:
         ts_match = re.search(r'data-n-a-ts=["\']([^"\']+)["\']', html_text)
         
         if not sig_match or not ts_match:
+            RPC_FAIL_COUNT += 1
             return url
             
         signature = sig_match.group(1)
@@ -54,7 +61,7 @@ def resolve_google_news_link(url: str) -> str:
         
         headers["Content-Type"] = "application/x-www-form-urlencoded;charset=UTF-8"
         
-        response = httpx.post(post_url, headers=headers, content=payload_str, timeout=5.0)
+        response = httpx.post(post_url, headers=headers, content=payload_str, timeout=2.0)
         response.raise_for_status()
         
         # Clean and parse the response
@@ -66,6 +73,7 @@ def resolve_google_news_link(url: str) -> str:
         return decoded_url
     except Exception as e:
         print(f"[Parser] Failed to RPC resolve {url[:55]}: {e}")
+        RPC_FAIL_COUNT += 1
         return url
 
 
@@ -1055,6 +1063,7 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
                     return results
             except Exception as e:
                 print(f"[Social Scraper] Yahoo search failed for {search_url}: {e}")
+                break
                 
         return []
 
