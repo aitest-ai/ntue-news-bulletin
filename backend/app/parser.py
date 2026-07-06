@@ -370,6 +370,173 @@ def fetch_ptt_published_time(url: str) -> Optional[datetime]:
         print(f"[PTT Parser] Error fetching post page {url}: {e}")
     return None
 
+def fetch_threads_via_googlebot(keyword: str) -> List[Dict[str, Any]]:
+    """
+    Scrapes Threads search results using a Googlebot User-Agent.
+    Threads serves SSR (server-side rendered) content to Googlebot, containing
+    embedded JSON with real post text. This bypasses the need for Playwright.
+    Returns a list of post dicts with title, url, source, publish_time, keyword.
+    """
+    import urllib.parse as up
+    import json as _json
+
+    def _decode_unicode(s: str) -> str:
+        """Decode \\uXXXX unicode escape sequences safely."""
+        def _replace(m):
+            try:
+                return chr(int(m.group(1), 16))
+            except (ValueError, OverflowError):
+                return ''
+        result = re.sub(r'\\u([0-9a-fA-F]{4})', _replace, s)
+        return result.encode('utf-8', errors='replace').decode('utf-8', errors='replace')
+
+    results = []
+    seen_urls: set = set()
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+        "Accept": "text/html,application/xhtml+xml,*/*;q=0.8",
+        "Accept-Language": "zh-TW,zh;q=0.9,en;q=0.8",
+    }
+
+    # Search variations to try (keyword, then common alternate forms)
+    kw_variants = [keyword]
+    if "臺" in keyword:
+        kw_variants.append(keyword.replace("臺", "台"))
+    elif "台" in keyword:
+        kw_variants.append(keyword.replace("台", "臺"))
+
+    EXCLUDE_KEYWORDS = ["市北教", "北市大", "台北市立大學", "台北市立教育大學", "台北大學", "ntpu"]
+
+    for kw_var in kw_variants:
+        if len(results) >= 15:
+            break
+        encoded = up.quote(kw_var)
+        search_url = f"https://www.threads.net/search/?q={encoded}"
+        try:
+            r = httpx.get(search_url, headers=headers, timeout=20.0, follow_redirects=True)
+            if r.status_code != 200:
+                print(f"[Threads Googlebot] HTTP {r.status_code} for {search_url}")
+                continue
+            html_raw = r.text
+            print(f"[Threads Googlebot] Got {len(html_raw)} bytes for keyword '{kw_var}'")
+        except Exception as e:
+            print(f"[Threads Googlebot] Request failed: {e}")
+            continue
+
+        # Decode all unicode escape sequences in the HTML at once
+        html = _decode_unicode(html_raw)
+
+        # --- Extract post text fields from JSON script tags ---
+        json_scripts = re.findall(
+            r'<script[^>]*type="application/json"[^>]*>(.*?)</script>',
+            html_raw, re.DOTALL
+        )
+
+        # Collect all text+url pairs by scanning each script block
+        for sc_raw in json_scripts:
+            if len(sc_raw) < 50:
+                continue
+            sc = _decode_unicode(sc_raw)
+
+            # Find all "text":"..." entries
+            text_matches = re.finditer(
+                r'"text"\s*:\s*"((?:[^"\\]|\\.)*)"',
+                sc
+            )
+            for tm in text_matches:
+                raw_text = tm.group(1)
+                text = re.sub(r'\\[nrt]', ' ', raw_text)
+                text = re.sub(r'\\u([0-9a-fA-F]{4})', lambda m: chr(int(m.group(1), 16)), text)
+                text = text.encode('utf-8', errors='replace').decode('utf-8', errors='replace').strip()
+
+                # Must contain the keyword
+                kw_norm = kw_var.replace("臺", "台").lower()
+                text_norm = text.replace("臺", "台").lower()
+                if kw_norm not in text_norm:
+                    continue
+
+                # Must not contain exclusion words
+                skip = False
+                for ew in EXCLUDE_KEYWORDS:
+                    if ew.lower() in text_norm and ew.lower() not in kw_norm:
+                        skip = True
+                        break
+                if skip:
+                    continue
+
+                # Find nearest post URL in the surrounding 3000 chars of the script
+                tm_start = max(0, tm.start() - 1500)
+                tm_end = min(len(sc), tm.end() + 1500)
+                window = sc[tm_start:tm_end]
+
+                # Look for Threads post URL patterns
+                url_match = re.search(
+                    r'https://www\.threads\.net/@([A-Za-z0-9_.]+)/post/([A-Za-z0-9_\-]+)',
+                    window
+                )
+                if url_match:
+                    post_url = url_match.group(0)
+                else:
+                    # Try to find post code from "code":"..." near text
+                    code_match = re.search(r'"code"\s*:\s*"([A-Za-z0-9_\-]{10,})"', window)
+                    if code_match:
+                        post_url = f"https://www.threads.net/t/{code_match.group(1)}"
+                    else:
+                        # Build a search URL as fallback
+                        post_url = f"https://www.threads.net/search/?q={encoded}"
+
+                if post_url in seen_urls:
+                    continue
+                seen_urls.add(post_url)
+
+                # Build title from post text
+                title_text = text[:80].strip()
+                if not title_text:
+                    title_text = f"Threads 貼文 - {kw_var}"
+
+                results.append({
+                    "title": title_text,
+                    "url": post_url,
+                    "source": "Threads",
+                    "publish_time": datetime.now(),  # Threads SSR doesn't expose timestamp easily
+                    "keyword": keyword,
+                })
+                print(f"[Threads Googlebot] Found post: {title_text[:60]}")
+
+                if len(results) >= 20:
+                    break
+
+        # Also scan decoded full HTML for any post URLs paired with keyword mentions
+        # (catches text that's not inside a "text" JSON field)
+        kw_positions = [m.start() for m in re.finditer(re.escape(kw_var), html)]
+        for pos in kw_positions[:30]:
+            window = html[max(0, pos-500):min(len(html), pos+1000)]
+            url_m = re.search(
+                r'https://www\.threads\.net/@([A-Za-z0-9_.]+)/post/([A-Za-z0-9_\-]+)',
+                window
+            )
+            if url_m:
+                post_url = url_m.group(0)
+                if post_url not in seen_urls:
+                    seen_urls.add(post_url)
+                    # Extract surrounding text as title
+                    raw_snip = html[max(0, pos-20):min(len(html), pos+100)]
+                    snip = re.sub(r'[<>"{}\[\]\\]', '', raw_snip).strip()
+                    snip = re.sub(r'\s+', ' ', snip)[:80]
+                    results.append({
+                        "title": snip or f"Threads 貼文 - {kw_var}",
+                        "url": post_url,
+                        "source": "Threads",
+                        "publish_time": datetime.now(),
+                        "keyword": keyword,
+                    })
+                    print(f"[Threads Googlebot] Found via URL scan: {post_url}")
+
+    print(f"[Threads Googlebot] Total found: {len(results)} posts for '{keyword}'")
+    return results
+
+
 def fetch_threads_via_official_api(keyword: str) -> Tuple[Optional[List[Dict[str, Any]]], str, Optional[str]]:
     """
     Calls Meta's official Threads /keyword_search endpoint if access token is set.
@@ -627,6 +794,7 @@ def collect_threads_posts(keyword: str) -> Tuple[dict, List[Dict[str, Any]]]:
         "sample_results": []
     }
     
+    # Priority 1: Official Threads API (if token configured)
     posts, api_status, api_error = fetch_threads_via_official_api(keyword)
     trace["official_api_status"] = api_status
     if api_status != "no_token":
@@ -638,20 +806,34 @@ def collect_threads_posts(keyword: str) -> Tuple[dict, List[Dict[str, Any]]]:
         trace["threads_url_count"] = len(posts)
         source_used = "official_api"
     else:
-        posts, queries, fallback_source, fallback_reason = fetch_threads_via_fallback(keyword)
-        trace["queries"].extend(queries)
-        trace["raw_result_count"] = len(posts)
-        trace["threads_url_count"] = len(posts)
-        source_used = fallback_source
-        if fallback_reason:
-            trace["failure_reason"] = fallback_reason
+        # Priority 2: Googlebot scraper (fast, no browser needed)
+        print(f"[Threads Collector] Trying Googlebot scraper for '{keyword}'...")
+        googlebot_posts = fetch_threads_via_googlebot(keyword)
+        if googlebot_posts:
+            posts = googlebot_posts
+            trace["queries"].append(f"https://www.threads.net/search/?q={keyword}&serp_type=keyword")
+            trace["raw_result_count"] = len(posts)
+            trace["threads_url_count"] = len(posts)
+            source_used = "googlebot_scraper"
+            if api_status == "no_token":
+                trace["failure_reason"] = "no_api_token_used_googlebot"
         else:
-            if api_status == "api_error":
-                trace["failure_reason"] = "api_error"
-            elif api_status == "permission_missing":
-                trace["failure_reason"] = "api_permission_missing"
+            # Priority 3: Playwright fallback (slow, resource-heavy)
+            print(f"[Threads Collector] Googlebot scraper returned 0 results, falling back to Playwright...")
+            posts, queries, fallback_source, fallback_reason = fetch_threads_via_fallback(keyword)
+            trace["queries"].extend(queries)
+            trace["raw_result_count"] = len(posts)
+            trace["threads_url_count"] = len(posts)
+            source_used = fallback_source
+            if fallback_reason:
+                trace["failure_reason"] = fallback_reason
             else:
-                trace["failure_reason"] = "no_api_token"
+                if api_status == "api_error":
+                    trace["failure_reason"] = "api_error"
+                elif api_status == "permission_missing":
+                    trace["failure_reason"] = "api_permission_missing"
+                else:
+                    trace["failure_reason"] = "no_api_token"
         
     db = SessionLocal()
     final_posts = []
@@ -884,29 +1066,43 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
                     if not ru_match:
                         continue
                     direct_url = urllib.parse.unquote(ru_match.group(1))
-                    title_m = re.search(r'aria-label="([^"]+)"', seg)
-                    title = htmllib.unescape(title_m.group(1)) if title_m else ""
                     
-                    # Robust fallback title extractor for placeholder tags
-                    invalid_titles = ["threads", "www.threads.net", "threads.net", "dcard", "ptt", "instagram", ""]
-                    if title.lower().strip() in invalid_titles:
-                        clean_seg = re.sub(r'<style[^>]*>.*?</style>', '', seg, flags=re.DOTALL)
-                        clean_seg = re.sub(r'<script[^>]*>.*?</script>', '', clean_seg, flags=re.DOTALL)
-                        clean_seg = re.sub(r'<[^>]+>', ' ', clean_seg)
-                        clean_seg = htmllib.unescape(clean_seg)
-                        clean_seg = re.sub(r'\s+', ' ', clean_seg).strip()
-                        
-                        # Extract clean context containing search query keywords
-                        kw_normalized = query.replace("site:threads.net", "").replace("site:dcard.tw/f/ntue", "").replace("ptt", "").replace("instagram", "").strip().lower()
-                        if kw_normalized and kw_normalized in clean_seg.lower():
-                            kw_pos = clean_seg.lower().find(kw_normalized)
-                            start_pos = max(0, kw_pos - 20)
-                            end_pos = min(len(clean_seg), kw_pos + 80)
-                            title = clean_seg[start_pos:end_pos].strip()
-                        else:
-                            # Fallback if keyword not in segment text, use first 80 characters
-                            title = clean_seg[:80].strip() if clean_seg else "Threads 公開貼文分享"
-                            
+                    # --- Multi-strategy title extractor ---
+                    # Strategy 1: Look for h3 tag (most reliable on Yahoo TW/HK)
+                    title = ""
+                    h3_m = re.search(r'<h3[^>]*>(.*?)</h3>', seg[:3000], re.DOTALL)
+                    if h3_m:
+                        title = re.sub(r'<[^>]+>', '', h3_m.group(1))
+                        title = htmllib.unescape(title).strip()
+                    
+                    # Strategy 2: aria-label if h3 is missing/empty
+                    if not title or len(title) < 3:
+                        aria_m = re.search(r'aria-label="([^"]{5,})"', seg)
+                        if aria_m:
+                            candidate = htmllib.unescape(aria_m.group(1))
+                            # Reject URL-like strings
+                            if not re.search(r'[_=&%]{3,}', candidate):
+                                title = candidate.strip()
+                    
+                    # Strategy 3: compTitle / search snippet text
+                    if not title or len(title) < 3:
+                        comp_m = re.search(r'class="[^"]*compTitle[^"]*"[^>]*>(.*?)</(?:h3|h2|div|span)>', seg[:3000], re.DOTALL)
+                        if comp_m:
+                            title = re.sub(r'<[^>]+>', '', comp_m.group(1))
+                            title = htmllib.unescape(title).strip()
+                    
+                    # Clean up any remaining HTML artifacts from title
+                    # Remove Yahoo tracking params (_ylt, _ylu, _ylv, RK=, RS=)
+                    title = re.sub(r'_y(?:lt|lu|lv)=[^;\s"<]+', '', title)
+                    title = re.sub(r'RK=\d+[^\s"<]*', '', title)
+                    title = re.sub(r'RS=[^\s"<]+', '', title)
+                    # Remove URL-encoded garbage (sequences of %XX patterns)
+                    title = re.sub(r'(?:%[0-9a-fA-F]{2}){3,}[^\s]*', '', title)
+                    # Remove remaining HTML tags
+                    title = re.sub(r'<[^>]+>', ' ', title)
+                    title = htmllib.unescape(title)
+                    title = re.sub(r'\s+', ' ', title).strip()
+                    
                     date_m = re.search(r'<span class="fc-smoke">([^<]+)</span>', seg[:2000])
                     date_text = date_m.group(1).strip() if date_m else None
                     results.append((direct_url, title, date_text))
