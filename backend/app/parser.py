@@ -6,6 +6,10 @@ import urllib.parse
 from typing import List, Dict, Any, Tuple, Optional
 import re
 import json
+import pytz
+
+def now_taipei() -> datetime:
+    return datetime.now(pytz.timezone("Asia/Taipei")).replace(tzinfo=None)
 
 RPC_FAIL_COUNT = 0
 
@@ -115,11 +119,15 @@ def fetch_google_news_rss(keyword: str) -> List[Dict[str, Any]]:
             publish_time = None
             if pub_date_elem is not None and pub_date_elem.text:
                 try:
-                    publish_time = email.utils.parsedate_to_datetime(pub_date_elem.text)
+                    dt = email.utils.parsedate_to_datetime(pub_date_elem.text)
+                    if dt.tzinfo:
+                        publish_time = dt.astimezone(pytz.timezone("Asia/Taipei")).replace(tzinfo=None)
+                    else:
+                        publish_time = dt
                 except Exception:
-                    publish_time = datetime.now()
+                    publish_time = now_taipei()
             else:
-                publish_time = datetime.now()
+                publish_time = now_taipei()
                 
             source = "Google News"
             if source_elem is not None and source_elem.text:
@@ -177,7 +185,7 @@ def is_real_social_post(url: str) -> bool:
 
 def parse_yahoo_date(date_str: str) -> datetime:
     if not date_str or date_str == "None":
-        return datetime.now()
+        return now_taipei()
         
     date_str = date_str.strip().lower()
     
@@ -185,19 +193,19 @@ def parse_yahoo_date(date_str: str) -> datetime:
     hr_match = re.search(r'(\d+)\s*(?:小時|hour|hr)', date_str)
     if hr_match:
         hrs = int(hr_match.group(1))
-        return datetime.now() - timedelta(hours=hrs)
+        return now_taipei() - timedelta(hours=hrs)
         
     # Handle "X天前" or "X day ago"
     day_match = re.search(r'(\d+)\s*(?:天|day|d)\s*(?:前|ago)?', date_str)
     if day_match:
         days = int(day_match.group(1))
-        return datetime.now() - timedelta(days=days)
+        return now_taipei() - timedelta(days=days)
         
     # Handle "X分鐘前" or "X min ago"
     min_match = re.search(r'(\d+)\s*(?:分鐘|minute|min|m)\s*(?:前|ago)?', date_str)
     if min_match:
         mins = int(min_match.group(1))
-        return datetime.now() - timedelta(minutes=mins)
+        return now_taipei() - timedelta(minutes=mins)
         
     # Handle date format like "2026年6月12日"
     date_match = re.search(r'(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日', date_str)
@@ -211,7 +219,7 @@ def parse_yahoo_date(date_str: str) -> datetime:
         y, m, d = int(dash_match.group(1)), int(dash_match.group(2)), int(dash_match.group(3))
         return datetime(y, m, d)
         
-    return datetime.now()
+    return now_taipei()
 
 NTUE_RELEVANCE_TERMS = [
     "國北教大", "北教大", "國立臺北教育大學", "臺北教育大學", "台北教育大學",
@@ -231,7 +239,8 @@ def parse_iso_datetime(iso_str: str) -> Optional[datetime]:
     try:
         dt = datetime.fromisoformat(iso_str)
         if dt.tzinfo:
-            dt = dt.astimezone(pytz.utc).replace(tzinfo=None)
+            tz = pytz.timezone("Asia/Taipei")
+            dt = dt.astimezone(tz).replace(tzinfo=None)
         return dt
     except Exception:
         m = re.search(r'(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})', iso_str)
@@ -469,7 +478,7 @@ def fetch_threads_via_googlebot(keyword: str) -> List[Dict[str, Any]]:
                     title_text = f"Threads 貼文 - {kw_var}"
                     
                 taken_at = p.get('taken_at')
-                pub_time = datetime.fromtimestamp(taken_at) if taken_at else datetime.now()
+                pub_time = datetime.fromtimestamp(taken_at) if taken_at else now_taipei()
                 likes = p.get('like_count', 0)
                 
                 results.append({
@@ -856,7 +865,7 @@ def fetch_social_via_google_news(keyword: str) -> List[Dict[str, Any]]:
 
     items = []
     seen_urls = set()
-    cutoff = datetime.now() - timedelta(days=30)
+    cutoff = now_taipei() - timedelta(days=30)
 
     # Search queries: keyword + platform name (helps Google surface those results)
     queries = [
@@ -927,7 +936,11 @@ def fetch_social_via_google_news(keyword: str) -> List[Dict[str, Any]]:
                     if pub_date_text:
                         try:
                             import email.utils
-                            publish_time = email.utils.parsedate_to_datetime(pub_date_text)
+                            dt = email.utils.parsedate_to_datetime(pub_date_text)
+                            if dt.tzinfo:
+                                publish_time = dt.astimezone(pytz.timezone("Asia/Taipei")).replace(tzinfo=None)
+                            else:
+                                publish_time = dt
                         except Exception:
                             pass
                 elif source == "Instagram":
@@ -937,7 +950,7 @@ def fetch_social_via_google_news(keyword: str) -> List[Dict[str, Any]]:
                 if source != "Threads" and publish_time is not None:
                     if publish_time < cutoff:
                         title_safe = title[:50].encode('utf-8', errors='ignore').decode('utf-8')
-                        print(f"[Google Social] Skipping old ({(datetime.now()-publish_time).days}d): {title_safe}")
+                        print(f"[Google Social] Skipping old ({(now_taipei()-publish_time).days}d): {title_safe}")
                         continue
 
                 # Clean title (strip " - PTT" etc)
@@ -1101,7 +1114,7 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
         elif source == "PTT":
             publish_time = fetch_ptt_published_time(url)
         elif source == "Threads":
-            pass  # publish_time will use date_text fallback or datetime.now()
+            pass  # publish_time will use date_text fallback or now_taipei()
         elif source == "Instagram":
             pass
 
@@ -1114,11 +1127,11 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
                 
         # Final fallback: default to current time to avoid None (shows as 1970/1/1 or Time Unknown)
         if publish_time is None:
-            publish_time = datetime.now()
+            publish_time = now_taipei()
 
         # Filter to past 30 days (only if publish_time is parsed and NOT Threads)
         if source != "Threads" and publish_time is not None:
-            age_days = (datetime.now() - publish_time).days
+            age_days = (now_taipei() - publish_time).days
             if age_days > 30:
                 title_safe = title[:50].encode('utf-8', errors='ignore').decode('utf-8')
                 print(f"[Social Scraper] Skipping old post ({age_days}d): {title_safe}")
