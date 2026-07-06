@@ -374,22 +374,12 @@ def fetch_threads_via_googlebot(keyword: str) -> List[Dict[str, Any]]:
     """
     Scrapes Threads search results using a Googlebot User-Agent.
     Threads serves SSR (server-side rendered) content to Googlebot, containing
-    embedded JSON with real post text. This bypasses the need for Playwright.
-    Returns a list of post dicts with title, url, source, publish_time, keyword.
+    embedded JSON with real post text and timestamps.
     """
     import urllib.parse as up
     import json as _json
-
-    def _decode_unicode(s: str) -> str:
-        """Decode \\uXXXX unicode escape sequences safely."""
-        def _replace(m):
-            try:
-                return chr(int(m.group(1), 16))
-            except (ValueError, OverflowError):
-                return ''
-        result = re.sub(r'\\u([0-9a-fA-F]{4})', _replace, s)
-        return result.encode('utf-8', errors='replace').decode('utf-8', errors='replace')
-
+    from datetime import datetime
+    
     results = []
     seen_urls: set = set()
 
@@ -399,14 +389,23 @@ def fetch_threads_via_googlebot(keyword: str) -> List[Dict[str, Any]]:
         "Accept-Language": "zh-TW,zh;q=0.9,en;q=0.8",
     }
 
-    # Search variations to try (keyword, then common alternate forms)
     kw_variants = [keyword]
     if "臺" in keyword:
         kw_variants.append(keyword.replace("臺", "台"))
     elif "台" in keyword:
         kw_variants.append(keyword.replace("台", "臺"))
 
-    EXCLUDE_KEYWORDS = ["市北教", "北市大", "台北市立大學", "台北市立教育大學", "台北大學", "ntpu"]
+    EXCLUDE_KEYWORDS = ["北投", "北科", "台北醫大", "台北教育大學", "台科", "ntpu"]
+    
+    def find_posts(obj, out_list):
+        if isinstance(obj, dict):
+            if 'post' in obj and isinstance(obj['post'], dict):
+                out_list.append(obj['post'])
+            for k, v in obj.items():
+                find_posts(v, out_list)
+        elif isinstance(obj, list):
+            for v in obj:
+                find_posts(v, out_list)
 
     for kw_var in kw_variants:
         if len(results) >= 15:
@@ -416,122 +415,66 @@ def fetch_threads_via_googlebot(keyword: str) -> List[Dict[str, Any]]:
         try:
             r = httpx.get(search_url, headers=headers, timeout=20.0, follow_redirects=True)
             if r.status_code != 200:
-                print(f"[Threads Googlebot] HTTP {r.status_code} for {search_url}")
                 continue
             html_raw = r.text
-            print(f"[Threads Googlebot] Got {len(html_raw)} bytes for keyword '{kw_var}'")
-        except Exception as e:
-            print(f"[Threads Googlebot] Request failed: {e}")
-            continue
-
-        # Decode all unicode escape sequences in the HTML at once
-        html = _decode_unicode(html_raw)
-
-        # --- Extract post text fields from JSON script tags ---
-        json_scripts = re.findall(
-            r'<script[^>]*type="application/json"[^>]*>(.*?)</script>',
-            html_raw, re.DOTALL
-        )
-
-        # Collect all text+url pairs by scanning each script block
-        for sc_raw in json_scripts:
-            if len(sc_raw) < 50:
-                continue
-            sc = _decode_unicode(sc_raw)
-
-            # Find all "text":"..." entries
-            text_matches = re.finditer(
-                r'"text"\s*:\s*"((?:[^"\\]|\\.)*)"',
-                sc
-            )
-            for tm in text_matches:
-                raw_text = tm.group(1)
-                text = re.sub(r'\\[nrt]', ' ', raw_text)
-                text = re.sub(r'\\u([0-9a-fA-F]{4})', lambda m: chr(int(m.group(1), 16)), text)
-                text = text.encode('utf-8', errors='replace').decode('utf-8', errors='replace').strip()
-
-                # Must contain the keyword
+            
+            scripts = re.findall(r'<script type="application/json"([^>]*)>(.*?)</script>', html_raw, re.DOTALL)
+            extracted_posts = []
+            
+            for attrs, content in scripts:
+                if not content: continue
+                if 'thread_items' in content or 'post' in content:
+                    try:
+                        data = _json.loads(content)
+                        find_posts(data, extracted_posts)
+                    except Exception:
+                        pass
+                        
+            for p in extracted_posts:
+                code = p.get('code')
+                if not code: continue
+                post_url = f"https://www.threads.net/t/{code}"
+                
+                if post_url in seen_urls: continue
+                seen_urls.add(post_url)
+                
+                caption = p.get('caption')
+                text = caption.get('text', '') if caption else ''
+                if not text: continue
+                
                 kw_norm = kw_var.replace("臺", "台").lower()
                 text_norm = text.replace("臺", "台").lower()
+                
+                # STRICT KEYWORD FILTER
                 if kw_norm not in text_norm:
                     continue
-
-                # Must not contain exclusion words
+                    
                 skip = False
                 for ew in EXCLUDE_KEYWORDS:
                     if ew.lower() in text_norm and ew.lower() not in kw_norm:
                         skip = True
                         break
-                if skip:
-                    continue
-
-                # Find nearest post URL in the surrounding 3000 chars of the script
-                tm_start = max(0, tm.start() - 1500)
-                tm_end = min(len(sc), tm.end() + 1500)
-                window = sc[tm_start:tm_end]
-
-                # Look for Threads post URL patterns
-                url_match = re.search(
-                    r'https://www\.threads\.net/@([A-Za-z0-9_.]+)/post/([A-Za-z0-9_\-]+)',
-                    window
-                )
-                if url_match:
-                    post_url = url_match.group(0)
-                else:
-                    # Try to find post code from "code":"..." near text
-                    code_match = re.search(r'"code"\s*:\s*"([A-Za-z0-9_\-]{10,})"', window)
-                    if code_match:
-                        post_url = f"https://www.threads.net/t/{code_match.group(1)}"
-                    else:
-                        # Build a search URL as fallback
-                        post_url = f"https://www.threads.net/search/?q={encoded}"
-
-                if post_url in seen_urls:
-                    continue
-                seen_urls.add(post_url)
-
-                # Build title from post text
+                if skip: continue
+                
                 title_text = text[:80].strip()
                 if not title_text:
                     title_text = f"Threads 貼文 - {kw_var}"
-
+                    
+                taken_at = p.get('taken_at')
+                pub_time = datetime.fromtimestamp(taken_at) if taken_at else datetime.now()
+                likes = p.get('like_count', 0)
+                
                 results.append({
                     "title": title_text,
                     "url": post_url,
                     "source": "Threads",
-                    "publish_time": datetime.now(),  # Threads SSR doesn't expose timestamp easily
+                    "publish_time": pub_time,
                     "keyword": keyword,
+                    "engagement_count": likes,
+                    "excerpt": text[:150]
                 })
-                print(f"[Threads Googlebot] Found post: {title_text[:60]}")
-
-                if len(results) >= 20:
-                    break
-
-        # Also scan decoded full HTML for any post URLs paired with keyword mentions
-        # (catches text that's not inside a "text" JSON field)
-        kw_positions = [m.start() for m in re.finditer(re.escape(kw_var), html)]
-        for pos in kw_positions[:30]:
-            window = html[max(0, pos-500):min(len(html), pos+1000)]
-            url_m = re.search(
-                r'https://www\.threads\.net/@([A-Za-z0-9_.]+)/post/([A-Za-z0-9_\-]+)',
-                window
-            )
-            if url_m:
-                post_url = url_m.group(0)
-                if post_url not in seen_urls:
-                    seen_urls.add(post_url)
-                    # Extract surrounding text as title
-                    raw_snip = html[max(0, pos-20):min(len(html), pos+100)]
-                    snip = re.sub(r'[<>"{}\[\]\\]', '', raw_snip).strip()
-                    snip = re.sub(r'\s+', ' ', snip)[:80]
-                    results.append({
-                        "title": snip or f"Threads 貼文 - {kw_var}",
-                        "url": post_url,
-                        "source": "Threads",
-                        "publish_time": datetime.now(),
-                        "keyword": keyword,
-                    })
-                    print(f"[Threads Googlebot] Found via URL scan: {post_url}")
+        except Exception as e:
+            print(f"[Threads Googlebot] Request/Parsing failed for {kw_var}: {e}")
 
     print(f"[Threads Googlebot] Total found: {len(results)} posts for '{keyword}'")
     return results
