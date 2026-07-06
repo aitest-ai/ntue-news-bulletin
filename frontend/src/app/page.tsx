@@ -422,13 +422,8 @@ export default function BulletinBoard() {
       if (await handleResponse(res)) {
         if (res.ok) {
           const data = await res.json();
-          showToast(data.message || "已在背景啟動抓取任務，請稍後手動重新整理頁面", "success");
+          showToast(data.message || "已在背景啟動抓取任務，完整掃描約需 3~5 分鐘，完成後將會寄發信件。請稍後自行重新整理網頁。", "success");
           setPage(1);
-          // Single delayed refresh after 15 seconds
-          setTimeout(() => fetchNews(), 15000);
-          if (activeTab === "jobs") {
-            fetchJobs();
-          }
         } else {
           let errMsg = "手動抓取新聞失敗";
           try {
