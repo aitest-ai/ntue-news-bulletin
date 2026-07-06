@@ -717,17 +717,20 @@ def fetch_social_via_google_news(keyword: str) -> List[Dict[str, Any]]:
         "pttweb.cc": "PTT",
         "instagram.com": "Instagram",
         "dcard.tw": "Dcard",
+        "threads.net": "Threads",
+        "threads.com": "Threads",
     }
 
     items = []
     seen_urls = set()
-    cutoff = datetime.now() - timedelta(days=7)
+    cutoff = datetime.now() - timedelta(days=30)
 
     # Search queries: keyword + platform name (helps Google surface those results)
     queries = [
-        f"{keyword} site:ptt.cc when:7d",
-        f"{keyword} site:dcard.tw/f/ntue when:7d",
-        f"{keyword} instagram when:7d",
+        f"{keyword} site:ptt.cc when:30d",
+        f"{keyword} site:dcard.tw/f/ntue when:30d",
+        f"{keyword} site:threads.net when:30d",
+        f"{keyword} instagram when:30d",
     ]
 
     for query in queries:
@@ -788,7 +791,12 @@ def fetch_social_via_google_news(keyword: str) -> List[Dict[str, Any]]:
                 elif source == "PTT":
                     publish_time = fetch_ptt_published_time(resolved_link)
                 elif source == "Threads":
-                    fetch_threads_via_official_api(keyword)
+                    if pub_date_text:
+                        try:
+                            import email.utils
+                            publish_time = email.utils.parsedate_to_datetime(pub_date_text)
+                        except Exception:
+                            pass
                 elif source == "Instagram":
                     pass
 
@@ -939,42 +947,17 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
             "keyword": kw,
         })
 
+    import random
+
     # ── 1. Dcard: search dedicated NTUE board only ──────────────────────────
     print(f"[Social Scraper] Searching Dcard NTUE board...")
     for url, title, date_text in yahoo_search("site:dcard.tw/f/ntue"):
         if "dcard.tw" not in url.lower():
             continue
         try_add(url, title, "Dcard", keyword, date_text=date_text, require_relevance=False)
-    time.sleep(1.5)
+    time.sleep(2.0 + random.random() * 2.0)
 
-    # ── 2. PTT: keyword + ptt + btf=w, require title relevance ─────────────
-    print(f"[Social Scraper] Searching PTT for '{keyword}'...")
-    for url, title, date_text in yahoo_search(f"{keyword} ptt", use_btf=True):
-        if "ptt.cc" not in url.lower() and "pttweb.cc" not in url.lower():
-            continue
-        try_add(url, title, "PTT", keyword, date_text=date_text, require_relevance=True)
-    time.sleep(1.5)
-
-    # ── 3. Instagram: keyword + instagram + btf=w, require title relevance ───
-    print(f"[Social Scraper] Searching Instagram for '{keyword}'...")
-    for url, title, date_text in yahoo_search(f"{keyword} instagram", use_btf=True):
-        if "instagram.com" not in url.lower():
-            continue
-        try_add(url, title, "Instagram", keyword, date_text=date_text, require_relevance=True)
-    time.sleep(1.5)
-
-    # ── 4. Threads: Dedicated official API & fallback search collector ──────
-    print(f"[Social Scraper] Running dedicated Threads collector for '{keyword}'...")
-    try:
-        trace_data, threads_posts = collect_threads_posts(keyword)
-        for p in threads_posts:
-            if p["url"] not in seen_urls:
-                seen_urls.add(p["url"])
-                items.append(p)
-    except Exception as threads_err:
-        print(f"[Social Scraper] Error in Threads collector: {threads_err}")
-
-    # ── 5. Threads: Yahoo Search site:threads.net fallback & booster ─────────
+    # ── 2. Threads: Yahoo Search site:threads.net booster (RUN FIRST to bypass rates) ──
     print(f"[Social Scraper] Running Yahoo search booster for Threads posts related to '{keyword}'...")
     try:
         for url, title, date_text in yahoo_search(f"site:threads.net {keyword}"):
@@ -1015,6 +998,34 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
             try_add(url, post_title, "Threads", keyword, date_text=date_text, require_relevance=False)
     except Exception as yahoo_threads_err:
         print(f"[Social Scraper] Yahoo search Threads booster error: {yahoo_threads_err}")
+    time.sleep(2.0 + random.random() * 2.0)
+
+    # ── 3. Threads: Dedicated official API & Playwright crawler ──────────────────
+    print(f"[Social Scraper] Running dedicated Threads collector for '{keyword}'...")
+    try:
+        trace_data, threads_posts = collect_threads_posts(keyword)
+        for p in threads_posts:
+            if p["url"] not in seen_urls:
+                seen_urls.add(p["url"])
+                items.append(p)
+    except Exception as threads_err:
+        print(f"[Social Scraper] Error in Threads collector: {threads_err}")
+    time.sleep(2.0 + random.random() * 2.0)
+
+    # ── 4. PTT: keyword + ptt + btf=w, require title relevance ─────────────
+    print(f"[Social Scraper] Searching PTT for '{keyword}'...")
+    for url, title, date_text in yahoo_search(f"{keyword} ptt", use_btf=True):
+        if "ptt.cc" not in url.lower() and "pttweb.cc" not in url.lower():
+            continue
+        try_add(url, title, "PTT", keyword, date_text=date_text, require_relevance=True)
+    time.sleep(2.0 + random.random() * 2.0)
+
+    # ── 5. Instagram: keyword + instagram + btf=w, require title relevance ───
+    print(f"[Social Scraper] Searching Instagram for '{keyword}'...")
+    for url, title, date_text in yahoo_search(f"{keyword} instagram", use_btf=True):
+        if "instagram.com" not in url.lower():
+            continue
+        try_add(url, title, "Instagram", keyword, date_text=date_text, require_relevance=True)
 
     print(f"[Social Scraper] Found {len(items)} valid social posts for keyword '{keyword}'")
     return items
