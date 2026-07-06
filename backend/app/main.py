@@ -175,11 +175,10 @@ def read_news(
 
 @app.post("/api/news/fetch")
 def trigger_fetch(background_tasks: BackgroundTasks, user: str = Depends(auth.verify_token)):
-    """
-    Manually triggers RSS fetch of news for all active keywords in the background. (Guarded by Password JWT)
-    """
+    if scheduler.FETCH_LOCK.locked():
+        raise HTTPException(status_code=429, detail="背景抓取任務已經在進行中，請稍候幾分鐘再試。")
     background_tasks.add_task(scheduler.fetch_all_keywords_news)
-    return {"message": "已在背景啟動新聞與輿情抓取任務，請於 30 秒至 1 分鐘後重新整理網頁！", "new_articles_count": 0}
+    return {"message": "已在背景啟動新聞與輿情抓取任務，請於 3 到 5 分鐘後重新整理網頁！", "new_articles_count": 0}
 
 @app.get("/api/news/fetch-trace")
 def get_fetch_trace(user: str = Depends(auth.verify_token)):
