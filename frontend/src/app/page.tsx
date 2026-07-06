@@ -121,30 +121,42 @@ export default function BulletinBoard() {
     }, 4000);
   };
 
-  // Silent safe fetch with automatic direct-to-Render fallback
-  const safeFetch = async (path: string, options: RequestInit = {}) => {
+  // Silent safe fetch with automatic direct-to-Render fallback + 20s timeout
+  const safeFetch = async (path: string, options: RequestInit = {}, timeoutMs = 20000) => {
     const cleanPath = path.startsWith("/") ? path : `/${path}`;
     const directUrl = `${RENDER_BACKEND_URL}${cleanPath}`;
     const proxyUrl = cleanPath;
 
-    // Case 1: Already detected proxy failure in this session -> go direct
-    if (useDirectBackend) {
+    // Helper: fetch with AbortController timeout
+    const fetchWithTimeout = async (url: string, opts: RequestInit) => {
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), timeoutMs);
       try {
-        return await fetch(directUrl, options);
-      } catch (err) {
+        const res = await fetch(url, { ...opts, signal: controller.signal });
+        clearTimeout(id);
+        return res;
+      } catch (err: any) {
+        clearTimeout(id);
+        if (err?.name === "AbortError") {
+          throw new Error("TIMEOUT");
+        }
         throw err;
       }
+    };
+
+    // Case 1: Already detected proxy failure in this session -> go direct
+    if (useDirectBackend) {
+      return await fetchWithTimeout(directUrl, options);
     }
 
     // Case 2: Try Vercel's proxy first
     try {
-      const res = await fetch(proxyUrl, options);
+      const res = await fetchWithTimeout(proxyUrl, options);
 
-      // If Vercel returns 502 Bad Gateway / 503 Tunnel Unavailable / 504 Timeout
+      // If Vercel returns 502/503/504 -> fallback to direct
       if (res.status === 502 || res.status === 503 || res.status === 504) {
-        console.warn(`Vercel proxy returned ${res.status}. Silently falling back to Render directly...`);
-        const fallbackRes = await fetch(directUrl, options);
-        
+        console.warn(`Vercel proxy returned ${res.status}. Falling back to Render directly...`);
+        const fallbackRes = await fetchWithTimeout(directUrl, options);
         if (fallbackRes.ok || fallbackRes.status < 500) {
           setUseDirectBackend(true);
           sessionStorage.setItem("use_direct_backend", "true");
@@ -153,16 +165,30 @@ export default function BulletinBoard() {
       }
 
       return res;
-    } catch (err) {
-      // If network fails entirely (DNS or CORS on relative proxy path) -> retry directly
-      console.warn("Proxy connection error. Silently falling back to Render directly...", err);
+    } catch (err: any) {
+      const isTimeout = err?.message === "TIMEOUT";
+      if (isTimeout) {
+        // Try direct with same timeout
+        try {
+          const fallbackRes = await fetchWithTimeout(directUrl, options);
+          setUseDirectBackend(true);
+          sessionStorage.setItem("use_direct_backend", "true");
+          return fallbackRes;
+        } catch (innerErr: any) {
+          if (innerErr?.message === "TIMEOUT") {
+            throw new Error("伺服器回應超時，Render 可能正在冷啟動（約需 30-60 秒），請稍候再重新整理頁面。");
+          }
+          throw innerErr;
+        }
+      }
+      // Network error -> retry directly
+      console.warn("Proxy connection error. Falling back to Render directly...", err);
       try {
-        const fallbackRes = await fetch(directUrl, options);
+        const fallbackRes = await fetchWithTimeout(directUrl, options);
         setUseDirectBackend(true);
         sessionStorage.setItem("use_direct_backend", "true");
         return fallbackRes;
-      } catch (fallbackErr) {
-        // Both failed, throw original error
+      } catch {
         throw err;
       }
     }
@@ -345,8 +371,13 @@ export default function BulletinBoard() {
           triggerAutoFetch();
         }
       }
-    } catch (err) {
-      showToast("無法載入新聞列表", "error");
+    } catch (err: any) {
+      const msg = err?.message || "";
+      if (msg.includes("超時") || msg.includes("TIMEOUT")) {
+        showToast("伺服器冷啟動中（Render 免費方案），請稍候 30 秒後重新整理頁面", "error");
+      } else {
+        showToast("無法載入新聞列表，請檢查網路或稍後再試", "error");
+      }
     } finally {
       setLoadingNews(false);
     }
@@ -357,7 +388,8 @@ export default function BulletinBoard() {
     setIsFetching(true);
     showToast("公佈欄內容目前為空，正在為您自動抓取最新新聞...", "success");
     try {
-      const res = await safeFetch("/api/news/fetch", { method: "POST", headers: getHeaders() });
+      // Use longer timeout (90s) for fetch since it crawls multiple sources
+      const res = await safeFetch("/api/news/fetch", { method: "POST", headers: getHeaders() }, 90000);
       if (await handleResponse(res)) {
         if (res.ok) {
           const data = await res.json();
@@ -365,8 +397,14 @@ export default function BulletinBoard() {
           fetchNews();
         }
       }
-    } catch (err) {
-      // ignore
+    } catch (err: any) {
+      // 502 from Render means the crawl is still running in background
+      const msg = err?.message || "";
+      if (msg.includes("超時") || msg.includes("TIMEOUT")) {
+        showToast("伺服器冷啟動中，請稍後 30 秒後重新整理頁面", "error");
+      }
+      // Retry fetching news after a delay (crawl may have completed server-side)
+      setTimeout(() => fetchNews(), 5000);
     } finally {
       setIsFetching(false);
     }

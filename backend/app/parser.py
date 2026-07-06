@@ -215,6 +215,115 @@ def title_mentions_ntue(title: str) -> bool:
     t = title.lower()
     return any(term.lower() in t for term in NTUE_RELEVANCE_TERMS)
 
+def fetch_social_via_google_news(keyword: str) -> List[Dict[str, Any]]:
+    """
+    Uses Google News RSS to find PTT, Threads, Instagram, and Dcard posts
+    mentioning the keyword within the past 7 days.
+    
+    Strategy: search for keyword + platform name. Google News indexes PTT/Threads/Dcard
+    and returns them in regular RSS results. We filter by URL domain to identify social posts.
+    """
+    import email.utils
+
+    SOCIAL_DOMAIN_MAP = {
+        "ptt.cc": "PTT",
+        "pttweb.cc": "PTT",
+        "threads.net": "Threads",
+        "threads.com": "Threads",
+        "instagram.com": "Instagram",
+        "dcard.tw": "Dcard",
+    }
+
+    items = []
+    seen_urls = set()
+    cutoff = datetime.now() - timedelta(days=7)
+
+    # Search queries: keyword + platform name (helps Google surface those results)
+    queries = [
+        f"{keyword} site:ptt.cc",
+        f"{keyword} site:dcard.tw/f/ntue",
+        f"{keyword} threads",
+        f"{keyword} site:threads.net",
+    ]
+
+    for query in queries:
+        encoded = urllib.parse.quote(query)
+        rss_url = (
+            f"https://news.google.com/rss/search"
+            f"?q={encoded}&hl=zh-TW&gl=TW&ceid=TW:zh-Hant"
+        )
+        try:
+            response = httpx.get(rss_url, headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            }, timeout=10.0)
+            response.raise_for_status()
+
+            root = ET.fromstring(response.content)
+            for item in root.findall(".//item")[:30]:
+                link = item.findtext("link", "")
+                title = item.findtext("title", "")
+                pub_date_text = item.findtext("pubDate", "")
+
+                if not link or not title:
+                    continue
+
+                # Determine if link is a social platform we care about
+                link_lower = link.lower()
+                source = None
+                for domain, src_name in SOCIAL_DOMAIN_MAP.items():
+                    if domain in link_lower:
+                        source = src_name
+                        break
+
+                if source is None:
+                    continue  # Not a social post link
+
+                # Dedup
+                if link in seen_urls:
+                    continue
+
+                # Must be a real post (not a board/profile page)
+                if not is_real_social_post(link):
+                    continue
+
+                # Title relevance check (for PTT/Threads/IG — Dcard board URL is self-validating)
+                if source != "Dcard" and not title_mentions_ntue(title):
+                    print(f"[Google Social] Skipping irrelevant: {title[:50]}")
+                    continue
+
+                # Parse publish date
+                publish_time = datetime.now()
+                if pub_date_text:
+                    try:
+                        publish_time = email.utils.parsedate_to_datetime(pub_date_text).replace(tzinfo=None)
+                    except Exception:
+                        pass
+
+                # Filter to past 7 days
+                if publish_time < cutoff:
+                    print(f"[Google Social] Skipping old ({(datetime.now()-publish_time).days}d): {title[:50]}")
+                    continue
+
+                # Clean title (strip " - PTT" etc)
+                clean_title = title
+                if " - " in title:
+                    clean_title = title.rsplit(" - ", 1)[0]
+
+                seen_urls.add(link)
+                items.append({
+                    "title": clean_title.strip(),
+                    "url": link,
+                    "source": source,
+                    "publish_time": publish_time,
+                    "keyword": keyword,
+                })
+        except Exception as e:
+            print(f"[Google Social] Error searching '{query}': {e}")
+
+    print(f"[Google Social] Found {len(items)} social posts via Google News for keyword '{keyword}'")
+    return items
+
+
 def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
     """
     Searches Yahoo for Dcard (NTUE board), PTT, Threads, and Instagram posts.
@@ -226,8 +335,14 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
     import html as htmllib
     import time
 
-    items = []
-    seen_urls = set()
+    # First fetch from Google News RSS for better coverage of PTT/Threads/Instagram/Dcard
+    print(f"[Social Scraper] Fetching from Google News RSS first...")
+    try:
+        items = fetch_social_via_google_news(keyword)
+    except Exception as e:
+        print(f"[Social Scraper] Google News search failed: {e}")
+        items = []
+    seen_urls = {item["url"] for item in items}
     
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
