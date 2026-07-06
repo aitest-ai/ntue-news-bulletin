@@ -866,6 +866,7 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
         
         urls_to_try = [
             f"https://tw.search.yahoo.com/search?p={encoded}{btf_param}",
+            f"https://hk.search.yahoo.com/search?p={encoded}{btf_param}",
             f"https://search.yahoo.com/search?p={encoded}{btf_param}"
         ]
         
@@ -885,6 +886,27 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
                     direct_url = urllib.parse.unquote(ru_match.group(1))
                     title_m = re.search(r'aria-label="([^"]+)"', seg)
                     title = htmllib.unescape(title_m.group(1)) if title_m else ""
+                    
+                    # Robust fallback title extractor for placeholder tags
+                    invalid_titles = ["threads", "www.threads.net", "threads.net", "dcard", "ptt", "instagram", ""]
+                    if title.lower().strip() in invalid_titles:
+                        clean_seg = re.sub(r'<style[^>]*>.*?</style>', '', seg, flags=re.DOTALL)
+                        clean_seg = re.sub(r'<script[^>]*>.*?</script>', '', clean_seg, flags=re.DOTALL)
+                        clean_seg = re.sub(r'<[^>]+>', ' ', clean_seg)
+                        clean_seg = htmllib.unescape(clean_seg)
+                        clean_seg = re.sub(r'\s+', ' ', clean_seg).strip()
+                        
+                        # Extract clean context containing search query keywords
+                        kw_normalized = query.replace("site:threads.net", "").replace("site:dcard.tw/f/ntue", "").replace("ptt", "").replace("instagram", "").strip().lower()
+                        if kw_normalized and kw_normalized in clean_seg.lower():
+                            kw_pos = clean_seg.lower().find(kw_normalized)
+                            start_pos = max(0, kw_pos - 20)
+                            end_pos = min(len(clean_seg), kw_pos + 80)
+                            title = clean_seg[start_pos:end_pos].strip()
+                        else:
+                            # Fallback if keyword not in segment text, use first 80 characters
+                            title = clean_seg[:80].strip() if clean_seg else "Threads 公開貼文分享"
+                            
                     date_m = re.search(r'<span class="fc-smoke">([^<]+)</span>', seg[:2000])
                     date_text = date_m.group(1).strip() if date_m else None
                     results.append((direct_url, title, date_text))
