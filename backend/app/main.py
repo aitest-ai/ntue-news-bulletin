@@ -161,8 +161,15 @@ def read_news(
         
         query = query.filter(or_(is_news, social_filter))
         
+        from sqlalchemy import case
+        threads_priority = case(
+            (models.News.source == "Threads", 1),
+            else_=0
+        ).desc()
+        
         total = query.count()
         items = query.order_by(
+            threads_priority,
             func.coalesce(models.News.publish_time, models.News.crawled_at, models.News.created_at).desc()
         ).offset(skip).limit(limit).all()
         return {"total": total, "items": items}

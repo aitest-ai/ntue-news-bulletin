@@ -974,6 +974,48 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
     except Exception as threads_err:
         print(f"[Social Scraper] Error in Threads collector: {threads_err}")
 
+    # ── 5. Threads: Yahoo Search site:threads.net fallback & booster ─────────
+    print(f"[Social Scraper] Running Yahoo search booster for Threads posts related to '{keyword}'...")
+    try:
+        for url, title, date_text in yahoo_search(f"site:threads.net {keyword}"):
+            url_lower = url.lower()
+            if "threads.net" not in url_lower and "threads.com" not in url_lower:
+                continue
+            if "/post/" not in url_lower and "/t/" not in url_lower:
+                continue
+                
+            art_text = title
+            kw_normalized = keyword.replace("臺", "台").lower()
+            text_normalized = art_text.replace("臺", "台").lower()
+            
+            if kw_normalized not in text_normalized:
+                continue
+                
+            EXCLUDE_WORDS = ["市北教", "北市大", "台北市立大學", "台北市立教育大學", "市立台北教育大學", "台北大學", "ntpu", "ntu", "台灣大學"]
+            has_exclude = False
+            for ew in EXCLUDE_WORDS:
+                if ew in kw_normalized:
+                    continue
+                if ew in text_normalized:
+                    has_exclude = True
+                    break
+            if has_exclude:
+                continue
+                
+            username = "@unknown"
+            user_m = re.search(r'threads\.net/(@[^/]+)/post', url)
+            if user_m:
+                username = user_m.group(1)
+                
+            clean_title = title.replace("Threads", "").replace("threads.net", "").replace("貼文", "").strip()
+            if username in clean_title:
+                clean_title = clean_title.replace(username, "").strip()
+            post_title = clean_title[:60] if clean_title else f"Threads 公開貼文 - {username}"
+            
+            try_add(url, post_title, "Threads", keyword, date_text=date_text, require_relevance=False)
+    except Exception as yahoo_threads_err:
+        print(f"[Social Scraper] Yahoo search Threads booster error: {yahoo_threads_err}")
+
     print(f"[Social Scraper] Found {len(items)} valid social posts for keyword '{keyword}'")
     return items
 
