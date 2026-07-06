@@ -124,43 +124,48 @@ def read_news(
     """
     Fetch paginated news collected from RSS. (Guarded by Password JWT)
     """
-    from datetime import datetime, timedelta
-    from sqlalchemy import or_, and_
-    
-    query = db.query(models.News)
-    if keyword:
-        query = query.filter(models.News.keyword == keyword)
+    try:
+        from datetime import datetime, timedelta, timezone
+        from sqlalchemy import or_, and_
         
-    # Recency filter: Keep all traditional news, but filter social posts to past 7 days
-    # criteria: crawled_at >= now - 7 days, or created_at >= now - 7 days if crawled_at is null
-    now = datetime.utcnow()
-    one_week_ago = now - timedelta(days=7)
-    SOCIAL_SOURCES = ["Dcard", "PTT", "Threads", "Instagram"]
-    
-    is_social = models.News.source.in_(SOCIAL_SOURCES)
-    is_news = ~models.News.source.in_(SOCIAL_SOURCES)
-    
-    social_valid_crawled = and_(
-        models.News.crawled_at.isnot(None),
-        models.News.crawled_at >= one_week_ago
-    )
-    social_valid_created = and_(
-        models.News.crawled_at.is_(None),
-        models.News.created_at >= one_week_ago
-    )
-    
-    social_filter = and_(
-        is_social,
-        or_(social_valid_crawled, social_valid_created)
-    )
-    
-    query = query.filter(or_(is_news, social_filter))
-    
-    total = query.count()
-    items = query.order_by(
-        func.coalesce(models.News.publish_time, models.News.crawled_at, models.News.created_at).desc()
-    ).offset(skip).limit(limit).all()
-    return {"total": total, "items": items}
+        query = db.query(models.News)
+        if keyword:
+            query = query.filter(models.News.keyword == keyword)
+            
+        # Try using timezone-aware UTC datetime
+        now = datetime.now(timezone.utc)
+        one_week_ago = now - timedelta(days=7)
+        SOCIAL_SOURCES = ["Dcard", "PTT", "Threads", "Instagram"]
+        
+        is_social = models.News.source.in_(SOCIAL_SOURCES)
+        is_news = ~models.News.source.in_(SOCIAL_SOURCES)
+        
+        social_valid_crawled = and_(
+            models.News.crawled_at.isnot(None),
+            models.News.crawled_at >= one_week_ago
+        )
+        social_valid_created = and_(
+            models.News.crawled_at.is_(None),
+            models.News.created_at >= one_week_ago
+        )
+        
+        social_filter = and_(
+            is_social,
+            or_(social_valid_crawled, social_valid_created)
+        )
+        
+        query = query.filter(or_(is_news, social_filter))
+        
+        total = query.count()
+        items = query.order_by(
+            func.coalesce(models.News.publish_time, models.News.crawled_at, models.News.created_at).desc()
+        ).offset(skip).limit(limit).all()
+        return {"total": total, "items": items}
+    except Exception as e:
+        import traceback
+        err_msg = traceback.format_exc()
+        print(f"Error in read_news: {err_msg}")
+        raise HTTPException(status_code=500, detail=f"Database query error: {str(e)}\n{err_msg}")
 
 @app.post("/api/news/fetch")
 def trigger_fetch(background_tasks: BackgroundTasks, user: str = Depends(auth.verify_token)):
