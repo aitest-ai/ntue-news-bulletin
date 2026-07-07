@@ -86,8 +86,7 @@ def fetch_google_news_rss(keyword: str) -> List[Dict[str, Any]]:
     Fetches and parses Google News RSS feed for a specific keyword.
     Uses hl=zh-TW and gl=TW to target Taiwanese traditional Chinese news content.
     """
-    # Append +when:14d to strictly limit Google News to the past 14 days
-    encoded_keyword = urllib.parse.quote(f"{keyword} when:14d")
+    encoded_keyword = urllib.parse.quote(keyword)
     url = f"https://news.google.com/rss/search?q={encoded_keyword}&hl=zh-TW&gl=TW&ceid=TW:zh-Hant"
     
     headers = {
@@ -126,9 +125,9 @@ def fetch_google_news_rss(keyword: str) -> List[Dict[str, Any]]:
                     else:
                         publish_time = dt
                 except Exception:
-                    publish_time = now_taipei()
+                    continue
             else:
-                publish_time = now_taipei()
+                continue
                 
             source = "Google News"
             if source_elem is not None and source_elem.text:
@@ -144,13 +143,6 @@ def fetch_google_news_rss(keyword: str) -> List[Dict[str, Any]]:
             elif " - " in title:
                 parts = title.rsplit(" - ", 1)
                 clean_title = parts[0]
-                
-            # STRICT RELEVANCE: Ensure the keyword is actually in the title
-            kw_normalized = keyword.replace("臺", "台").lower()
-            title_normalized = clean_title.replace("臺", "台").lower()
-            if kw_normalized not in title_normalized:
-                print(f"[Google News] Skipping irrelevant news: {clean_title}")
-                continue
                 
             items.append({
                 "title": clean_title.strip(),
@@ -193,7 +185,7 @@ def is_real_social_post(url: str) -> bool:
 
 def parse_yahoo_date(date_str: str) -> datetime:
     if not date_str or date_str == "None":
-        return now_taipei()
+        return None
         
     date_str = date_str.strip().lower()
     
@@ -227,7 +219,7 @@ def parse_yahoo_date(date_str: str) -> datetime:
         y, m, d = int(dash_match.group(1)), int(dash_match.group(2)), int(dash_match.group(3))
         return datetime(y, m, d)
         
-    return now_taipei()
+    return None
 
 NTUE_RELEVANCE_TERMS = [
     "國北教大", "北教大", "國立臺北教育大學", "臺北教育大學", "台北教育大學",
@@ -966,13 +958,6 @@ def fetch_social_via_google_news(keyword: str) -> List[Dict[str, Any]]:
                 if " - " in title:
                     clean_title = title.rsplit(" - ", 1)[0]
 
-                # STRICT RELEVANCE: Ensure the keyword is actually in the title
-                kw_normalized = keyword.replace("臺", "台").lower()
-                title_normalized = clean_title.replace("臺", "台").lower()
-                if kw_normalized not in title_normalized:
-                    print(f"[Google Social] Skipping irrelevant post: {clean_title}")
-                    continue
-
                 seen_urls.add(resolved_link)
                 items.append({
                     "title": clean_title.strip(),
@@ -1140,9 +1125,9 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
             except Exception:
                 pass
                 
-        # Final fallback: default to current time to avoid None (shows as 1970/1/1 or Time Unknown)
+        # Final fallback: drop post if date is unknown to prevent old posts from appearing as new
         if publish_time is None:
-            publish_time = now_taipei()
+            return
 
         # Filter to past 30 days (only if publish_time is parsed and NOT Threads)
         if source != "Threads" and publish_time is not None:
@@ -1165,11 +1150,10 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
 
     # ── 1. Dcard: search dedicated NTUE board only ──────────────────────────
     print(f"[Social Scraper] Searching Dcard NTUE board...")
-    # Add keyword to search query so we don't just fetch random posts
-    for url, title, date_text in yahoo_search(f"{keyword} site:dcard.tw/f/ntue", use_btf=True):
+    for url, title, date_text in yahoo_search("site:dcard.tw/f/ntue"):
         if "dcard.tw" not in url.lower():
             continue
-        try_add(url, title, "Dcard", keyword, date_text=date_text, require_relevance=True)
+        try_add(url, title, "Dcard", keyword, date_text=date_text, require_relevance=False)
     time.sleep(2.0 + random.random() * 2.0)
 
     # ── 3. Threads: Dedicated official API & Playwright crawler ──────────────────
