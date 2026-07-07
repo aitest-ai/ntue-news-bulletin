@@ -145,6 +145,13 @@ def fetch_google_news_rss(keyword: str) -> List[Dict[str, Any]]:
                 parts = title.rsplit(" - ", 1)
                 clean_title = parts[0]
                 
+            # STRICT RELEVANCE: Ensure the keyword is actually in the title
+            kw_normalized = keyword.replace("臺", "台").lower()
+            title_normalized = clean_title.replace("臺", "台").lower()
+            if kw_normalized not in title_normalized:
+                print(f"[Google News] Skipping irrelevant news: {clean_title}")
+                continue
+                
             items.append({
                 "title": clean_title.strip(),
                 "url": link,
@@ -959,6 +966,13 @@ def fetch_social_via_google_news(keyword: str) -> List[Dict[str, Any]]:
                 if " - " in title:
                     clean_title = title.rsplit(" - ", 1)[0]
 
+                # STRICT RELEVANCE: Ensure the keyword is actually in the title
+                kw_normalized = keyword.replace("臺", "台").lower()
+                title_normalized = clean_title.replace("臺", "台").lower()
+                if kw_normalized not in title_normalized:
+                    print(f"[Google Social] Skipping irrelevant post: {clean_title}")
+                    continue
+
                 seen_urls.add(resolved_link)
                 items.append({
                     "title": clean_title.strip(),
@@ -1151,10 +1165,11 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
 
     # ── 1. Dcard: search dedicated NTUE board only ──────────────────────────
     print(f"[Social Scraper] Searching Dcard NTUE board...")
-    for url, title, date_text in yahoo_search("site:dcard.tw/f/ntue", use_btf=True):
+    # Add keyword to search query so we don't just fetch random posts
+    for url, title, date_text in yahoo_search(f"{keyword} site:dcard.tw/f/ntue", use_btf=True):
         if "dcard.tw" not in url.lower():
             continue
-        try_add(url, title, "Dcard", keyword, date_text=date_text, require_relevance=False)
+        try_add(url, title, "Dcard", keyword, date_text=date_text, require_relevance=True)
     time.sleep(2.0 + random.random() * 2.0)
 
     # ── 3. Threads: Dedicated official API & Playwright crawler ──────────────────
