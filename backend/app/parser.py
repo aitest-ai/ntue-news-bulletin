@@ -1088,6 +1088,10 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
         # Skip Facebook entirely
         if "facebook.com" in url_lower or "fb.com" in url_lower:
             return
+            
+        # Hardcoded blacklist for specific buggy/old URLs returned by Google News
+        if "setn.com/news/240258" in url_lower:
+            return
         
         # Dedup
         if url in seen_urls:
