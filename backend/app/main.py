@@ -72,7 +72,7 @@ async def lifespan(app: FastAPI):
 
     # Start APScheduler background tasks
     # Initialize default jobs in the DB if empty
-    db = database.SessionLocal()
+    db = SessionLocal()
     try:
         scheduler.init_default_jobs(db)
     finally:
@@ -82,8 +82,6 @@ async def lifespan(app: FastAPI):
     # Auto-fetching on cold start causes Render free-tier to run out of resources and restart endlessly.
         
     yield
-    # Safely shutdown APScheduler on app termination
-    scheduler.scheduler.shutdown()
 
 app = FastAPI(
     title="NTUE Bulletin Board API",
@@ -413,7 +411,7 @@ def get_scheduler_jobs(user: str = Depends(auth.verify_token)):
     """
     List all active scheduled background tasks. (Guarded by Password JWT)
     """
-    db = database.SessionLocal()
+    db = SessionLocal()
     try:
         jobs = []
         db_jobs = db.query(models.ScheduledJob).order_by(models.ScheduledJob.hour, models.ScheduledJob.minute).all()
@@ -444,7 +442,7 @@ def create_scheduler_job(req: schemas.JobCreate, user: str = Depends(auth.verify
     job_id = f"news_fetch_{req.hour}_{req.minute}"
     job_name = f"自動抓取新聞 {req.hour}:{str(req.minute).zfill(2)}"
     
-    db = database.SessionLocal()
+    db = SessionLocal()
     try:
         existing_job = db.query(models.ScheduledJob).filter(models.ScheduledJob.id == job_id).first()
         if existing_job:
@@ -484,7 +482,7 @@ def trigger_scheduler_job(
     """
     Trigger a scheduled job to run immediately in a background task. (Guarded by Password JWT)
     """
-    db = database.SessionLocal()
+    db = SessionLocal()
     try:
         job = db.query(models.ScheduledJob).filter(models.ScheduledJob.id == job_id).first()
         if not job:
@@ -500,7 +498,7 @@ def toggle_scheduler_job(job_id: str, user: str = Depends(auth.verify_token)):
     """
     Pause or resume a scheduled job in real time. (Guarded by Password JWT)
     """
-    db = database.SessionLocal()
+    db = SessionLocal()
     try:
         job = db.query(models.ScheduledJob).filter(models.ScheduledJob.id == job_id).first()
         if not job:
@@ -524,7 +522,7 @@ def remove_scheduler_job(job_id: str, user: str = Depends(auth.verify_token)):
     """
     Delete a job from the scheduler memory. (Guarded by Password JWT)
     """
-    db = database.SessionLocal()
+    db = SessionLocal()
     try:
         job = db.query(models.ScheduledJob).filter(models.ScheduledJob.id == job_id).first()
         if not job:
@@ -541,7 +539,7 @@ def reset_scheduler_jobs(user: str = Depends(auth.verify_token)):
     """
     Reset scheduler tasks back to default settings. (Guarded by Password JWT)
     """
-    db = database.SessionLocal()
+    db = SessionLocal()
     try:
         db.query(models.ScheduledJob).delete()
         db.commit()
@@ -561,7 +559,7 @@ def tick_scheduler(background_tasks: BackgroundTasks):
     tz = pytz.timezone("Asia/Taipei")
     now = datetime.now(tz)
     
-    db = database.SessionLocal()
+    db = SessionLocal()
     try:
         jobs = db.query(models.ScheduledJob).filter(models.ScheduledJob.paused == 0).all()
         triggered = False
