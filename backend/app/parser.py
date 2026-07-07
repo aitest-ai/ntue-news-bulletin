@@ -81,79 +81,6 @@ def resolve_google_news_link(url: str) -> str:
         return url
 
 
-def verify_true_publish_date(url: str, max_days_old: int = 14) -> bool:
-    """
-    Fetches the HTML of the article and parses metadata/text to find the TRUE publish date.
-    Returns True if the article is recent (within max_days_old) or if date cannot be determined.
-    Returns False if it is confidently determined to be older than max_days_old.
-    """
-    try:
-        from bs4 import BeautifulSoup
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        }
-        r = httpx.get(url, headers=headers, timeout=10.0, follow_redirects=True)
-        if r.status_code != 200:
-            return True # If we can't fetch it, give it the benefit of the doubt
-            
-        soup = BeautifulSoup(r.text, 'html.parser')
-        extracted_date = None
-        
-        # 1. Check meta tags
-        meta_pub1 = soup.find('meta', property='article:published_time')
-        if meta_pub1 and meta_pub1.get('content'):
-            extracted_date = meta_pub1.get('content')
-            
-        if not extracted_date:
-            meta_pub2 = soup.find('meta', attrs={'name': 'pubdate'})
-            if meta_pub2 and meta_pub2.get('content'):
-                extracted_date = meta_pub2.get('content')
-                
-        if not extracted_date:
-            meta_pub3 = soup.find('meta', attrs={'name': 'datePublished'})
-            if meta_pub3 and meta_pub3.get('content'):
-                extracted_date = meta_pub3.get('content')
-                
-        # 2. Check time tag
-        if not extracted_date:
-            time_tag = soup.find('time')
-            if time_tag and time_tag.get('datetime'):
-                extracted_date = time_tag.get('datetime')
-            elif time_tag and time_tag.text:
-                extracted_date = time_tag.text
-                
-        # 3. Regex on the page text
-        if not extracted_date:
-            text = soup.get_text()
-            match = re.search(r'20\d{2}[-/]\d{2}[-/]\d{2}', text)
-            if match:
-                extracted_date = match.group(0)
-                
-        if not extracted_date:
-            print(f"[Parser] REJECTED ARTICLE (NO DATE FOUND): {url}")
-            return True # Vercel fallback: If we cannot verify the date (e.g. due to IP block), allow it and trust RSS date
-            
-        # Parse the extracted date
-        dt = None
-        try:
-            m = re.search(r'(\d{4})[-/](\d{1,2})[-/](\d{1,2})', extracted_date)
-            if m:
-                dt = datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)))
-        except Exception:
-            pass
-            
-        if dt:
-            now = now_taipei()
-            age = (now - dt).days
-            if age > max_days_old:
-                print(f"[Parser] REJECTED OLD ARTICLE: {url} (Age: {age} days, True Date: {dt.strftime('%Y-%m-%d')})")
-                return False
-                
-        return True
-    except Exception as e:
-        print(f"[Parser] Verification failed for {url}: {e}")
-        return True # Vercel fallback: On error, allow it and trust RSS date
-
 
 def fetch_google_news_rss(keyword: str) -> List[Dict[str, Any]]:
     """
@@ -204,11 +131,6 @@ def fetch_google_news_rss(keyword: str) -> List[Dict[str, Any]]:
             if "三立" in source or "setn" in source.lower():
                 print(f"[Parser] REJECTED BLACKLISTED SOURCE: {source}")
                 continue
-
-            # Verify the true publish date of the article by fetching its HTML
-            if link:
-                if not verify_true_publish_date(link, max_days_old=60):
-                    continue
             
             publish_time = None
             if pub_date_elem is not None and pub_date_elem.text:
