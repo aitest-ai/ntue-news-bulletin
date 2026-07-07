@@ -207,7 +207,7 @@ def fetch_google_news_rss(keyword: str) -> List[Dict[str, Any]]:
 
             # Verify the true publish date of the article by fetching its HTML
             if link:
-                if not verify_true_publish_date(link, max_days_old=14):
+                if not verify_true_publish_date(link, max_days_old=60):
                     continue
             
             publish_time = None
@@ -232,7 +232,7 @@ def fetch_google_news_rss(keyword: str) -> List[Dict[str, Any]]:
                 
             if publish_time is not None:
                 age_days = (now_taipei() - publish_time).days
-                if age_days > 14:
+                if age_days > 60:
                     print(f"[Parser] Filtered {clean_title.strip()[:30]} from RSS because it is {age_days} days old")
                     continue
                 
