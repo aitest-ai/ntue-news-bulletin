@@ -2,18 +2,37 @@ name: Daily News Fetch Cron
 
 on:
   schedule:
-    # Run every 15 minutes during specific UTC hours to save GitHub Actions minutes
-    # Taiwan Time (UTC+8): 07:00-10:59 and 16:00-18:59
-    # UTC Time: 23,0,1,2 and 8,9,10
-    - cron: "*/15 23,0,1,2,8,9,10 * * *"
+    # Run every 2 hours
+    - cron: "0 */2 * * *"
   workflow_dispatch: # Allow manual trigger from GitHub UI
+  repository_dispatch:
+    types: [trigger-fetch]
 
 jobs:
-  ping_backend:
+  run_scraper:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Scheduler Tick
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      - name: Install Dependencies
         run: |
-          echo "Pinging the backend scheduler tick endpoint..."
-          curl -X POST https://ntue-news-bulletin-backend.onrender.com/api/scheduler/tick
-          echo -e "\nDone!"
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          python -m playwright install chromium
+
+      - name: Run Scraper
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+        run: |
+          cd backend
+          python run_scraper.py
