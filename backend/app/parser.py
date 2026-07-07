@@ -115,6 +115,9 @@ def fetch_google_news_rss(keyword: str) -> List[Dict[str, Any]]:
             # Resolve Google News redirect URL to direct website URL
             if link:
                 link = resolve_google_news_link(link)
+                
+            if "setn.com/news/240258" in link.lower():
+                continue
             
             publish_time = None
             if pub_date_elem is not None and pub_date_elem.text:
