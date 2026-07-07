@@ -225,6 +225,12 @@ def fetch_google_news_rss(keyword: str) -> List[Dict[str, Any]]:
                 parts = title.rsplit(" - ", 1)
                 clean_title = parts[0]
                 
+            if publish_time is not None:
+                age_days = (now_taipei() - publish_time).days
+                if age_days > 14:
+                    print(f"[Parser] Filtered {clean_title.strip()[:30]} from RSS because it is {age_days} days old")
+                    continue
+                
             items.append({
                 "title": clean_title.strip(),
                 "url": link,
