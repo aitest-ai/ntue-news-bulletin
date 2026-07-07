@@ -400,11 +400,11 @@ def delete_keyword(keyword_id: int, db: Session = Depends(get_db), user: str = D
     db.commit()
     return {"message": "已刪除"}
 
-@app.post("/api/admin/wipe-threads")
-def wipe_threads(db: Session = Depends(get_db), user: str = Depends(auth.verify_token)):
-    deleted = db.query(models.News).filter(models.News.source == 'Threads').delete()
+@app.post("/api/admin/wipe-all")
+def wipe_all(db: Session = Depends(get_db), user: str = Depends(auth.verify_token)):
+    deleted = db.query(models.News).delete()
     db.commit()
-    return {"message": f"Successfully wiped {deleted} old Threads posts!"}
+    return {"message": f"Successfully wiped {deleted} old posts. Database is now clean!"}
 
 @app.get("/api/scheduler/jobs", response_model=List[schemas.JobResponse])
 def get_scheduler_jobs(user: str = Depends(auth.verify_token)):

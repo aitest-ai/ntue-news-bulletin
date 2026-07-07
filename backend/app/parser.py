@@ -86,7 +86,8 @@ def fetch_google_news_rss(keyword: str) -> List[Dict[str, Any]]:
     Fetches and parses Google News RSS feed for a specific keyword.
     Uses hl=zh-TW and gl=TW to target Taiwanese traditional Chinese news content.
     """
-    encoded_keyword = urllib.parse.quote(keyword)
+    # Append +when:14d to strictly limit Google News to the past 14 days
+    encoded_keyword = urllib.parse.quote(f"{keyword} when:14d")
     url = f"https://news.google.com/rss/search?q={encoded_keyword}&hl=zh-TW&gl=TW&ceid=TW:zh-Hant"
     
     headers = {
@@ -1150,7 +1151,7 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
 
     # ── 1. Dcard: search dedicated NTUE board only ──────────────────────────
     print(f"[Social Scraper] Searching Dcard NTUE board...")
-    for url, title, date_text in yahoo_search("site:dcard.tw/f/ntue"):
+    for url, title, date_text in yahoo_search("site:dcard.tw/f/ntue", use_btf=True):
         if "dcard.tw" not in url.lower():
             continue
         try_add(url, title, "Dcard", keyword, date_text=date_text, require_relevance=False)

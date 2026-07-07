@@ -1059,6 +1059,23 @@ export default function BulletinBoard() {
                   ※ 變更後的新信箱於「第一次發信」時，會收到一封來自 FormSubmit 的確認啟動信（若尚未啟用過該信箱），點擊信中確認按鈕後即開始自動接收日報。如果您的伺服器配置了 SMTP 發信（如 Gmail 帳密），信件將會經由您的 Gmail 帳號發送，且不需要任何確認。
                 </p>
               </div>
+
+              {/* Wipe All Data Section */}
+              <div className="glass-panel" style={{ padding: "1.5rem", marginTop: "2.5rem", border: "1px solid #ff4d4f" }}>
+                <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "#ff4d4f", marginBottom: "0.5rem" }}>
+                  危險操作：清除所有舊資料
+                </h3>
+                <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", marginBottom: "1rem", lineHeight: 1.4 }}>
+                  如果您發現系統抓到了年代久遠的舊新聞，您可以點擊下方按鈕將資料庫內所有的舊新聞與社群貼文刪除。刪除後，請回到「新聞佈告欄」分頁點擊「立即抓取」來重新蒐集最新的資料（約需等待 3~5 分鐘）。
+                </p>
+                <button
+                  className="btn btn-danger-outline"
+                  style={{ width: "auto", display: "inline-block" }}
+                  onClick={handleWipeAll}
+                >
+                  清除所有新聞與貼文資料
+                </button>
+              </div>
             </div>
           )}
         </section>
