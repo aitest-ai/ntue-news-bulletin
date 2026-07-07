@@ -131,7 +131,7 @@ def verify_true_publish_date(url: str, max_days_old: int = 14) -> bool:
                 
         if not extracted_date:
             print(f"[Parser] REJECTED ARTICLE (NO DATE FOUND): {url}")
-            return False # STRICT MODE: If we cannot verify the date, we drop it to prevent old news from slipping through
+            return True # Vercel fallback: If we cannot verify the date (e.g. due to IP block), allow it and trust RSS date
             
         # Parse the extracted date
         dt = None
@@ -152,7 +152,7 @@ def verify_true_publish_date(url: str, max_days_old: int = 14) -> bool:
         return True
     except Exception as e:
         print(f"[Parser] Verification failed for {url}: {e}")
-        return False # STRICT MODE: On error, drop it
+        return True # Vercel fallback: On error, allow it and trust RSS date
 
 
 def fetch_google_news_rss(keyword: str) -> List[Dict[str, Any]]:
