@@ -1,12 +1,9 @@
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.cron import CronTrigger
 from datetime import datetime
 import pytz
 
 from .database import SessionLocal
 from . import models, parser
 
-scheduler = BackgroundScheduler()
 
 LAST_FETCH_TRACE = {
     "status": "never_run",
@@ -141,59 +138,29 @@ def fetch_all_keywords_news():
         db.close()
         FETCH_LOCK.release()
 
-def start_scheduler():
-    # Ensure default keywords exist in database before starting
-    db = SessionLocal()
-    try:
-        keywords = db.query(models.Keyword).all()
-        if not keywords:
-            default_words = [
-                "國立臺北教育大學",
-                "國北教大",
-                "北教大",
-                "NTUE",
-                "National Taipei University of Education"
-            ]
-            for word in default_words:
-                db.add(models.Keyword(word=word))
-            db.commit()
-            print("Default keywords seeded in database.")
-    except Exception as e:
-        print(f"Error seeding database keywords on startup: {e}")
-        db.rollback()
-    finally:
-        db.close()
-
-    # Timezone Asia/Taipei
-    tz = pytz.timezone("Asia/Taipei")
-
-    # Cron timings: 
-    # Morning: 07:30, 08:00, 08:30, 09:00, 09:30, 10:00 Taipei time
-    # Evening: 16:00, 16:30, 17:00, 17:30, 18:00 Taipei time
-    fetch_times = [
-        ("7", "30"),
-        ("8", "0"),
-        ("8", "30"),
-        ("9", "0"),
-        ("9", "30"),
-        ("10", "0"),
-        ("16", "0"),
-        ("16", "30"),
-        ("17", "0"),
-        ("17", "30"),
-        ("18", "0")
-    ]
-    
-    for h, m in fetch_times:
-        job_id = f"news_fetch_{h}_{m}"
-        job_name = f"自動抓取新聞 {h}:{m.zfill(2)}"
-        scheduler.add_job(
-            fetch_all_keywords_news,
-            CronTrigger(hour=h, minute=m, timezone=tz),
-            id=job_id,
-            name=job_name,
-            replace_existing=True
-        )
+def init_default_jobs(db):
+    """
+    Initialize default scheduled jobs in the database if empty.
+    """
+    job_count = db.query(models.ScheduledJob).count()
+    if job_count == 0:
+        fetch_times = [
+            ("7", "30"), ("8", "0"), ("8", "30"),
+            ("9", "0"), ("9", "30"), ("10", "0"),
+            ("16", "0"), ("16", "30"), ("17", "0"),
+            ("17", "30"), ("18", "0")
+        ]
         
-    scheduler.start()
-    print(f"APScheduler workers started. Registered {len(fetch_times)} daily cron triggers.")
+        for h, m in fetch_times:
+            job_id = f"news_fetch_{h}_{m}"
+            job_name = f"自動抓取新聞 {h}:{m.zfill(2)}"
+            new_job = models.ScheduledJob(
+                id=job_id,
+                name=job_name,
+                hour=int(h),
+                minute=int(m),
+                paused=0
+            )
+            db.add(new_job)
+        db.commit()
+        print(f"Initialized {len(fetch_times)} default jobs in DB.")

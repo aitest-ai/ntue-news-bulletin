@@ -71,7 +71,12 @@ async def lifespan(app: FastAPI):
         db.close()
 
     # Start APScheduler background tasks
-    scheduler.start_scheduler()
+    # Initialize default jobs in the DB if empty
+    db = database.SessionLocal()
+    try:
+        scheduler.init_default_jobs(db)
+    finally:
+        db.close()
     
     # NOTE: Do NOT auto-fetch on startup. The scheduler cron jobs will handle populating data.
     # Auto-fetching on cold start causes Render free-tier to run out of resources and restart endlessly.
@@ -408,20 +413,24 @@ def get_scheduler_jobs(user: str = Depends(auth.verify_token)):
     """
     List all active scheduled background tasks. (Guarded by Password JWT)
     """
-    jobs = []
-    for job in scheduler.scheduler.get_jobs():
-        next_run = None
-        if job.next_run_time:
-            next_run = job.next_run_time.isoformat()
-            
-        jobs.append({
-            "id": job.id,
-            "name": job.name or job.id,
-            "trigger": str(job.trigger),
-            "next_run_time": next_run,
-            "paused": job.next_run_time is None
-        })
-    return jobs
+    db = database.SessionLocal()
+    try:
+        jobs = []
+        db_jobs = db.query(models.ScheduledJob).order_by(models.ScheduledJob.hour, models.ScheduledJob.minute).all()
+        for j in db_jobs:
+            # We don't have APScheduler to calculate next_run_time natively, 
+            # so we'll just format the trigger as string for the frontend.
+            trigger_str = f"cron[hour='{j.hour}', minute='{j.minute}']"
+            jobs.append({
+                "id": j.id,
+                "name": j.name,
+                "trigger": trigger_str,
+                "next_run_time": None,
+                "paused": bool(j.paused)
+            })
+        return jobs
+    finally:
+        db.close()
 
 @app.post("/api/scheduler/jobs", response_model=schemas.JobResponse)
 def create_scheduler_job(req: schemas.JobCreate, user: str = Depends(auth.verify_token)):
@@ -435,33 +444,36 @@ def create_scheduler_job(req: schemas.JobCreate, user: str = Depends(auth.verify
     job_id = f"news_fetch_{req.hour}_{req.minute}"
     job_name = f"自動抓取新聞 {req.hour}:{str(req.minute).zfill(2)}"
     
-    # Check if a job with this ID already exists
-    existing_job = scheduler.scheduler.get_job(job_id)
-    if existing_job:
-        raise HTTPException(status_code=400, detail=f"已存在該時段 ({req.hour}:{str(req.minute).zfill(2)}) 的抓取任務！")
-        
+    db = database.SessionLocal()
     try:
-        job = scheduler.scheduler.add_job(
-            scheduler.fetch_all_keywords_news,
-            CronTrigger(hour=str(req.hour), minute=str(req.minute), timezone=tz),
+        existing_job = db.query(models.ScheduledJob).filter(models.ScheduledJob.id == job_id).first()
+        if existing_job:
+            raise HTTPException(status_code=400, detail=f"已存在該時段 ({req.hour}:{str(req.minute).zfill(2)}) 的抓取任務！")
+            
+        new_job = models.ScheduledJob(
             id=job_id,
             name=job_name,
-            replace_existing=True
+            hour=req.hour,
+            minute=req.minute,
+            paused=0
         )
+        db.add(new_job)
+        db.commit()
         
-        next_run = None
-        if job.next_run_time:
-            next_run = job.next_run_time.isoformat()
-            
         return {
-            "id": job.id,
-            "name": job.name or job.id,
-            "trigger": str(job.trigger),
-            "next_run_time": next_run,
+            "id": new_job.id,
+            "name": new_job.name,
+            "trigger": f"cron[hour='{new_job.hour}', minute='{new_job.minute}']",
+            "next_run_time": None,
             "paused": False
         }
+    except HTTPException:
+        raise
     except Exception as e:
+        db.rollback()
         raise HTTPException(status_code=500, detail=f"註冊任務失敗: {str(e)}")
+    finally:
+        db.close()
 
 @app.post("/api/scheduler/jobs/{job_id}/run")
 def trigger_scheduler_job(
@@ -472,11 +484,15 @@ def trigger_scheduler_job(
     """
     Trigger a scheduled job to run immediately in a background task. (Guarded by Password JWT)
     """
-    job = scheduler.scheduler.get_job(job_id)
-    if not job:
-        raise HTTPException(status_code=404, detail="找不到此任務")
+    db = database.SessionLocal()
+    try:
+        job = db.query(models.ScheduledJob).filter(models.ScheduledJob.id == job_id).first()
+        if not job:
+            raise HTTPException(status_code=404, detail="找不到此任務")
+    finally:
+        db.close()
         
-    background_tasks.add_task(job.func)
+    background_tasks.add_task(scheduler.fetch_all_keywords_news)
     return {"message": f"任務 '{job_id}' 已成功在背景觸發執行。"}
 
 @app.post("/api/scheduler/jobs/{job_id}/toggle", response_model=schemas.JobResponse)
@@ -484,39 +500,40 @@ def toggle_scheduler_job(job_id: str, user: str = Depends(auth.verify_token)):
     """
     Pause or resume a scheduled job in real time. (Guarded by Password JWT)
     """
-    job = scheduler.scheduler.get_job(job_id)
-    if not job:
-        raise HTTPException(status_code=404, detail="找不到此任務")
+    db = database.SessionLocal()
+    try:
+        job = db.query(models.ScheduledJob).filter(models.ScheduledJob.id == job_id).first()
+        if not job:
+            raise HTTPException(status_code=404, detail="找不到此任務")
+            
+        job.paused = 0 if job.paused else 1
+        db.commit()
         
-    if job.next_run_time is None:
-        job.resume()
-        paused = False
-    else:
-        job.pause()
-        paused = True
-        
-    next_run = None
-    if job.next_run_time:
-        next_run = job.next_run_time.isoformat()
-        
-    return {
-        "id": job.id,
-        "name": job.name or job.id,
-        "trigger": str(job.trigger),
-        "next_run_time": next_run,
-        "paused": paused
-    }
+        return {
+            "id": job.id,
+            "name": job.name,
+            "trigger": f"cron[hour='{job.hour}', minute='{job.minute}']",
+            "next_run_time": None,
+            "paused": bool(job.paused)
+        }
+    finally:
+        db.close()
 
 @app.delete("/api/scheduler/jobs/{job_id}")
 def remove_scheduler_job(job_id: str, user: str = Depends(auth.verify_token)):
     """
     Delete a job from the scheduler memory. (Guarded by Password JWT)
     """
-    job = scheduler.scheduler.get_job(job_id)
-    if not job:
-        raise HTTPException(status_code=404, detail="找不到此任務")
-        
-    job.remove()
+    db = database.SessionLocal()
+    try:
+        job = db.query(models.ScheduledJob).filter(models.ScheduledJob.id == job_id).first()
+        if not job:
+            raise HTTPException(status_code=404, detail="找不到此任務")
+            
+        db.delete(job)
+        db.commit()
+    finally:
+        db.close()
     return {"message": f"任務 '{job_id}' 已成功從排程記憶體中移除。"}
 
 @app.post("/api/scheduler/jobs/reset")
@@ -524,40 +541,44 @@ def reset_scheduler_jobs(user: str = Depends(auth.verify_token)):
     """
     Reset scheduler tasks back to default settings. (Guarded by Password JWT)
     """
-    # Remove existing cron jobs
-    for job in scheduler.scheduler.get_jobs():
-        scheduler.scheduler.remove_job(job.id)
-            
-    # Timezone Asia/Taipei
-    tz = pytz.timezone("Asia/Taipei")
-
-    # Re-register 7:30 - 10:00 and 16:00 - 18:00 triggers
-    fetch_times = [
-        ("7", "30"),
-        ("8", "0"),
-        ("8", "30"),
-        ("9", "0"),
-        ("9", "30"),
-        ("10", "0"),
-        ("16", "0"),
-        ("16", "30"),
-        ("17", "0"),
-        ("17", "30"),
-        ("18", "0")
-    ]
-    
-    for h, m in fetch_times:
-        job_id = f"news_fetch_{h}_{m}"
-        job_name = f"自動抓取新聞 {h}:{m.zfill(2)}"
-        scheduler.scheduler.add_job(
-            scheduler.fetch_all_keywords_news,
-            CronTrigger(hour=h, minute=m, timezone=tz),
-            id=job_id,
-            name=job_name,
-            replace_existing=True
-        )
-    
+    db = database.SessionLocal()
+    try:
+        db.query(models.ScheduledJob).delete()
+        db.commit()
+        scheduler.init_default_jobs(db)
+    finally:
+        db.close()
+        
     return {"message": "系統已成功還原預設定時排程。"}
+
+@app.post("/api/scheduler/tick")
+def tick_scheduler(background_tasks: BackgroundTasks):
+    """
+    Called by GitHub Actions cron periodically to trigger due jobs.
+    """
+    from datetime import datetime
+    import pytz
+    tz = pytz.timezone("Asia/Taipei")
+    now = datetime.now(tz)
+    
+    db = database.SessionLocal()
+    try:
+        jobs = db.query(models.ScheduledJob).filter(models.ScheduledJob.paused == 0).all()
+        triggered = False
+        for job in jobs:
+            now_mins = now.hour * 60 + now.minute
+            job_mins = job.hour * 60 + job.minute
+            diff = (now_mins - job_mins) % 1440
+            
+            # If the tick happens within 15 minutes after the scheduled time, trigger it
+            if diff < 15:
+                background_tasks.add_task(scheduler.fetch_all_keywords_news)
+                triggered = True
+                break # only trigger once even if multiple jobs match
+                
+        return {"message": "Tick successful.", "triggered": triggered, "time": str(now)}
+    finally:
+        db.close()
 
 @app.get("/api/debug/install-playwright")
 def debug_install_playwright():

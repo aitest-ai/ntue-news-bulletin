@@ -1,0 +1,19 @@
+name: Daily News Fetch Cron
+
+on:
+  schedule:
+    # Run every 15 minutes during specific UTC hours to save GitHub Actions minutes
+    # Taiwan Time (UTC+8): 07:00-10:59 and 16:00-18:59
+    # UTC Time: 23,0,1,2 and 8,9,10
+    - cron: "*/15 23,0,1,2,8,9,10 * * *"
+  workflow_dispatch: # Allow manual trigger from GitHub UI
+
+jobs:
+  ping_backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Scheduler Tick
+        run: |
+          echo "Pinging the backend scheduler tick endpoint..."
+          curl -X POST https://ntue-news-bulletin-backend.onrender.com/api/scheduler/tick
+          echo -e "\nDone!"

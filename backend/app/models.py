@@ -27,3 +27,12 @@ class SystemSetting(Base):
     key = Column(String(255), unique=True, index=True, nullable=False)
     value = Column(Text, nullable=True)
 
+class ScheduledJob(Base):
+    __tablename__ = "scheduled_jobs"
+
+    id = Column(String(255), primary_key=True, index=True)
+    name = Column(String(255), nullable=False)
+    hour = Column(Integer, nullable=False)
+    minute = Column(Integer, nullable=False)
+    paused = Column(Integer, default=0) # 0 = active, 1 = paused
+
