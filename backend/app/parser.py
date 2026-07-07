@@ -193,6 +193,18 @@ def fetch_google_news_rss(keyword: str) -> List[Dict[str, Any]]:
             if "setn.com/news/240258" in link.lower():
                 continue
                 
+            source = "Google News"
+            if source_elem is not None and source_elem.text:
+                source = source_elem.text
+            elif " - " in title:
+                parts = title.rsplit(" - ", 1)
+                if len(parts) > 1:
+                    source = parts[1]
+                    
+            if "三立" in source or "setn" in source.lower():
+                print(f"[Parser] REJECTED BLACKLISTED SOURCE: {source}")
+                continue
+
             # Verify the true publish date of the article by fetching its HTML
             if link:
                 if not verify_true_publish_date(link, max_days_old=14):
@@ -211,14 +223,6 @@ def fetch_google_news_rss(keyword: str) -> List[Dict[str, Any]]:
             else:
                 continue
                 
-            source = "Google News"
-            if source_elem is not None and source_elem.text:
-                source = source_elem.text
-            elif " - " in title:
-                parts = title.rsplit(" - ", 1)
-                if len(parts) > 1:
-                    source = parts[1]
-            
             clean_title = title
             if source and title.endswith(f" - {source}"):
                 clean_title = title[:-len(f" - {source}")]
