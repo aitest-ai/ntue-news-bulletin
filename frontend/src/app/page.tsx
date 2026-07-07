@@ -239,6 +239,30 @@ export default function BulletinBoard() {
     }
   };
 
+  // Wipe All Data
+  const handleWipeAll = async () => {
+    if (!window.confirm("警告：這將會清除資料庫內「所有」新聞與社群貼文！您確定要繼續嗎？ (清除後請點擊「立即抓取」重新取得最新 14 天內資料)")) return;
+    
+    try {
+      const res = await safeFetch("/api/admin/wipe-all", {
+        method: "POST",
+        headers: getHeaders()
+      });
+      if (await handleResponse(res)) {
+        if (res.ok) {
+          const data = await res.json();
+          showToast(data.message || "已成功清除所有舊資料！", "success");
+          setNews([]);
+          setTotalNews(0);
+        } else {
+          showToast("清除失敗！", "error");
+        }
+      }
+    } catch (err) {
+      showToast("連線至伺服器失敗", "error");
+    }
+  };
+
   // Add Email to list
   const handleAddEmail = async (e: React.FormEvent) => {
     e.preventDefault();
