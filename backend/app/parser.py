@@ -559,7 +559,15 @@ def fetch_threads_via_googlebot(keyword: str) -> List[Dict[str, Any]]:
                     title_text = f"Threads 貼文 - {kw_var}"
                     
                 taken_at = p.get('taken_at')
-                pub_time = datetime.fromtimestamp(taken_at) if taken_at else now_taipei()
+                pub_time = datetime.fromtimestamp(taken_at) if taken_at else None
+                if pub_time:
+                    age_days = (now_taipei() - pub_time).days
+                    if age_days > 14:
+                        print(f"[Threads Googlebot] Rejected old post: {post_url} (Age: {age_days} days)")
+                        continue
+                else:
+                    pub_time = now_taipei() # Only default if we absolutely have to, but googlebot usually has taken_at
+                    
                 likes = p.get('like_count', 0)
                 
                 results.append({
@@ -783,12 +791,26 @@ def fetch_threads_via_fallback(keyword: str) -> Tuple[List[Dict[str, Any]], List
                             post_title = clean_text[:60] if clean_text else f"Threads 貼文 - {username}"
                             post_excerpt = clean_text[:160] if clean_text else f"從 Threads 搜尋取得之公開貼文。作者: {username}"
                             
+                            # Extract time
+                            time_elem = art.query_selector("time")
+                            pub_time = None
+                            if time_elem:
+                                dt_str = time_elem.get_attribute("datetime")
+                                if dt_str:
+                                    pub_time = parse_iso_datetime(dt_str)
+                            
+                            if pub_time:
+                                age_days = (now_taipei() - pub_time).days
+                                if age_days > 14:
+                                    print(f"[Threads Playwright] Rejected old post: {l} (Age: {age_days} days)")
+                                    continue
+                            
                             seen_urls.add(l)
                             results.append({
                                 "title": post_title.strip(),
                                 "url": l,
                                 "source": "Threads",
-                                "publish_time": None,
+                                "publish_time": pub_time,
                                 "keyword": keyword,
                                 "excerpt": post_excerpt,
                                 "engagement_count": None
@@ -1214,10 +1236,10 @@ def fetch_social_posts(keyword: str) -> List[Dict[str, Any]]:
         if publish_time is None:
             return
 
-        # Filter to past 30 days (only if publish_time is parsed and NOT Threads)
-        if source != "Threads" and publish_time is not None:
+        # Filter to past 14 days for EVERYTHING
+        if publish_time is not None:
             age_days = (now_taipei() - publish_time).days
-            if age_days > 30:
+            if age_days > 14:
                 title_safe = title[:50].encode('utf-8', errors='ignore').decode('utf-8')
                 print(f"[Social Scraper] Skipping old post ({age_days}d): {title_safe}")
                 return
