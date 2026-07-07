@@ -130,7 +130,8 @@ def verify_true_publish_date(url: str, max_days_old: int = 14) -> bool:
                 extracted_date = match.group(0)
                 
         if not extracted_date:
-            return True # Cannot determine date, allow it
+            print(f"[Parser] REJECTED ARTICLE (NO DATE FOUND): {url}")
+            return False # STRICT MODE: If we cannot verify the date, we drop it to prevent old news from slipping through
             
         # Parse the extracted date
         dt = None
@@ -151,7 +152,7 @@ def verify_true_publish_date(url: str, max_days_old: int = 14) -> bool:
         return True
     except Exception as e:
         print(f"[Parser] Verification failed for {url}: {e}")
-        return True # On error, allow it
+        return False # STRICT MODE: On error, drop it
 
 
 def fetch_google_news_rss(keyword: str) -> List[Dict[str, Any]]:
