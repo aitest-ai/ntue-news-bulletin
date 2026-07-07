@@ -42,9 +42,6 @@ interface ToastState {
   type: "success" | "error";
 }
 
-// Hardcoded production fallback URL
-const RENDER_BACKEND_URL = "https://ntue-news-bulletin.onrender.com";
-
 const SOCIAL_DOMAINS = ["dcard.tw", "ptt.cc", "pttweb.cc", "threads.net", "threads.com", "instagram.com"];
 
 export default function BulletinBoard() {
@@ -121,10 +118,9 @@ export default function BulletinBoard() {
     }, 4000);
   };
 
-  // Silent safe fetch - directly to Render to bypass Vercel proxy issues + 20s timeout
+  // API request helper
   const safeFetch = async (path: string, options: RequestInit = {}, timeoutMs = 20000) => {
     const cleanPath = path.startsWith("/") ? path : `/${path}`;
-    const directUrl = `${RENDER_BACKEND_URL}${cleanPath}`;
 
     // Helper: fetch with AbortController timeout
     const fetchWithTimeout = async (url: string, opts: RequestInit) => {
@@ -144,20 +140,14 @@ export default function BulletinBoard() {
     };
 
     try {
-      // Direct call to Render backend (CORS is supported)
-      return await fetchWithTimeout(directUrl, options);
+      // Direct call to relative path (Vercel API)
+      return await fetchWithTimeout(cleanPath, options);
     } catch (err: any) {
       const isTimeout = err?.message === "TIMEOUT";
       if (isTimeout) {
-        throw new Error("伺服器回應超時，Render 可能正在冷啟動（約需 30-60 秒），請稍候再重新整理頁面。");
+        throw new Error("伺服器回應超時，請稍候再重新整理頁面。");
       }
-      // If direct call fails, try proxy as last-resort fallback (e.g. local development)
-      try {
-        console.warn("Direct connection failed. Trying proxy fallback...", err);
-        return await fetchWithTimeout(cleanPath, options);
-      } catch {
-        throw err;
-      }
+      throw err;
     }
   };
 
