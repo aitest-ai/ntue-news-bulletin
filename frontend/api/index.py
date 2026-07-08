@@ -293,3 +293,44 @@ def remove_scheduler_job(job_id: str, db: Session = Depends(get_db), user: str =
     db.query(ScheduledJob).filter(ScheduledJob.id == job_id).delete()
     db.commit()
     return {"message": "Deleted"}
+
+@app.get("/api/scheduler/tick")
+def tick_scheduler(db: Session = Depends(get_db)):
+    """
+    Called by Vercel Cron every 15 minutes to trigger due jobs.
+    """
+    try:
+        jobs = db.query(ScheduledJob).filter(ScheduledJob.paused == 0).all()
+        tz = pytz.timezone("Asia/Taipei")
+        now = datetime.now(tz)
+        now_mins = now.hour * 60 + now.minute
+        
+        triggered = False
+        for job in jobs:
+            job_mins = job.hour * 60 + job.minute
+            diff = (now_mins - job_mins) % 1440
+            
+            # If the tick happens within 15 minutes after the scheduled time, trigger it
+            if diff < 15:
+                triggered = True
+                break
+                
+        if triggered:
+            token = os.getenv("GITHUB_PAT")
+            repo = os.getenv("GITHUB_REPO", "aitest-ai/ntue-news-bulletin")
+            if token:
+                httpx.post(
+                    f"https://api.github.com/repos/{repo}/dispatches",
+                    headers={
+                        "Accept": "application/vnd.github.v3+json",
+                        "Authorization": f"token {token}"
+                    },
+                    json={"event_type": "trigger-fetch"},
+                    timeout=5.0
+                )
+            return {"message": "Tick matched a job. Triggered GitHub Actions.", "triggered": True, "time": str(now)}
+        
+        return {"message": "No matching jobs. Tick skipped.", "triggered": False, "time": str(now)}
+    except Exception as e:
+        return {"message": f"Error: {e}", "triggered": False}
+
