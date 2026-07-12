@@ -1082,13 +1082,6 @@ export default function BulletinBoard() {
                 <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", marginBottom: "1rem", lineHeight: 1.4 }}>
                   如果您發現系統抓到了年代久遠的舊新聞，您可以點擊下方按鈕將資料庫內所有的舊新聞與社群貼文刪除。刪除後，請回到「新聞佈告欄」分頁點擊「立即抓取」來重新蒐集最新的資料（約需等待 3~5 分鐘）。
                 </p>
-                <button
-                  className="btn btn-danger-outline"
-                  style={{ width: "auto", display: "inline-block" }}
-                  onClick={handleWipeAll}
-                >
-                  清除所有新聞與貼文資料
-                </button>
               </div>
             </div>
           )}
