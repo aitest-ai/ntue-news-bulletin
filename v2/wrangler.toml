@@ -1,0 +1,16 @@
+name = "ntue-opinion-v2"
+main = "src/index.js"
+compatibility_date = "2026-08-31"
+workers_dev = true
+
+[triggers]
+crons = ["*/30 23-2 * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ntue-opinion-v2"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+[vars]
+APP_NAME = "國北教大輿情系統 2.0"
+TIMEZONE = "Asia/Taipei"
