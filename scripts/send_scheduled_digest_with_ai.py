@@ -3,6 +3,7 @@ import json
 import os
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -68,7 +69,46 @@ def generate_via_vercel(selected, attention, days):
     return _original_generate(selected, attention, days)
 
 
+def submit_with_requests(recipient, subject, body_fields, source_url, pdf_path):
+    import requests
+
+    endpoint = f"https://formsubmit.co/{urllib.parse.quote(recipient, safe='@.+-_')}"
+    fields = {
+        "_subject": subject,
+        "_template": "box",
+        "_captcha": "false",
+        "_url": source_url,
+        **body_fields,
+    }
+    pdf = Path(pdf_path)
+    try:
+        with pdf.open("rb") as fh:
+            response = requests.post(
+                endpoint,
+                data=fields,
+                files={"attachment": (pdf.name, fh, "application/pdf")},
+                headers={
+                    "Origin": "https://ntue-news-bulletin.vercel.app",
+                    "Referer": source_url,
+                    "User-Agent": "Mozilla/5.0 NTUE-Opinion-Monitor/4.0",
+                },
+                timeout=45,
+                allow_redirects=True,
+            )
+        lower = response.text.lower()
+        success = response.ok and "unable to submit" not in lower and "error" not in lower
+        print(
+            f"[digest] FormSubmit requests upload HTTP {response.status_code} for {recipient}; "
+            f"attachment={pdf.stat().st_size}B multipart={'multipart/form-data' in response.request.headers.get('Content-Type','')}"
+        )
+        return success
+    except Exception as exc:
+        print(f"[digest] FormSubmit requests upload failed for {recipient}: {exc}")
+        return False
+
+
 digest.generate_ai_report = generate_via_vercel
+digest.submit_to_formsubmit = submit_with_requests
 
 if __name__ == "__main__":
     digest.main()
