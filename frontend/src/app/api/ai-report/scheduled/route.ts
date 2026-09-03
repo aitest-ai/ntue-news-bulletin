@@ -14,11 +14,11 @@ type FeedItem = {
   risk_score?: number;
 };
 
-async function verifyGithubRun(runId: string, sha: string) {
+async function verifyGithubCommit(sha: string) {
   const token = (process.env.GITHUB_PAT || process.env.GITHUB_TOKEN || "").trim();
-  if (!token || !runId || !sha) return false;
+  if (!token || !sha) return false;
 
-  const response = await fetch(`https://api.github.com/repos/${REPO}/actions/runs/${encodeURIComponent(runId)}`, {
+  const response = await fetch(`https://api.github.com/repos/${REPO}/commits/${encodeURIComponent(sha)}`, {
     headers: {
       Authorization: `Bearer ${token}`,
       Accept: "application/vnd.github+json",
@@ -27,27 +27,18 @@ async function verifyGithubRun(runId: string, sha: string) {
     cache: "no-store",
   });
   if (!response.ok) return false;
-  const run = await response.json();
 
-  const created = Date.parse(run?.created_at || "");
-  const recent = Number.isFinite(created) && Math.abs(Date.now() - created) <= 20 * 60 * 1000;
-  const validEvent = ["push", "schedule", "workflow_dispatch"].includes(run?.event);
-  return Boolean(
-    recent &&
-    validEvent &&
-    run?.name === "NTUE Opinion Collector" &&
-    run?.head_branch === "master" &&
-    run?.head_sha === sha &&
-    ["queued", "in_progress", "completed"].includes(run?.status)
-  );
+  const commit = await response.json();
+  const committedAt = Date.parse(commit?.commit?.committer?.date || commit?.commit?.author?.date || "");
+  const recent = Number.isFinite(committedAt) && Math.abs(Date.now() - committedAt) <= 30 * 60 * 1000;
+  return Boolean(recent && commit?.sha === sha);
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const runId = req.headers.get("x-github-run-id") || "";
     const sha = req.headers.get("x-github-sha") || "";
-    if (!(await verifyGithubRun(runId, sha))) {
-      return NextResponse.json({ error: "GitHub workflow verification failed" }, { status: 403 });
+    if (!(await verifyGithubCommit(sha))) {
+      return NextResponse.json({ error: "GitHub commit verification failed" }, { status: 403 });
     }
 
     const apiKey = (process.env.GEMINI_API_KEY || "").trim();
