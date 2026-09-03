@@ -17,8 +17,9 @@ _original_generate = digest.generate_ai_report
 def generate_via_vercel(selected, attention, days):
     run_id = os.getenv("GITHUB_RUN_ID", "").strip()
     sha = os.getenv("GITHUB_SHA", "").strip()
+    workflow_token = os.getenv("GITHUB_WORKFLOW_TOKEN", "").strip()
     base_url = os.getenv("PUBLIC_BASE_URL", "https://ntue-news-bulletin.vercel.app").rstrip("/")
-    if not run_id or not sha:
+    if not run_id or not sha or not workflow_token:
         return _original_generate(selected, attention, days)
 
     items = [
@@ -43,7 +44,8 @@ def generate_via_vercel(selected, attention, days):
             "Accept": "application/json",
             "x-github-run-id": run_id,
             "x-github-sha": sha,
-            "User-Agent": "NTUE-GitHub-Actions-Scheduled-Report/1.0",
+            "x-github-workflow-token": workflow_token,
+            "User-Agent": "NTUE-GitHub-Actions-Scheduled-Report/2.0",
         },
         method="POST",
     )
