@@ -1,6 +1,6 @@
 {
-  "schema_version": 3,
-  "updated_at": "2026-09-03T10:33:41.620297+08:00",
+  "schema_version": 4,
+  "updated_at": "2026-09-03T10:40:36.303520+08:00",
   "keywords": [
     "國立臺北教育大學",
     "國北教大",
@@ -26,6 +26,24 @@
       "publish_time": "2026-09-02T21:05:56+08:00",
       "keyword": "國北教大",
       "task": "dcard"
+    },
+    {
+      "title": "心理學的旅行地圖：林姿葶老師如何用科學、溫暖帶學生認識自己？",
+      "url": "https://news.google.com/rss/articles/CBMiaEFVX3lxTE93REJxVW9HRDhJRWNYOW5fUGdVakk2ZHRGRTg0OVFvcTd3LTdaeWV6UUJPcVh0WVZ3YVhBM1Z5VUdOb1BzN3pFM1RDNzNGSEx6TW8yX0hQTEdMdUJNT2FhMXlWM0pLQ1ZW?oc=5",
+      "source": "ner.gov.tw",
+      "publisher": "ner.gov.tw",
+      "publish_time": "2026-09-02T15:12:14+08:00",
+      "keyword": "國立臺北教育大學",
+      "task": "google_news"
+    },
+    {
+      "title": "哪裡最缺老師？教育部首推「大數據工具包」　助縣市精準開缺",
+      "url": "https://news.google.com/rss/articles/CBMiSEFVX3lxTE9yMTdHa2hkV2dvNWNoazhtU1RQbmttNUdCNE1JdWFjS0F4RVZ1NWVrZldwZEhUbzVxQzY4UjJoUnFRWll0Snl1adIBTEFVX3lxTFBvZThuV091ZkFJbERJNG1IN2lldmNCWVB3anhROUs3N2U1LTF3VlFHMGkxT1FheXk2Z3FqRWpmNnFMT0VPYmJ6d0w2RkU?oc=5",
+      "source": "三立新聞網SETN.com",
+      "publisher": "三立新聞網SETN.com",
+      "publish_time": "2026-09-01T01:38:24+08:00",
+      "keyword": "國北教大",
+      "task": "google_news"
     },
     {
       "title": "【聯合迎新報名】 yo what’s up? 想要跟我們一起玩遊戲，吃點心嗎？ 聯合迎新報名開始啦！！ 快來一起度過最精采的夜晚🦷🦷 🌀活動資訊： 時間｜9/22（二） 18:30-21:30 地點｜國北教大禮堂 費用｜完全免費！ 🌀Event Info: Time｜Sep. 22 (Tue) 18:30-21:30 Location",
@@ -163,6 +181,15 @@
       "task": "google_news"
     },
     {
+      "title": "《國北✧直排 #社團介紹 🛼》 國北直排輪28屆上幹嚕！ - #幹部名單 社長&教學&器材ㅣ呂海漵 @sssyusea5l 副社&公關ㅣ 陳玟卉 @cwb._.wm 文書ㅣ陳品妤 @yuyuyu.1.6 活動ㅣ黃知然 @zhiranhuang 總務ㅣ吳瑀璇 @wushane0726 美宣ㅣ王心彤 @sintong950604 _",
+      "url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE5xc3lNZlQzSWlaTkJkQzYxSFhjeF9pQnhaWjJaLWtGcXdLQzF6NmpNem9wblh3UkxEdFdONFZmVkw5Y0R0NHBZN25CNHkxNE9hN0E?oc=5",
+      "source": "Instagram",
+      "publisher": "instagram.com",
+      "publish_time": "2026-08-29T23:44:57+08:00",
+      "keyword": "國北教大",
+      "task": "instagram"
+    },
+    {
       "title": "Photo by 國北教大浮夢電影社(@ntue.film) · August 29, 2026",
       "url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE5QMkpiYWFWQS1OVno2dnpFZ2E2MC1qZklZWUVIX2tsT0t0dE1QUDF6b2lBQmNVN0pRRGM4NWM0Rnk2WXdETTBqYTdiYzFiWEN1MUE?oc=5",
       "source": "Instagram",
@@ -181,6 +208,24 @@
       "task": "dcard"
     },
     {
+      "title": "中選會否決鞭刑等公投！藍營怒轟「沒收民主」 洪孟楷酸：怕鞭到自己人？",
+      "url": "https://news.google.com/rss/articles/CBMiW0FVX3lxTE53OVVIM1RTRWNuZWdDT3V6emM2WUxMN3RYNXpSWnZjbk5UbTk5anFKdmNVNVlLWG4xS0FWTE9vN09VQjRYMGVmdXh1LXJYZjJ2RjhNbnRVOUUzblE?oc=5",
+      "source": "上報Up Media",
+      "publisher": "上報Up Media",
+      "publish_time": "2026-08-28T19:56:00+08:00",
+      "keyword": "國北教大",
+      "task": "google_news"
+    },
+    {
+      "title": "光澤醫美偷拍逾300人受害 2主管遭起訴求處重刑、創辦人通緝中",
+      "url": "https://news.google.com/rss/articles/CBMiV0FVX3lxTFB1S05mbVRudWgybUhEM2ZOOS15TG04Z2syZ2liOFhFdEhqY0c4R3BPUkF3N0s4N2dEMlAtN0dwQ2ttTEVmUTlJZ3lfMHV0MDZPVExVVThkaw?oc=5",
+      "source": "台視新聞網",
+      "publisher": "台視新聞網",
+      "publish_time": "2026-08-28T16:46:25+08:00",
+      "keyword": "北教大",
+      "task": "google_news"
+    },
+    {
       "title": "楊啓文教授接任運動部政務次長- 臺北教育大學板",
       "url": "https://news.google.com/rss/articles/CBMiUEFVX3lxTE5yU3U1Q0hwUmpFX3VoTklDdVp6a3lPdThXbVRhSTdIM2hON0JBZ1ZkRXJ1MWpJdkJtODU5MGQ4YUY0QU0wTTAxT2w4bElmWGRi?oc=5",
       "source": "Dcard",
@@ -188,6 +233,87 @@
       "publish_time": "2026-08-28T15:56:55+08:00",
       "keyword": "國北教大",
       "task": "dcard"
+    },
+    {
+      "title": "MLB》Chris Sale飆11K完封道奇 技壓山本由伸、大谷翔平 | TSNA",
+      "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxPOGVKS1Q2YkczTjN5dE9MWExNSDc2ZXcyT184Qm5KMHQxMFkySVpiTjhxeDA5MGgtVVF0M0I2ZmtLWFplUXBiOW1GRnVncWlFdE5LWTVPMFJNM3VYZVBmWWd4ZUNDdlAteFdwb04xM1FvOC1xeXEzVkZ3dW1fVm9rOUhTMA?oc=5",
+      "source": "LINE TODAY",
+      "publisher": "LINE TODAY",
+      "publish_time": "2026-08-28T15:17:43+08:00",
+      "keyword": "國北教大",
+      "task": "google_news"
+    },
+    {
+      "title": "紐約聯邦儲備銀行示警 穩定幣恐加劇貨幣危機難遏",
+      "url": "https://news.google.com/rss/articles/CBMigAFBVV95cUxOUnFKVnZ0MU9icmF1WWE1Y1o2eGlrTlNZU0c1YmZBRWVKbEs1bGM4SkpkaW5vbElLNWhYUklSeWVTdl8tV3VXTkJ6aDRXdG93MUxTcW1WdG8zTG9kbmJRVmJMUHF0LXZ5TWNianJyUkZaRERBWENHVHpQeDNWS2RrXw?oc=5",
+      "source": "PChome Online 股市",
+      "publisher": "PChome Online 股市",
+      "publish_time": "2026-08-28T15:05:34+08:00",
+      "keyword": "國北教大",
+      "task": "google_news"
+    },
+    {
+      "title": "蔣萬安宣告：「自動駕駛公車」2027年上路！先投入4輛實測",
+      "url": "https://news.google.com/rss/articles/CBMiU0FVX3lxTE55Nk1pTG1seFRocmZBLWt5QWNWS2NpeGRZSGlqYmNGWHBsUTNIdEZ5dS1zdTJYNXRIWlptZVQwLWE5MktRdzBxLWRCOHBQUTYwWjdz?oc=5",
+      "source": "中天新聞網",
+      "publisher": "中天新聞網",
+      "publish_time": "2026-08-28T14:29:10+08:00",
+      "keyword": "國北教大",
+      "task": "google_news"
+    },
+    {
+      "title": "運動30分鐘就能換超商好禮！運動部「揮汗有禮」開跑最多領14次",
+      "url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE11SEprbC1mNkNBYl9mb2xNWnFDajJyWGJZOGFjbmNSaXRGelFVY0lEbWZSSVNWYjdwXzcwcEhvNlVfOXN2QXhfMjVoTmp3NnZLS0E?oc=5",
+      "source": "n.yam.com",
+      "publisher": "n.yam.com",
+      "publish_time": "2026-08-28T14:17:00+08:00",
+      "keyword": "國北教大",
+      "task": "google_news"
+    },
+    {
+      "title": "台北排隊名店「阿英海產粥」創辦人英姐睡夢中離世！小老闆悲痛證實：一切很不真實 | 太報",
+      "url": "https://news.google.com/rss/articles/CBMiVkFVX3lxTE9CQlNxLVJKSjgzb2w0eFNEbXdkem1yMExVOU94UVJLSmsycndFWHU0bHpzZXRFQzJ1cy1weEdBVlZGbnhVOFFHNnBlVTB4XzRPa0hKTU5n?oc=5",
+      "source": "LINE TODAY",
+      "publisher": "LINE TODAY",
+      "publish_time": "2026-08-28T13:10:01+08:00",
+      "keyword": "國北教大",
+      "task": "google_news"
+    },
+    {
+      "title": "MLB/傷癒後想跳過小聯盟復健賽 洋基隊長：正增加訓練量",
+      "url": "https://news.google.com/rss/articles/CBMiU0FVX3lxTFBPbHRIaGJwX2xfUnlQazRlbFlIeDBSd2E2OWZJbTJYTEVYNjJqUnFWTGlmemM5cV92RDdkNnpnTDVLZy03SGYyY2VqcGxfTTRxcFpr?oc=5",
+      "source": "中天新聞網",
+      "publisher": "中天新聞網",
+      "publish_time": "2026-08-28T10:01:41+08:00",
+      "keyword": "國北教大",
+      "task": "google_news"
+    },
+    {
+      "title": "足球》歐足聯準備向瑞士法院提告指控FIFA主席財務管理不當| TSNA",
+      "url": "https://news.google.com/rss/articles/CBMihAFBVV95cUxPdDZJT2pPV3dQYmlWV2QyUWdWUDBLcmxBbzl6YXhkUG00OGFSTXlWMjNPX1JfbjlmTF9hT3QtQW84MXFvOVpCTTBIcm1DVTFnbGZvbHFxcmgxX0FRNm81cnpxczVMU2FaOHdaa3FMcFMybjRwX2ZEc25pT2tFS0poZjhrdlA?oc=5",
+      "source": "LINE TODAY",
+      "publisher": "LINE TODAY",
+      "publish_time": "2026-08-28T08:45:46+08:00",
+      "keyword": "國北教大",
+      "task": "google_news"
+    },
+    {
+      "title": "韓國輸了！ 擠下中華隊延續世界盃夢、今慘敗黎巴嫩",
+      "url": "https://news.google.com/rss/articles/CBMiU0FVX3lxTE9sVWx0OFpuNlpSczUwcVlfVEtkblRIaUZoeHU2QjhrdmVmUUJxOXAxODNURUZYN1ZXdVRick1ERnZtdmlRVkZUODJ2M3VwTmJJUXFz?oc=5",
+      "source": "中天新聞網",
+      "publisher": "中天新聞網",
+      "publish_time": "2026-08-28T08:43:39+08:00",
+      "keyword": "國北教大",
+      "task": "google_news"
+    },
+    {
+      "title": "美大學開AI學位蔚為風潮專家：人文教育更顯重要- 國際",
+      "url": "https://news.google.com/rss/articles/CBMieEFVX3lxTFBReGs2Wk1kYm5aMTZVcUhKMDQ4TXBTZTFCa293Y1pmLXh3U3FGaUgwZGYyRWRJSjVlbHlaS19TNVNYUkNfM2xlZWVVSTlzX2JEU3F6MUxDTk5DbWJPVVZNbTBwTDBkb3NIR193RFZtY01UdGFoNkZqRw?oc=5",
+      "source": "華視新聞網",
+      "publisher": "華視新聞網",
+      "publish_time": "2026-08-28T08:11:13+08:00",
+      "keyword": "國北教大",
+      "task": "google_news"
     },
     {
       "title": "討論牆 | 體壇》輔佐李洋人選出爐！國北教大教授楊啓文接任運動部政務次長",
@@ -208,11 +334,65 @@
       "task": "google_news"
     },
     {
+      "title": "守護孩子餐桌！中市教育局、衛生局跨局處稽查校園午餐食安",
+      "url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE1jN0FRdUFtTXNNaUJISndZOWRLR1BCNlpzSjBVdmpSMUNIYzl3Vi1tRUJpakRtSzZ4Y3N3SWc1QmFXUHRLSUQtUzBzcVJnb3ZwZWc?oc=5",
+      "source": "n.yam.com",
+      "publisher": "n.yam.com",
+      "publish_time": "2026-08-27T23:29:00+08:00",
+      "keyword": "國北教大",
+      "task": "google_news"
+    },
+    {
+      "title": "AI人才成產業轉型關鍵 臺南經發局攜手學研深化產學合作",
+      "url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE1ZNWlTc1NZX2RhalJmWGxER0NIbmk4WElBNUtNWHpWZUNuYlEtNXprNU5aOUw0TjhDN3lqZFl1VkNydnllX3liREpVelU4RUR4LXc?oc=5",
+      "source": "n.yam.com",
+      "publisher": "n.yam.com",
+      "publish_time": "2026-08-27T23:13:00+08:00",
+      "keyword": "國北教大",
+      "task": "google_news"
+    },
+    {
+      "title": "2400億無人機條例三讀通過 總統府批：沒有充分考慮國防需求",
+      "url": "https://news.google.com/rss/articles/CBMiU0FVX3lxTFA0MGF2aHAwYU1VeDExbUhFdVFCd1V4RUhkdUNvWDEzWnZoYl9Lbm9ORU1wclNFMWhTajJTTUhEOEs3NkpJRG5HNC1yblNyZ0FzSmFv?oc=5",
+      "source": "中天新聞網",
+      "publisher": "中天新聞網",
+      "publish_time": "2026-08-27T22:55:48+08:00",
+      "keyword": "國北教大",
+      "task": "google_news"
+    },
+    {
       "title": "懸缺逾4個月！ 賴清德任命國北教大教授楊啓文接任運動部政次",
       "url": "https://news.google.com/rss/articles/CBMiggNBVV95cUxQRUUwaS1rdUN1ZlpKeVVoSDhsMWpJTmNZOUM4dnFub1Z6T1FMSThJODF2RFZUbmk0cXdza19xRzBRdzFQSTNkVl84Z1hFZGhPQ0tLcHFUU3FsOHFpNHFPdkxJYXhTRmE5THFaa3FZNUd3YW5nZTAzcldwZExBOF8wc2I5dTkySmp4X0xQcExvTkVtZlk3OFdWejVQZmFFTVNVMFhFaW8zVFdUZlE5c19HVTNRV3luRVp4eGl4R3VWVTZfNFpmd1lyZDNJRU1EaElGZVBsUHlTSjZOS2Z2bEU3QW5BTjJuaGZFNGVuTUV3U1loWi1mQlBUOWlqX3d3SVJDaERKd0U5NFRua3dpcmI2N0VXaVVJMkoyMV9LQXFwWVRpWE1qdHkxR2tSRGtDaEpmRXhmQVhPQThESDhpODFMZEttWUs1bWw2emMwdUJ4ZXlkeXNPcFJBQjV3VUExa0FkUVNlUXRqR3NLX2syNFNhbmNWdGZlb19hZnhza1E1RHZWZw?oc=5",
       "source": "Life 生活網",
       "publisher": "Life 生活網",
       "publish_time": "2026-08-27T22:36:00+08:00",
+      "keyword": "國北教大",
+      "task": "google_news"
+    },
+    {
+      "title": "金管會：國銀房貸逾放數一家銀行少報 「校正回歸」7月94.25億元",
+      "url": "https://news.google.com/rss/articles/CBMiU0FVX3lxTE1MQXFwb3JKcWo3cmxpZVY3ZGFiYVFOM3gxaU5saE9TeWZDaW5EMU9wUVFvN3VBRDVsZ2F5c3d3QU1WdmdpSzZiRlpoUXoyc3lYNlhR?oc=5",
+      "source": "中天新聞網",
+      "publisher": "中天新聞網",
+      "publish_time": "2026-08-27T21:50:34+08:00",
+      "keyword": "國北教大",
+      "task": "google_news"
+    },
+    {
+      "title": "懸缺4個月！賴清德正式任命 楊啓文接任運動部政務次長",
+      "url": "https://news.google.com/rss/articles/CBMiU0FVX3lxTE51RUtTQ2pYRjU4V2t6eTdWckVScU42a2FPcDdTU1JWbU5aYUFvZmFaaFd6SUQxRTZnZXJaNU9SY19iQWF2Tk5Za2kwZXU3eVBHSnRj?oc=5",
+      "source": "TVBS新聞網",
+      "publisher": "TVBS新聞網",
+      "publish_time": "2026-08-27T21:20:00+08:00",
+      "keyword": "國北教大",
+      "task": "google_news"
+    },
+    {
+      "title": "總統公布新人事 楊啓文出任運動部政務次長",
+      "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxOZWFEcDFpSEpEazhvSHFhTlBpN0J5R1NhT0RMczA1SGY0WlpmQ29MUlo4WHAtZV9fa1kwUVFHRmplQ1NqcmZqUHlVVjE2dUFUY0JnZUJWeGNEMlA1TUlobE9DV3pzc3h0eHB2YUhyVExmcHBQRWNtZEFETS02MlFpUlpLVQ?oc=5",
+      "source": "news.nextapple.com",
+      "publisher": "news.nextapple.com",
+      "publish_time": "2026-08-27T21:00:00+08:00",
       "keyword": "國北教大",
       "task": "google_news"
     },
@@ -233,6 +413,33 @@
       "publish_time": "2026-08-27T16:13:40+08:00",
       "keyword": "國北教大",
       "task": "instagram"
+    },
+    {
+      "title": "張美蘭失蹤104天「化為白骨」 南韓濟州警察廳長道歉了！",
+      "url": "https://news.google.com/rss/articles/CBMi6wJBVV95cUxOUUZSWURLRUItcGRoamZORXRhVllJWnZUTy14SjdvTWpCTTBxVDJMSEpuNFZYcXNTV0s4R29nejJYZkYwejRkeVFZUDYyYzFNM0tyVy1MUzZDTHZueVJRb210UkJPbldvbGVSb2FfTnVJb181SXVRVHpidDMyRjBQdzExUUJXd0czV2FOOFFsT3lLc2VaZFdGU05BT3RmNFhFSGU1OGgyVWhlZXAyanF1Vl9NNGhhcmlSRno0Z2xBUTRYblFmbVA3RUg3N3c2Sml2NE9IaEZKR1RBRDBoQV9wRlRYWjlGZUlya2d4T2VwTU1KbWE2NWxRTGNyMThVeVctOTN5bEx6U3pLalBGbU5OY3gwM3QteGVkTWQ1ejRtMUgwNlNnYkFkV1gzTDNNU3c4eTNzVlNURGtkemtpeWtQcW5Mc1dGNC1vMmVxWHhxODJ6ZXhzOVJvZDg2bFI5dzBpYWtkYzRIdGpCazQ?oc=5",
+      "source": "facebook.com",
+      "publisher": "facebook.com",
+      "publish_time": "2026-08-27T11:56:47+08:00",
+      "keyword": "北教大",
+      "task": "google_news"
+    },
+    {
+      "title": "台中骨得診所內部現況曝！ 在地人怒嗆：揪親友抵制趙建銘",
+      "url": "https://news.google.com/rss/articles/CBMiigNBVV95cUxQejdTcm41STR2ZHNBX3FuZVNPSFAxNVpsVlpsSWlxMUdJc2U1OFdlTzRQaUpyOEprei1ITktsY3BBdHdxVGNVQ1dSMHhuNXpxTml1NV9Gdm1ldVh1V0ZpZDNXaGJNUDFTZUViWkh1VjBMZE5admtOYnducFNFaGVielFnYkRSUjJzOXdJUmhjbzBQTWp2ZFZSNnpNczVFY3Ruem9RaEt2SGk1Wnc5TFNLeHZGNzZESks1QVdLSzFWRjVwdWY1OTZkX0hSS0E4bnRrSFI0VTN0bEdwa0pEU1RIZnk3cmlVREN2YnRCNVVWbm9YZWViS3h2ampmLVZUMklxVDNQX0hUaWZOVnhzRTE5cTZjcDJPdGlVVG92cnctcXQ1OHBhOVh2Yk1CXzRDM2JrRUc5V2g0ZGIwNFRzSjRFdkhrWTVLTDZJM18tb2Zjb2RBMEVRbkZhb3d6c0VpejFlMTgxY2ZQV3JFdXkxQ2RtNnlDUENwUzkxNWtXNjMzVjVUMzNWZXZrZWJB?oc=5",
+      "source": "facebook.com",
+      "publisher": "facebook.com",
+      "publish_time": "2026-08-27T11:48:00+08:00",
+      "keyword": "北教大",
+      "task": "google_news"
+    },
+    {
+      "title": "草間彌生逝世！真跡作品還在台灣展出 「當繁花盛開」屏東可看到8月底",
+      "url": "https://news.google.com/rss/articles/CBMiS0FVX3lxTE01MHI1by1xNkc3S0RJcnF0eFZ4SXo4SHgyZUNXSVgwa0FZR25Yal9zMnUxMFNhVkxwLVdKeUdJdTEtUUJSZnFZU1ZnQQ?oc=5",
+      "source": "FTNN 新聞",
+      "publisher": "FTNN 新聞",
+      "publish_time": "2026-08-27T11:14:00+08:00",
+      "keyword": "國立臺北教育大學",
+      "task": "google_news"
     },
     {
       "title": "Photo by 國立臺北教育大學藝術與造形設計學系(@ntuead_118) · August 25, 2026",
@@ -262,6 +469,15 @@
       "task": "dcard"
     },
     {
+      "title": "2026聲徜音樂節9月登場 匯聚130位表演者",
+      "url": "https://news.google.com/rss/articles/CBMiVkFVX3lxTFBaR1dOS3NfWXROT2FzaXBsemdUZTdiTGhob2JHU3FGN2NGdnhsY2xndmtTUTJzc1J2bE1IaWVCS3BNdS1VOU9teE9XWG8yOXVVZTR2WGRR?oc=5",
+      "source": "中央社 CNA",
+      "publisher": "中央社 CNA",
+      "publish_time": "2026-08-25T14:06:34+08:00",
+      "keyword": "國立臺北教育大學",
+      "task": "google_news"
+    },
+    {
       "title": "找國小代課老師- 臺北教育大學板",
       "url": "https://news.google.com/rss/articles/CBMiUEFVX3lxTFBuMGVycUhoZUptVXJuZGloOEo2N1ljRjZKbVEzb3oyeW9Wa2lMUDI0QmYzaGFwN1FDc0wza1FVQktYaVN6a1N1R0V3OXRHVjhr?oc=5",
       "source": "Dcard",
@@ -271,6 +487,15 @@
       "task": "dcard"
     },
     {
+      "title": "足球》5000萬歐元的價值！托雷斯首秀梅開二度巴黎聖日耳曼客場逼平雷恩| TSNA",
+      "url": "https://news.google.com/rss/articles/CBMihAFBVV95cUxQazVjSWpNdDhQRVMtSUVvNzlNLU1IYkJ2RmUxbXBPSm5jck1uYmh6R19YejQ0N1pXaUNDV0tSd0dpbVdNekJhcWM3V19nVG80cEExNnZ5c3lMYUM3QU9uQ1FPWkt5X3NKRnJvRFhlVF9DNjZNUWZpUUZRaDhMN0tYRFI1Rm4?oc=5",
+      "source": "LINE TODAY",
+      "publisher": "LINE TODAY",
+      "publish_time": "2026-08-24T15:26:43+08:00",
+      "keyword": "國北教大",
+      "task": "google_news"
+    },
+    {
       "title": "Photo by 國立臺北教育大學藝術與造形設計學系 (@ntuead_118) · August 24, 2026",
       "url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTFB5cnl6czQyNDRpd3RNd2wtdk9aTTliUjAxd3RtUXd1Z0NkQnJoTm4taXdpYXNISjIwN3FTcXMwMmJIMjVmTzRHaU9jeEdicE8tNmc?oc=5",
       "source": "Instagram",
@@ -278,6 +503,33 @@
       "publish_time": "2026-08-24T15:25:09+08:00",
       "keyword": "國立臺北教育大學",
       "task": "instagram"
+    },
+    {
+      "title": "台大30周年｜觀點的誕生，思辨的起點",
+      "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE80MXE1Q1lZcEZtbjFkclRCa0Vjb3lYTXZBMDl0Q1hVMGdLQUoyUE9GRVoydC0xWWhCdkxUa1hoOXR2Q016WFNCN3J1Tm9WR1J4b21PUXp1Z3FESGEwNVdR?oc=5",
+      "source": "meet eslite",
+      "publisher": "meet eslite",
+      "publish_time": "2026-08-24T15:00:00+08:00",
+      "keyword": "國北教大",
+      "task": "google_news"
+    },
+    {
+      "title": "全台前十「低空屋率區」全在雙北！「這區」僅3.85％、交易量卻重摔3成",
+      "url": "https://news.google.com/rss/articles/CBMia0FVX3lxTE1mUHRYblJQSTh2ZjhrSUoyYk9nVGJXZklLaHNQdlc3a0hmckJ1bEVFcXY5SGFRZ0owd3VjMmRnbU5iQXRvakUtTFozYzZSR1I1YS0zclJfd28zOTV0czZETFJSN1RLSHNnUVZN0gFwQVVfeXFMTzR1UGRlcTVHOTZTa2hQYmtyRTFtVW1DVTc3OUM3dXFFV0UxdGktTDZuTFpPSUxHUWljd1BBLWVEd3VtOFBKSFQ5ODlXUVYxQkNYX2x0SHp5WHpKb1pTTnh3WS1OLU8wSTBfb1N6VHZPdA?oc=5",
+      "source": "好房網News",
+      "publisher": "好房網News",
+      "publish_time": "2026-08-24T15:00:00+08:00",
+      "keyword": "北教大",
+      "task": "google_news"
+    },
+    {
+      "title": "從海岸到海洋：西部沿海無人機技術應用、人才培育與區域發展",
+      "url": "https://news.google.com/rss/articles/CBMiaEFVX3lxTFBjM3dKcUVCNVFnWHBfcDBTdWlzaU1wSnNyTjFYdjRQWFNkY1Q0MnpPc2tsalEyaW80MEU4MEJlS0F2WjZLT1J5eXhwVnBmLTR3QzQ5VmdPYkNpN1U2cDN0X2xEZFVyZFg2?oc=5",
+      "source": "ner.gov.tw",
+      "publisher": "ner.gov.tw",
+      "publish_time": "2026-08-23T23:11:10+08:00",
+      "keyword": "國立臺北教育大學",
+      "task": "google_news"
     },
     {
       "title": "打工相關- 臺北教育大學板",
@@ -316,6 +568,15 @@
       "task": "instagram"
     },
     {
+      "title": "影/南港展覽館驚見怪阿伯 穿女裝進入女廁遭逮 - 社會新聞 - PChome Online 新聞",
+      "url": "https://news.google.com/rss/articles/CBMiiwFBVV95cUxPS3B3LWNvaFpGNVZUSFUzU1NjUnBxZFoyc25vQnlFVmc4czNuWDkzVzYxREFOQjNaaTh5ZHpQTFd3cEVjbnRFeXJ5dlYzX2RWejhxejlsb05CTjg0b2VfRjk3cGh6SUdJS1FHbnJNdmNwSm9WWlpqd01uMHRuXzRtSjJmakJSTlF4Yk5J?oc=5",
+      "source": "PChome Online 新聞",
+      "publisher": "PChome Online 新聞",
+      "publish_time": "2026-08-22T17:26:12+08:00",
+      "keyword": "國北教大",
+      "task": "google_news"
+    },
+    {
       "title": "報名倒數三天！大學星攻略- 臺北教育大學板",
       "url": "https://news.google.com/rss/articles/CBMiUEFVX3lxTE5zbXFKcVV2TEVVOXJsVFFUZUt3aDlOdDJfRXAwalpGMklSNVcxZHZ6VVJIQmhUUXI5N0VxekdTQml4c2NtWUFpZ2tkNU1LMXcy?oc=5",
       "source": "Dcard",
@@ -325,6 +586,42 @@
       "task": "dcard"
     },
     {
+      "title": "開學收心、解密世界遺產與干城社區小旅行",
+      "url": "https://news.google.com/rss/articles/CBMiaEFVX3lxTFBBVTAyWXZqRTBvTmotVHZrdHNpd3NiRkxYaU5yQ0FmQVFKNXZpUUYxRldGaFVQZWVPc2w0Y3dJM1RMb3FTZUpCREpkTF9WWENfb2lSZFhTeFBldHlQQjlGc1ZQN1R3cDBG?oc=5",
+      "source": "ner.gov.tw",
+      "publisher": "ner.gov.tw",
+      "publish_time": "2026-08-21T15:00:00+08:00",
+      "keyword": "國立臺北教育大學",
+      "task": "google_news"
+    },
+    {
+      "title": "新北國際教育接軌世界，導入國際教育課堂",
+      "url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE0xMVdWWUlsLVFYdlM4S05ZQTB1OXY0aVdEcTlUZmJJZ0RBejhmSWpGUUpob09ybHBVZkJtRXM1SnNMNFdqYXBQN2FGQXVvX05YVWc?oc=5",
+      "source": "n.yam.com",
+      "publisher": "n.yam.com",
+      "publish_time": "2026-08-21T12:18:00+08:00",
+      "keyword": "國立臺北教育大學",
+      "task": "google_news"
+    },
+    {
+      "title": "MLB／遊騎兵強投 Jacob deGrom 傷癒復出 週四先發對決國民隊 | 民視新聞網",
+      "url": "https://news.google.com/rss/articles/CBMiekFVX3lxTE9WM0JneTZybERrWXFGOXdjRm9MMml4eFlpd3RqaC0zNlBEUmRPdFdDaWFPZXd4a1loREZweTRGUmVHYnEwU3Y4RGxMcThtSzJIRVdJWW9rMWNKWXdtMDlzY0dydlZGdkJJdU1wRWxCSllaY09SZHgzdFZB?oc=5",
+      "source": "LINE TODAY",
+      "publisher": "LINE TODAY",
+      "publish_time": "2026-08-20T23:45:22+08:00",
+      "keyword": "國北教大",
+      "task": "google_news"
+    },
+    {
+      "title": "從《鐵獅玉玲瓏》到博士生！ 大墩大師講堂 許效舜揭密38年藝界人生",
+      "url": "https://news.google.com/rss/articles/CBMiiwFBVV95cUxPdUJZS2JzUjJnajIydWRUYXpPNlRicWVaWFBWVm9uLTZ0cUZrcTFYUWEtcDJNdGRYUFZoN09GajlPMUIwamRIVzF6RnBOY0pzWE1XeVkxQk93VDg0OFBnVzhCUkd5Q3hzV0d5aVdja1pPc01pRXd1b2ZDaEtLSWtpMVNfX09LZlk5UXhN?oc=5",
+      "source": "PChome Online 新聞",
+      "publisher": "PChome Online 新聞",
+      "publish_time": "2026-08-20T21:40:41+08:00",
+      "keyword": "國立臺北教育大學",
+      "task": "google_news"
+    },
+    {
       "title": "哈囉～國北幼教的學弟妹們👋🏻 歡迎你們來到國北教大的新世界！🗺️✨ 從收到錄取通知的那一刻開始，你們就正式踏上屬於自己的大學冒險之路🧚 告別熟悉的高中生活，來到國北這個全新的世界，接下來的四年，將會遇見什麼樣的人、發生什麼樣的故事？別擔心！這趟",
       "url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTFBNajFrV210TlZka2UtV3VmampoTXNmbFFDc0pwcG9wcVZLOTdBVzhTUmNCQW1RbDhhN1VsbnVFOTVNQ3pzNTRwRXMxQ1lOcVIyaEE?oc=5",
       "source": "Instagram",
@@ -332,6 +629,15 @@
       "publish_time": "2026-08-20T21:04:03+08:00",
       "keyword": "國北教大",
       "task": "instagram"
+    },
+    {
+      "title": "英超新賽季開踢 兵工廠主帥：享受被對手追趕的壓力 | 民視新聞網",
+      "url": "https://news.google.com/rss/articles/CBMidkFVX3lxTE95bEhSb2xUWDM4cEZubDJBTngxUWM4dldUTVJJUVRGTkZiMUlMVXBneVBFMkw4SlFtenFEaVg5ZTJrTE8yZEFTZWdYMWtNR2dlenpkVDdwbWhlQUZsUXdEdS1Xc3BJM3VCZDZiVzF5MW9hTFl6VWc?oc=5",
+      "source": "LINE TODAY",
+      "publisher": "LINE TODAY",
+      "publish_time": "2026-08-20T15:00:00+08:00",
+      "keyword": "國北教大",
+      "task": "google_news"
     },
     {
       "title": "轉學生學分折抵詢問北教大閱讀與寫作折抵台大閱讀與寫作詢問- 臺灣大學板",
@@ -438,6 +744,15 @@
       "source": "Instagram",
       "publisher": "instagram.com",
       "publish_time": "2026-08-13T21:00:02+08:00",
+      "keyword": "國立臺北教育大學",
+      "task": "instagram"
+    },
+    {
+      "title": "【 2026 名古屋亞運點將錄 】 現年 20 歲，就讀於國立臺北教育大學體育學系的朱品薰，是國內女子標槍備受矚目的頂尖好手。她曾代表臺灣參加 2022 杭州亞運，當時以 54 公尺 93 的成績獲得第 7 名。 今年 3 月的新北市青年盃全國田徑公開賽中，她以 57 公尺 24 成績",
+      "url": "https://news.google.com/rss/articles/CBMiYkFVX3lxTE85cV9UNnpmS001b2RtX1oxZWF5SG1jTUVaN01xSEdfaHJnVG4wYmkzYVY4WkJfbDZfeG14dnZjYktGZnVqakVVQkdUUklZalVsQVMzZE5LTVpzSDNsZ2ZfdU9B?oc=5",
+      "source": "Instagram",
+      "publisher": "instagram.com",
+      "publish_time": "2026-08-13T15:00:00+08:00",
       "keyword": "國立臺北教育大學",
       "task": "instagram"
     },
@@ -591,8 +906,15 @@
       "task": "google_news",
       "source": "新聞媒體",
       "status": "healthy",
-      "count": 4,
-      "error": null
+      "count": 37,
+      "error": null,
+      "keyword_counts": {
+        "國立臺北教育大學": 7,
+        "國北教大": 26,
+        "北教大": 23,
+        "NTUE": 0,
+        "National Taipei University of Education": 0
+      }
     },
     {
       "task": "dcard",
@@ -624,9 +946,10 @@
     }
   ],
   "summary": {
-    "total": 64,
-    "fresh_this_run": 61,
+    "total": 99,
+    "fresh_this_run": 94,
     "healthy_tasks": 5,
-    "failed_tasks": 0
+    "failed_tasks": 0,
+    "news_publishers": 18
   }
 }
