@@ -53,11 +53,14 @@ jobs:
       - name: Generate AI PDF report and send scheduled bulletin when due
         env:
           GITHUB_WORKFLOW_TOKEN: ${{ github.token }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          BREVO_SENDER_EMAIL: ${{ secrets.BREVO_SENDER_EMAIL }}
+          BREVO_SENDER_NAME: 國北教大輿情監測
           PUBLIC_BASE_URL: https://ntue-news-bulletin.vercel.app
         run: |
           if python scripts/send_scheduled_digest.py --is-due; then
             echo "Bulletin is due; generating verified AI report and PDF attachment."
-            python -m pip install --quiet reportlab requests
+            python -m pip install --quiet reportlab
             python scripts/send_scheduled_digest_with_ai.py
           else
             echo "No scheduled bulletin due."
