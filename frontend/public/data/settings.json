@@ -1,5 +1,5 @@
 {
-  "email_enabled": false,
+  "email_enabled": true,
   "recipients": [
     "kancollect126@gmail.com"
   ],
