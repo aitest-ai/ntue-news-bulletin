@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import email.utils
 import json
-import os
 import sys
 import urllib.parse
 import urllib.request
@@ -21,9 +20,24 @@ KEYWORDS = [
     "National Taipei University of Education",
 ]
 
+# Used only for relevance validation. These aliases are deliberately specific enough
+# to keep NTUE-related student/community posts while rejecting unrelated search noise.
+RELEVANCE_TERMS = [
+    "國立臺北教育大學",
+    "國立台北教育大學",
+    "臺北教育大學",
+    "台北教育大學",
+    "國北教大",
+    "國北教",
+    "北教大",
+    "國北",
+    "NTUE",
+    "National Taipei University of Education",
+]
+
 TASKS = [
     ("google_news", "新聞媒體", None, 14),
-    ("dcard", "Dcard", "site:dcard.tw", 30),
+    ("dcard", "Dcard", "site:dcard.tw/f/ntue", 30),
     ("ptt", "PTT", "site:ptt.cc", 30),
     ("threads", "Threads", "site:threads.net OR site:threads.com", 30),
     ("instagram", "Instagram", "site:instagram.com", 30),
@@ -42,12 +56,20 @@ def keyword_query():
     return "(" + " OR ".join(f'\"{word}\"' for word in KEYWORDS) + ")"
 
 
-def matched_keyword(title):
+def relevance_keyword(title):
     norm = normalize_text(title)
-    for word in KEYWORDS:
-        if normalize_text(word) in norm:
-            return word
-    return KEYWORDS[0]
+    for term in RELEVANCE_TERMS:
+        if normalize_text(term) in norm:
+            # Prefer a canonical monitoring keyword when possible.
+            for keyword in KEYWORDS:
+                if normalize_text(keyword) in norm:
+                    return keyword
+            if "ntue" in norm:
+                return "NTUE"
+            if "北教" in norm or "國北" in norm:
+                return "國北教大"
+            return "國立臺北教育大學"
+    return None
 
 
 def fetch_task(task_name, display_source, site_filter, max_days):
@@ -60,7 +82,7 @@ def fetch_task(task_name, display_source, site_filter, max_days):
     )
     request = urllib.request.Request(
         rss_url,
-        headers={"User-Agent": "Mozilla/5.0 NTUE-Opinion-Monitor/3.0"},
+        headers={"User-Agent": "Mozilla/5.0 NTUE-Opinion-Monitor/3.1"},
     )
     cutoff = now_local() - timedelta(days=max_days)
 
@@ -77,6 +99,11 @@ def fetch_task(task_name, display_source, site_filter, max_days):
         if not raw_title or not link or not pub_raw:
             continue
 
+        title = raw_title.rsplit(" - ", 1)[0].strip() if " - " in raw_title else raw_title
+        matched = relevance_keyword(title)
+        if not matched:
+            continue
+
         try:
             dt = email.utils.parsedate_to_datetime(pub_raw)
             if dt.tzinfo is None:
@@ -85,7 +112,7 @@ def fetch_task(task_name, display_source, site_filter, max_days):
         except Exception:
             continue
 
-        # Never invent or coerce unknown dates into "now".
+        # Unknown, malformed, or 1970-like dates are discarded instead of relabeled as new.
         if local_dt.year <= 1971 or local_dt < cutoff:
             continue
 
@@ -94,11 +121,6 @@ def fetch_task(task_name, display_source, site_filter, max_days):
             if source_node is not None and source_node.text
             else "Google News"
         )
-
-        title = raw_title
-        if " - " in title:
-            title = title.rsplit(" - ", 1)[0].strip()
-
         source = display_source if display_source != "新聞媒體" else publisher
         items.append(
             {
@@ -107,7 +129,7 @@ def fetch_task(task_name, display_source, site_filter, max_days):
                 "source": source,
                 "publisher": publisher,
                 "publish_time": local_dt.isoformat(),
-                "keyword": matched_keyword(title),
+                "keyword": matched,
                 "task": task_name,
             }
         )
@@ -158,7 +180,7 @@ def main():
                     "error": None,
                 }
             )
-            print(f"[{task_name}] {len(task_items)} items")
+            print(f"[{task_name}] {len(task_items)} relevant items")
         except Exception as exc:
             health.append(
                 {
@@ -171,8 +193,9 @@ def main():
             )
             print(f"[{task_name}] FAILED: {exc}", file=sys.stderr)
 
-    # Keep recent previous items so one temporary source outage does not erase the board.
-    previous = load_previous()
+    # Keep recent previous items through temporary source outages, but re-validate
+    # them with the current relevance rules so historical false positives disappear.
+    previous = [item for item in load_previous() if relevance_keyword(item.get("title", ""))]
     combined = deduplicate(fresh + previous)
     cutoff = now_local() - timedelta(days=30)
     kept = []
