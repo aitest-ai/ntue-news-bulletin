@@ -42,19 +42,17 @@ jobs:
       - name: Search indexed public Threads posts
         run: python scripts/collect_threads_public_search.py
 
-      - name: Search public Threads posts with browser
-        continue-on-error: true
-        run: timeout 55s python scripts/collect_threads_browser.py
-
       - name: Send scheduled bulletin when due
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          SMTP_HOST: ${{ secrets.SMTP_HOST }}
-          SMTP_PORT: ${{ secrets.SMTP_PORT }}
           SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           PUBLIC_BASE_URL: https://ntue-news-bulletin.vercel.app
         run: python scripts/send_scheduled_digest.py
+
+      - name: Search public Threads posts with browser
+        continue-on-error: true
+        run: timeout 55s python scripts/collect_threads_browser.py
 
       - name: Commit refreshed data and delivery state
         run: |
