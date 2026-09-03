@@ -1,9 +1,14 @@
 {
   "email_enabled": false,
-  "recipients": [],
-  "schedules": ["08:00"],
+  "recipients": [
+    "kancollect126@gmail.com"
+  ],
+  "schedules": [
+    "08:00",
+    "16:07"
+  ],
   "timezone": "Asia/Taipei",
-  "report_days": 1,
+  "report_days": 7,
   "include_latest_items": 20,
   "subject_prefix": "【國北教大輿情快報】"
 }
