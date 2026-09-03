@@ -1,4 +1,4 @@
-name: NTUE Opinion Fetch
+name: NTUE Opinion Scheduler
 
 on:
   schedule:
@@ -8,39 +8,21 @@ on:
     types: [trigger-fetch]
 
 concurrency:
-  group: ntue-opinion-fetch
+  group: ntue-opinion-scheduler
   cancel-in-progress: false
 
 jobs:
-  run_scraper:
+  trigger_vercel_collector:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 3
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: pip
-          cache-dependency-path: backend/requirements.txt
-
-      - name: Install dependencies
+      - name: Trigger scheduled collection on Vercel
         run: |
-          cd backend
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          python -m playwright install --with-deps chromium
-
-      - name: Run Task-to-Task scraper
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
-          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
-          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
-          THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
-          THREADS_API_VERSION: ${{ secrets.THREADS_API_VERSION }}
-        run: |
-          cd backend
-          python run_scraper.py
+          set -e
+          curl --fail-with-body \
+            --retry 2 \
+            --retry-delay 3 \
+            --max-time 90 \
+            -X POST \
+            -H "User-Agent: NTUE-Opinion-Scheduler/2.0" \
+            https://ntue-news-bulletin.vercel.app/api/internal/scheduled-fetch
