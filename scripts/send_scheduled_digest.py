@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 import json
 import os
-import smtplib
-import ssl
+import urllib.error
 import urllib.request
 from datetime import datetime, timedelta, timezone
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -41,7 +38,6 @@ def due_slots(settings, state, now):
         except Exception:
             continue
         key = f"{now.date().isoformat()}@{slot}"
-        # GitHub scheduler may be delayed. Allow a 25-minute grace window.
         delta = (now - target).total_seconds() / 60
         if 0 <= delta <= 25 and sent.get(slot) != key:
             slots.append((slot, key))
@@ -53,7 +49,10 @@ def ai_summary(items, days):
     if not api_key:
         return "本期輿情資料已更新，請登入系統查看完整 AI 輿情報告。"
 
-    compact = [{"title": x.get("title"), "source": x.get("source"), "publish_time": x.get("publish_time")} for x in items[:100]]
+    compact = [
+        {"title": x.get("title"), "source": x.get("source"), "publish_time": x.get("publish_time")}
+        for x in items[:100]
+    ]
     prompt = (
         "你是國立臺北教育大學校級輿情分析助理。請依提供的公開新聞與社群標題，"
         "用繁體中文撰寫一段 180 字以內的主管摘要，包含主要議題、是否有明顯風險與建議是否持續觀察。"
@@ -73,23 +72,16 @@ def ai_summary(items, days):
     try:
         with urllib.request.urlopen(req, timeout=40) as resp:
             data = json.loads(resp.read().decode("utf-8"))
-        return "".join(p.get("text", "") for p in data.get("candidates", [{}])[0].get("content", {}).get("parts", [])).strip() or "本期資料已更新。"
+        return "".join(
+            p.get("text", "")
+            for p in data.get("candidates", [{}])[0].get("content", {}).get("parts", [])
+        ).strip() or "本期資料已更新。"
     except Exception as exc:
         print(f"[digest] Gemini summary fallback: {exc}")
         return "本期輿情資料已更新，請登入系統查看完整 AI 輿情報告。"
 
 
-def send_email(settings, feed, slot):
-    username = os.getenv("SMTP_USERNAME", "").strip()
-    password = os.getenv("SMTP_PASSWORD", "").strip()
-    host = os.getenv("SMTP_HOST", "smtp.gmail.com").strip() or "smtp.gmail.com"
-    port = int(os.getenv("SMTP_PORT", "587") or "587")
-    recipients = [x.strip() for x in settings.get("recipients", []) if str(x).strip()]
-    if not username or not password or not recipients:
-        print("[digest] SMTP secrets or recipients missing; skip email")
-        return False
-
-    days = int(settings.get("report_days", 1) or 1)
+def select_items(feed, days):
     cutoff = datetime.now(TAIPEI) - timedelta(days=days)
     selected = []
     for item in feed.get("items", []):
@@ -105,7 +97,12 @@ def send_email(settings, feed, slot):
                 selected.append(item)
         except Exception:
             selected.append(item)
+    return selected
 
+
+def build_email(settings, feed, slot):
+    days = int(settings.get("report_days", 1) or 1)
+    selected = select_items(feed, days)
     news_count = sum(1 for x in selected if x.get("source") not in SOCIAL)
     social_count = sum(1 for x in selected if x.get("source") in SOCIAL)
     latest_n = int(settings.get("include_latest_items", 20) or 20)
@@ -134,25 +131,53 @@ def send_email(settings, feed, slot):
       <h3 style='color:#0d2147;margin-top:24px'>最新訊息</h3>
       <table style='width:100%;border-collapse:collapse;font-size:14px'>{rows}</table>
     </div>"""
+    text = f"國北教大輿情快報\n\n{summary}\n\n完整報告：{base_url}/reports"
+    return subject, html, text
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = f"國北教大輿情監測 <{username}>"
-    msg["To"] = ", ".join(recipients)
-    msg.attach(MIMEText(f"國北教大輿情快報：{summary}\n完整報告：{base_url}/reports", "plain", "utf-8"))
-    msg.attach(MIMEText(html, "html", "utf-8"))
 
-    if port == 465:
-        with smtplib.SMTP_SSL(host, port, context=ssl.create_default_context(), timeout=30) as server:
-            server.login(username, password)
-            server.sendmail(username, recipients, msg.as_string())
-    else:
-        with smtplib.SMTP(host, port, timeout=30) as server:
-            server.starttls(context=ssl.create_default_context())
-            server.login(username, password)
-            server.sendmail(username, recipients, msg.as_string())
-    print(f"[digest] sent to {len(recipients)} recipient(s) for slot {slot}")
-    return True
+def send_email(settings, feed, slot):
+    api_key = os.getenv("RESEND_API_KEY", "").strip()
+    recipients = [str(x).strip() for x in settings.get("recipients", []) if str(x).strip()]
+    if not api_key:
+        print("[digest] RESEND_API_KEY missing; cannot send email")
+        return False
+    if not recipients:
+        print("[digest] no recipients configured; cannot send email")
+        return False
+
+    subject, html, text = build_email(settings, feed, slot)
+    from_email = os.getenv("RESEND_FROM", "國北教大輿情監測 <onboarding@resend.dev>").strip()
+    payload = json.dumps({
+        "from": from_email,
+        "to": recipients,
+        "subject": subject,
+        "html": html,
+        "text": text,
+    }, ensure_ascii=False).encode("utf-8")
+
+    req = urllib.request.Request(
+        "https://api.resend.com/emails",
+        data=payload,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "User-Agent": "NTUE-Opinion-Monitor/1.0",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            body = resp.read().decode("utf-8", errors="ignore")
+            data = json.loads(body) if body else {}
+        print(f"[digest] Resend accepted email id={data.get('id','unknown')} to {len(recipients)} recipient(s) for slot {slot}")
+        return True
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="ignore")
+        print(f"[digest] Resend HTTP {exc.code}: {detail[:800]}")
+        return False
+    except Exception as exc:
+        print(f"[digest] Resend send failed: {exc}")
+        return False
 
 
 def main():
