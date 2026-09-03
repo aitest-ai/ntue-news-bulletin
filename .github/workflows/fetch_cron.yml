@@ -1,29 +1,54 @@
-name: NTUE Opinion Scheduler
+name: NTUE Opinion Collector
 
 on:
   push:
     branches: [master]
+    paths:
+      - "scripts/collect_static.py"
+      - ".github/workflows/fetch_cron.yml"
   schedule:
-    - cron: "*/15 * * * *"
+    # Taiwan 07:30-10:00 (UTC previous day 23:30 through 02:00)
+    - cron: "30 23 * * *"
+    - cron: "0,30 0-1 * * *"
+    - cron: "0 2 * * *"
+    # Taiwan 16:00-18:00 (UTC 08:00-10:00)
+    - cron: "0,30 8-9 * * *"
+    - cron: "0 10 * * *"
   workflow_dispatch:
-  repository_dispatch:
-    types: [trigger-fetch]
+
+permissions:
+  contents: write
 
 concurrency:
-  group: ntue-opinion-scheduler
+  group: ntue-opinion-collector
   cancel-in-progress: false
 
 jobs:
-  trigger_vercel_collector:
+  collect:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 5
     steps:
-      - name: Diagnose Vercel API and scheduler
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Collect public opinion data
+        run: python scripts/collect_static.py
+
+      - name: Commit refreshed data
         run: |
-          set +e
-          echo '=== API import check: GET /api/auth/login (expected 405 if healthy) ==='
-          curl -sS -i --max-time 20 https://ntue-news-bulletin.vercel.app/api/auth/login | head -40
-          echo
-          echo '=== Scheduler endpoint ==='
-          curl -sS -i --max-time 60 -X POST -H "User-Agent: NTUE-Opinion-Scheduler/2.0" https://ntue-news-bulletin.vercel.app/api/internal/scheduled-fetch | head -80
-          exit 0
+          if git diff --quiet -- frontend/public/data/news.json; then
+            echo "No data changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/public/data/news.json
+          git commit -m "data: refresh NTUE opinion feed"
+          git push origin HEAD:master
