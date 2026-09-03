@@ -5,15 +5,11 @@ on:
     branches: [master]
     paths:
       - "scripts/collect_static.py"
+      - "scripts/send_scheduled_digest.py"
+      - "frontend/public/data/settings.json"
       - ".github/workflows/fetch_cron.yml"
   schedule:
-    # Taiwan 07:30-10:00 (UTC previous day 23:30 through 02:00)
-    - cron: "30 23 * * *"
-    - cron: "0,30 0-1 * * *"
-    - cron: "0 2 * * *"
-    # Taiwan 16:00-18:00 (UTC 08:00-10:00)
-    - cron: "0,30 8-9 * * *"
-    - cron: "0 10 * * *"
+    - cron: "*/10 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -26,7 +22,7 @@ concurrency:
 jobs:
   collect:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -41,14 +37,24 @@ jobs:
       - name: Collect public opinion data
         run: python scripts/collect_static.py
 
-      - name: Commit refreshed data
+      - name: Send scheduled bulletin when due
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          PUBLIC_BASE_URL: https://ntue-news-bulletin.vercel.app
+        run: python scripts/send_scheduled_digest.py
+
+      - name: Commit refreshed data and delivery state
         run: |
-          if git diff --quiet -- frontend/public/data/news.json; then
+          if git diff --quiet -- frontend/public/data/news.json frontend/public/data/email-state.json; then
             echo "No data changes."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add frontend/public/data/news.json
+          git add frontend/public/data/news.json frontend/public/data/email-state.json
           git commit -m "data: refresh NTUE opinion feed"
           git push origin HEAD:master
