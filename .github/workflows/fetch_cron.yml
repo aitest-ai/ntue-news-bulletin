@@ -35,6 +35,8 @@ jobs:
           python-version: "3.11"
 
       - name: Collect public opinion data
+        env:
+          THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
         run: python scripts/collect_static.py
 
       - name: Send scheduled bulletin when due
