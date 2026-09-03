@@ -1,6 +1,6 @@
 {
   "schema_version": 8,
-  "updated_at": "2026-09-03T22:39:21.648987+08:00",
+  "updated_at": "2026-09-03T23:07:23.266131+08:00",
   "keywords": [
     "國立臺北教育大學",
     "國北教大",
@@ -15,7 +15,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-03T19:00:02+08:00",
-      "discovered_at": "2026-09-03T22:38:20.799761+08:00",
+      "discovered_at": "2026-09-03T23:07:11.905252+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -26,7 +26,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-03T00:03:42+08:00",
-      "discovered_at": "2026-09-03T22:38:25.590847+08:00",
+      "discovered_at": "2026-09-03T23:07:11.905451+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -37,7 +37,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-02T21:05:56+08:00",
-      "discovered_at": "2026-09-03T22:38:20.799770+08:00",
+      "discovered_at": "2026-09-03T23:07:11.905295+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -92,7 +92,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-08-31T19:40:15+08:00",
-      "discovered_at": "2026-09-03T22:38:25.590841+08:00",
+      "discovered_at": "2026-09-03T23:07:11.905442+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -103,7 +103,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-08-31T19:26:47+08:00",
-      "discovered_at": "2026-09-03T22:38:20.799816+08:00",
+      "discovered_at": "2026-09-03T23:07:11.905411+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -235,8 +235,8 @@
       "source": "LINE TODAY",
       "publisher": "LINE TODAY",
       "publish_time": "2026-08-30T01:09:07+08:00",
-      "discovered_at": "2026-09-03T22:37:54.258823+08:00",
-      "keyword": "國北教大",
+      "discovered_at": "2026-09-03T23:07:11.155547+08:00",
+      "keyword": "北教大",
       "task": "google_news",
       "discovery": "google_news"
     },
@@ -277,7 +277,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-08-28T23:14:34+08:00",
-      "discovered_at": "2026-09-03T22:38:25.590835+08:00",
+      "discovered_at": "2026-09-03T23:07:11.905432+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -299,7 +299,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-08-28T15:56:55+08:00",
-      "discovered_at": "2026-09-03T22:38:20.799756+08:00",
+      "discovered_at": "2026-09-03T23:07:11.905245+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -321,8 +321,8 @@
       "source": "Yahoo運動",
       "publisher": "Yahoo運動",
       "publish_time": "2026-08-28T07:15:43+08:00",
-      "discovered_at": "2026-09-03T22:37:54.258807+08:00",
-      "keyword": "國北教大",
+      "discovered_at": "2026-09-03T23:07:11.155521+08:00",
+      "keyword": "北教大",
       "task": "google_news",
       "discovery": "google_news"
     },
@@ -332,8 +332,8 @@
       "source": "LINE TODAY",
       "publisher": "LINE TODAY",
       "publish_time": "2026-08-28T01:26:01+08:00",
-      "discovered_at": "2026-09-03T22:37:54.258816+08:00",
-      "keyword": "國北教大",
+      "discovered_at": "2026-09-03T23:07:11.155538+08:00",
+      "keyword": "北教大",
       "task": "google_news",
       "discovery": "google_news"
     },
@@ -343,8 +343,8 @@
       "source": "LINE TODAY",
       "publisher": "LINE TODAY",
       "publish_time": "2026-08-27T23:34:38+08:00",
-      "discovered_at": "2026-09-03T22:37:54.258805+08:00",
-      "keyword": "國北教大",
+      "discovered_at": "2026-09-03T23:07:11.155517+08:00",
+      "keyword": "北教大",
       "task": "google_news",
       "discovery": "google_news"
     },
@@ -354,8 +354,8 @@
       "source": "Life 生活網",
       "publisher": "Life 生活網",
       "publish_time": "2026-08-27T22:36:00+08:00",
-      "discovered_at": "2026-09-03T22:37:54.258845+08:00",
-      "keyword": "國北教大",
+      "discovered_at": "2026-09-03T23:07:11.155556+08:00",
+      "keyword": "北教大",
       "task": "google_news",
       "discovery": "google_news"
     },
@@ -376,8 +376,8 @@
       "source": "中天新聞網",
       "publisher": "中天新聞網",
       "publish_time": "2026-08-27T21:27:33+08:00",
-      "discovered_at": "2026-09-03T22:37:54.258809+08:00",
-      "keyword": "國北教大",
+      "discovered_at": "2026-09-03T23:07:11.155524+08:00",
+      "keyword": "北教大",
       "task": "google_news",
       "discovery": "google_news"
     },
@@ -387,7 +387,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-08-27T20:52:36+08:00",
-      "discovered_at": "2026-09-03T22:38:20.799785+08:00",
+      "discovered_at": "2026-09-03T23:07:11.905309+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -486,7 +486,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-08-25T17:07:22+08:00",
-      "discovered_at": "2026-09-03T22:38:20.799793+08:00",
+      "discovered_at": "2026-09-03T23:07:11.905370+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -497,7 +497,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-08-25T00:58:52+08:00",
-      "discovered_at": "2026-09-03T22:38:25.590777+08:00",
+      "discovered_at": "2026-09-03T23:07:11.905302+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -530,7 +530,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-08-23T21:26:11+08:00",
-      "discovered_at": "2026-09-03T22:38:25.590851+08:00",
+      "discovered_at": "2026-09-03T23:07:11.905457+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -541,7 +541,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-08-23T16:24:30+08:00",
-      "discovered_at": "2026-09-03T22:38:20.799812+08:00",
+      "discovered_at": "2026-09-03T23:07:11.905420+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -574,7 +574,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-08-22T16:31:51+08:00",
-      "discovered_at": "2026-09-03T22:38:20.799737+08:00",
+      "discovered_at": "2026-09-03T23:07:11.905212+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -680,7 +680,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-08-20T10:09:06+08:00",
-      "discovered_at": "2026-09-03T22:38:20.799820+08:00",
+      "discovered_at": "2026-09-03T23:07:11.905426+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -691,7 +691,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-08-19T19:13:09+08:00",
-      "discovered_at": "2026-09-03T22:38:25.590756+08:00",
+      "discovered_at": "2026-09-03T23:07:11.905273+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -812,7 +812,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-08-15T15:00:00+08:00",
-      "discovered_at": "2026-09-03T22:38:20.799826+08:00",
+      "discovered_at": "2026-09-03T23:07:11.905463+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -845,7 +845,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-08-14T15:00:00+08:00",
-      "discovered_at": "2026-09-03T22:38:20.799751+08:00",
+      "discovered_at": "2026-09-03T23:07:11.905224+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -922,7 +922,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-08-11T15:00:00+08:00",
-      "discovered_at": "2026-09-03T22:38:20.799789+08:00",
+      "discovered_at": "2026-09-03T23:07:11.905340+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -999,7 +999,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-08-07T15:00:00+08:00",
-      "discovered_at": "2026-09-03T22:38:25.590769+08:00",
+      "discovered_at": "2026-09-03T23:07:11.905286+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -1021,7 +1021,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-08-06T15:00:00+08:00",
-      "discovered_at": "2026-09-03T22:38:20.799745+08:00",
+      "discovered_at": "2026-09-03T23:07:11.905232+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -1032,7 +1032,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-08-06T15:00:00+08:00",
-      "discovered_at": "2026-09-03T22:38:25.590783+08:00",
+      "discovered_at": "2026-09-03T23:07:11.905314+08:00",
       "keyword": "國立臺北教育大學",
       "task": "dcard",
       "discovery": "google_news"
@@ -1060,23 +1060,23 @@
       "discovery": "google_news"
     },
     {
-      "title": "【售】二手書- 臺北教育大學板",
-      "url": "https://news.google.com/rss/articles/CBMiUEFVX3lxTE9QZUFpTEdIenNzelVFYnNWeDV1NDdLT0RZR3g4ZmVkQ2hYNmhhaFlneVd2ZnpWdXh0eGo2RUNjWHZ4UXpaWVZHNXVzTXJtZzdQ?oc=5",
-      "source": "Dcard",
-      "publisher": "Dcard",
-      "publish_time": "2026-08-05T15:00:00+08:00",
-      "discovered_at": "2026-09-03T22:38:20.799781+08:00",
-      "keyword": "國北教大",
-      "task": "dcard",
-      "discovery": "google_news"
-    },
-    {
       "title": "【徵】樹林彭福國小誠徵教師- 臺北教育大學板",
       "url": "https://news.google.com/rss/articles/CBMiUEFVX3lxTE1NYmVTb2VlVXVvTzEyTTZsbDlfOUdnY0Roc25uR2x0dkxHZ2lYQXNvMmg1blUtT0FySm4wZ3hPRmd6YjI0azVSdjNxdnZFZC1t?oc=5",
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-08-05T15:00:00+08:00",
-      "discovered_at": "2026-09-03T22:38:25.590788+08:00",
+      "discovered_at": "2026-09-03T23:07:11.905346+08:00",
+      "keyword": "國北教大",
+      "task": "dcard",
+      "discovery": "google_news"
+    },
+    {
+      "title": "【售】二手書- 臺北教育大學板",
+      "url": "https://news.google.com/rss/articles/CBMiUEFVX3lxTE9QZUFpTEdIenNzelVFYnNWeDV1NDdLT0RZR3g4ZmVkQ2hYNmhhaFlneVd2ZnpWdXh0eGo2RUNjWHZ4UXpaWVZHNXVzTXJtZzdQ?oc=5",
+      "source": "Dcard",
+      "publisher": "Dcard",
+      "publish_time": "2026-08-05T15:00:00+08:00",
+      "discovered_at": "2026-09-03T23:07:11.905358+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -1120,7 +1120,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-08-04T15:00:00+08:00",
-      "discovered_at": "2026-09-03T22:38:20.799800+08:00",
+      "discovered_at": "2026-09-03T23:07:11.905364+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -1151,7 +1151,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-08-03T15:00:00+08:00",
-      "discovered_at": "2026-09-03T22:38:25.590820+08:00",
+      "discovered_at": "2026-09-03T23:07:11.905399+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -1173,7 +1173,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-08-02T15:00:00+08:00",
-      "discovered_at": "2026-09-03T22:38:25.590811+08:00",
+      "discovered_at": "2026-09-03T23:07:11.905384+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -1206,7 +1206,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-07-31T15:00:00+08:00",
-      "discovered_at": "2026-09-03T22:38:20.799775+08:00",
+      "discovered_at": "2026-09-03T23:07:11.905324+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -1228,7 +1228,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-07-29T15:00:00+08:00",
-      "discovered_at": "2026-09-03T22:38:20.799808+08:00",
+      "discovered_at": "2026-09-03T23:07:11.905405+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -1272,7 +1272,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-07-27T15:00:00+08:00",
-      "discovered_at": "2026-09-03T22:38:25.590807+08:00",
+      "discovered_at": "2026-09-03T23:07:11.905378+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -1316,7 +1316,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-07-23T15:00:00+08:00",
-      "discovered_at": "2026-09-03T22:38:20.799805+08:00",
+      "discovered_at": "2026-09-03T23:07:11.905394+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -1327,7 +1327,7 @@
       "source": "PTT",
       "publisher": "ptt.cc",
       "publish_time": "2026-07-22T15:00:00+08:00",
-      "discovered_at": "2026-09-03T22:38:42.449059+08:00",
+      "discovered_at": "2026-09-03T23:07:15.212048+08:00",
       "keyword": "NTUE",
       "task": "ptt",
       "discovery": "google_news"
@@ -1349,7 +1349,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-07-21T15:00:00+08:00",
-      "discovered_at": "2026-09-03T22:38:20.799797+08:00",
+      "discovered_at": "2026-09-03T23:07:11.905352+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -1371,12 +1371,12 @@
       "task": "google_news",
       "source": "新聞媒體",
       "status": "healthy",
-      "count": 39,
+      "count": 18,
       "error": null,
       "keyword_counts": {
-        "國立臺北教育大學": 7,
-        "國北教大": 32,
-        "北教大": 0,
+        "國立臺北教育大學": 0,
+        "國北教大": 0,
+        "北教大": 18,
         "NTUE": 0,
         "National Taipei University of Education": 0
       }
@@ -1385,10 +1385,10 @@
       "task": "dcard",
       "source": "Dcard",
       "status": "healthy",
-      "count": 32,
+      "count": 31,
       "error": null,
       "engine_counts": {
-        "google_news": 32,
+        "google_news": 31,
         "bing_web": 0
       }
     },
@@ -1407,10 +1407,10 @@
       "task": "instagram",
       "source": "Instagram",
       "status": "healthy",
-      "count": 41,
+      "count": 0,
       "error": null,
       "engine_counts": {
-        "google_news": 41,
+        "google_news": 0,
         "bing_web": 0
       }
     },
@@ -1432,10 +1432,10 @@
     }
   ],
   "summary": {
-    "total": 157,
-    "fresh_this_run": 113,
+    "total": 136,
+    "fresh_this_run": 50,
     "healthy_tasks": 5,
     "failed_tasks": 0,
-    "news_publishers": 16
+    "news_publishers": 10
   }
 }
