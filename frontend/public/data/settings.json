@@ -5,8 +5,7 @@
   ],
   "schedules": [
     "08:00",
-    "16:07",
-    "18:53"
+    "16:07"
   ],
   "timezone": "Asia/Taipei",
   "report_days": 7,
