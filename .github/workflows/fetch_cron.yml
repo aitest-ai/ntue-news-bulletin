@@ -1,6 +1,8 @@
 name: NTUE Opinion Scheduler
 
 on:
+  push:
+    branches: [master]
   schedule:
     - cron: "*/15 * * * *"
   workflow_dispatch:
