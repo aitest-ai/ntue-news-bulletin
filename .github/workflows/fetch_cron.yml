@@ -18,13 +18,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
-      - name: Trigger scheduled collection on Vercel
+      - name: Diagnose Vercel API and scheduler
         run: |
-          set -e
-          curl --fail-with-body \
-            --retry 2 \
-            --retry-delay 3 \
-            --max-time 90 \
-            -X POST \
-            -H "User-Agent: NTUE-Opinion-Scheduler/2.0" \
-            https://ntue-news-bulletin.vercel.app/api/internal/scheduled-fetch
+          set +e
+          echo '=== API import check: GET /api/auth/login (expected 405 if healthy) ==='
+          curl -sS -i --max-time 20 https://ntue-news-bulletin.vercel.app/api/auth/login | head -40
+          echo
+          echo '=== Scheduler endpoint ==='
+          curl -sS -i --max-time 60 -X POST -H "User-Agent: NTUE-Opinion-Scheduler/2.0" https://ntue-news-bulletin.vercel.app/api/internal/scheduled-fetch | head -80
+          exit 0
