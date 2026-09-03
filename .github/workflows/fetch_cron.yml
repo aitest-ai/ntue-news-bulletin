@@ -7,7 +7,11 @@ on:
       - "scripts/collect_static.py"
       - "scripts/collect_threads_public_search.py"
       - "scripts/collect_threads_browser.py"
+      - "scripts/filter_relevance.py"
       - "scripts/send_scheduled_digest.py"
+      - "scripts/send_scheduled_digest_with_ai.py"
+      - "frontend/src/app/api/ai-report/scheduled/route.ts"
+      - "frontend/src/middleware.ts"
       - "frontend/public/data/settings.json"
       - "frontend/public/data/email-state.json"
       - ".github/workflows/fetch_cron.yml"
@@ -43,15 +47,18 @@ jobs:
       - name: Search indexed public Threads posts
         run: python scripts/collect_threads_public_search.py
 
+      - name: Remove unrelated general news
+        run: python scripts/filter_relevance.py
+
       - name: Generate AI PDF report and send scheduled bulletin when due
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           PUBLIC_BASE_URL: https://ntue-news-bulletin.vercel.app
         run: |
           if python scripts/send_scheduled_digest.py --is-due; then
-            echo "Bulletin is due; preparing PDF report."
+            echo "Bulletin is due; generating verified AI report and PDF attachment."
             python -m pip install --quiet reportlab
-            python scripts/send_scheduled_digest.py
+            python scripts/send_scheduled_digest_with_ai.py
           else
             echo "No scheduled bulletin due."
           fi
