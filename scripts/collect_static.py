@@ -20,8 +20,6 @@ KEYWORDS = [
     "National Taipei University of Education",
 ]
 
-# Used only for relevance validation. These aliases are deliberately specific enough
-# to keep NTUE-related student/community posts while rejecting unrelated search noise.
 RELEVANCE_TERMS = [
     "國立臺北教育大學",
     "國立台北教育大學",
@@ -35,8 +33,7 @@ RELEVANCE_TERMS = [
     "National Taipei University of Education",
 ]
 
-TASKS = [
-    ("google_news", "新聞媒體", None, 14),
+SOCIAL_TASKS = [
     ("dcard", "Dcard", "site:dcard.tw/f/ntue", 30),
     ("ptt", "PTT", "site:ptt.cc", 30),
     ("threads", "Threads", "site:threads.net OR site:threads.com", 30),
@@ -60,7 +57,6 @@ def relevance_keyword(title):
     norm = normalize_text(title)
     for term in RELEVANCE_TERMS:
         if normalize_text(term) in norm:
-            # Prefer a canonical monitoring keyword when possible.
             for keyword in KEYWORDS:
                 if normalize_text(keyword) in norm:
                     return keyword
@@ -72,36 +68,25 @@ def relevance_keyword(title):
     return None
 
 
-def fetch_task(task_name, display_source, site_filter, max_days):
-    base = keyword_query()
-    query = f"{base} {site_filter or ''} when:{max_days}d".strip()
+def fetch_rss(query, max_days, user_agent="Mozilla/5.0 NTUE-Opinion-Monitor/3.2"):
     encoded = urllib.parse.quote(query)
     rss_url = (
         "https://news.google.com/rss/search"
         f"?q={encoded}&hl=zh-TW&gl=TW&ceid=TW:zh-Hant"
     )
-    request = urllib.request.Request(
-        rss_url,
-        headers={"User-Agent": "Mozilla/5.0 NTUE-Opinion-Monitor/3.1"},
-    )
+    request = urllib.request.Request(rss_url, headers={"User-Agent": user_agent})
     cutoff = now_local() - timedelta(days=max_days)
 
     with urllib.request.urlopen(request, timeout=15) as response:
         root = ET.fromstring(response.read())
 
-    items = []
+    rows = []
     for node in root.findall(".//item")[:40]:
         raw_title = (node.findtext("title") or "").strip()
         link = (node.findtext("link") or "").strip()
         pub_raw = (node.findtext("pubDate") or "").strip()
         source_node = node.find("source")
-
         if not raw_title or not link or not pub_raw:
-            continue
-
-        title = raw_title.rsplit(" - ", 1)[0].strip() if " - " in raw_title else raw_title
-        matched = relevance_keyword(title)
-        if not matched:
             continue
 
         try:
@@ -112,7 +97,6 @@ def fetch_task(task_name, display_source, site_filter, max_days):
         except Exception:
             continue
 
-        # Unknown, malformed, or 1970-like dates are discarded instead of relabeled as new.
         if local_dt.year <= 1971 or local_dt < cutoff:
             continue
 
@@ -121,19 +105,67 @@ def fetch_task(task_name, display_source, site_filter, max_days):
             if source_node is not None and source_node.text
             else "Google News"
         )
-        source = display_source if display_source != "新聞媒體" else publisher
-        items.append(
-            {
-                "title": title,
-                "url": link,
-                "source": source,
-                "publisher": publisher,
-                "publish_time": local_dt.isoformat(),
-                "keyword": matched,
-                "task": task_name,
-            }
-        )
+        title = raw_title.rsplit(" - ", 1)[0].strip() if " - " in raw_title else raw_title
+        rows.append({
+            "title": title,
+            "url": link,
+            "publisher": publisher,
+            "publish_time": local_dt.isoformat(),
+        })
+    return rows
 
+
+def fetch_news_task():
+    """Search each monitoring keyword separately to preserve publisher diversity.
+
+    News results are trusted based on the Google News keyword query itself; unlike
+    social posts, the headline is not required to repeat the school name because
+    many legitimate news headlines mention a person/event while the article body
+    carries the NTUE connection.
+    """
+    items = []
+    seen = set()
+    keyword_counts = {}
+
+    for keyword in KEYWORDS:
+        query = f'"{keyword}" when:14d'
+        rows = fetch_rss(query, 14)
+        keyword_counts[keyword] = len(rows)
+        for row in rows:
+            key = row["url"]
+            if key in seen:
+                continue
+            seen.add(key)
+            items.append({
+                "title": row["title"],
+                "url": row["url"],
+                "source": row["publisher"],
+                "publisher": row["publisher"],
+                "publish_time": row["publish_time"],
+                "keyword": keyword,
+                "task": "google_news",
+            })
+
+    return items, keyword_counts
+
+
+def fetch_social_task(task_name, display_source, site_filter, max_days):
+    query = f"{keyword_query()} {site_filter} when:{max_days}d".strip()
+    rows = fetch_rss(query, max_days)
+    items = []
+    for row in rows:
+        matched = relevance_keyword(row["title"])
+        if not matched:
+            continue
+        items.append({
+            "title": row["title"],
+            "url": row["url"],
+            "source": display_source,
+            "publisher": row["publisher"],
+            "publish_time": row["publish_time"],
+            "keyword": matched,
+            "task": task_name,
+        })
     return items
 
 
@@ -162,40 +194,62 @@ def deduplicate(items):
     return result
 
 
+def previous_item_is_valid(item):
+    if item.get("task") == "google_news":
+        return True
+    return bool(relevance_keyword(item.get("title", "")))
+
+
 def main():
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     health = []
     fresh = []
 
-    for task_name, source, site_filter, max_days in TASKS:
+    try:
+        news_items, keyword_counts = fetch_news_task()
+        fresh.extend(news_items)
+        health.append({
+            "task": "google_news",
+            "source": "新聞媒體",
+            "status": "healthy",
+            "count": len(news_items),
+            "error": None,
+            "keyword_counts": keyword_counts,
+        })
+        print(f"[google_news] {len(news_items)} unique items from {len(KEYWORDS)} keyword searches")
+    except Exception as exc:
+        health.append({
+            "task": "google_news",
+            "source": "新聞媒體",
+            "status": "failed",
+            "count": 0,
+            "error": str(exc)[:240],
+        })
+        print(f"[google_news] FAILED: {exc}", file=sys.stderr)
+
+    for task_name, source, site_filter, max_days in SOCIAL_TASKS:
         try:
-            task_items = fetch_task(task_name, source, site_filter, max_days)
+            task_items = fetch_social_task(task_name, source, site_filter, max_days)
             fresh.extend(task_items)
-            health.append(
-                {
-                    "task": task_name,
-                    "source": source,
-                    "status": "healthy",
-                    "count": len(task_items),
-                    "error": None,
-                }
-            )
+            health.append({
+                "task": task_name,
+                "source": source,
+                "status": "healthy",
+                "count": len(task_items),
+                "error": None,
+            })
             print(f"[{task_name}] {len(task_items)} relevant items")
         except Exception as exc:
-            health.append(
-                {
-                    "task": task_name,
-                    "source": source,
-                    "status": "failed",
-                    "count": 0,
-                    "error": str(exc)[:240],
-                }
-            )
+            health.append({
+                "task": task_name,
+                "source": source,
+                "status": "failed",
+                "count": 0,
+                "error": str(exc)[:240],
+            })
             print(f"[{task_name}] FAILED: {exc}", file=sys.stderr)
 
-    # Keep recent previous items through temporary source outages, but re-validate
-    # them with the current relevance rules so historical false positives disappear.
-    previous = [item for item in load_previous() if relevance_keyword(item.get("title", ""))]
+    previous = [item for item in load_previous() if previous_item_is_valid(item)]
     combined = deduplicate(fresh + previous)
     cutoff = now_local() - timedelta(days=30)
     kept = []
@@ -210,10 +264,16 @@ def main():
             continue
 
     kept.sort(key=lambda x: x.get("publish_time", ""), reverse=True)
-    kept = kept[:300]
+    kept = kept[:500]
+
+    news_publishers = sorted({
+        item.get("publisher") or item.get("source")
+        for item in kept
+        if item.get("task") == "google_news"
+    })
 
     payload = {
-        "schema_version": 3,
+        "schema_version": 4,
         "updated_at": now_local().isoformat(),
         "keywords": KEYWORDS,
         "items": kept,
@@ -223,13 +283,14 @@ def main():
             "fresh_this_run": len(fresh),
             "healthy_tasks": sum(1 for h in health if h["status"] == "healthy"),
             "failed_tasks": sum(1 for h in health if h["status"] == "failed"),
+            "news_publishers": len(news_publishers),
         },
     }
     OUT_FILE.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
-    print(f"Wrote {len(kept)} items -> {OUT_FILE}")
+    print(f"Wrote {len(kept)} items, {len(news_publishers)} news publishers -> {OUT_FILE}")
 
 
 if __name__ == "__main__":
