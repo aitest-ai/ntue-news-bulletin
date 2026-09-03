@@ -13,6 +13,7 @@ export async function middleware(req: NextRequest) {
   if (
     publicPaths.has(pathname) ||
     pathname.startsWith("/api/auth/") ||
+    pathname === "/api/ai-report/scheduled" ||
     pathname.startsWith("/r/") ||
     pathname.startsWith("/_next/")
   ) {
