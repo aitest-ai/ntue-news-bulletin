@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "國北教大新聞公佈欄",
-  description: "密碼鎖定保護的新聞公佈欄 - 定時自動抓取最新新聞",
+  title: "國北教大輿情監測系統",
+  description: "國立臺北教育大學新聞與公開社群輿情監測 — Task-to-Task resilient pipeline",
 };
 
 export default function RootLayout({
@@ -13,9 +13,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-Hant-TW">
-      <body>
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
