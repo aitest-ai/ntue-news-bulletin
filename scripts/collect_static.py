@@ -2,7 +2,6 @@
 import email.utils
 import html
 import json
-import os
 import re
 import sys
 import urllib.parse
@@ -10,14 +9,12 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 
 TAIPEI = timezone(timedelta(hours=8))
 ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = ROOT / "frontend" / "public" / "data"
 OUT_FILE = OUT_DIR / "news.json"
-THREADS_STATE_FILE = OUT_DIR / "threads-state.json"
-THREADS_OFFICIAL_REFRESH_HOURS = 3
 
 KEYWORDS = [
     "國立臺北教育大學",
@@ -76,22 +73,9 @@ def parse_rfc822(value):
         return None
 
 
-def parse_iso(value):
-    if not value:
-        return None
-    try:
-        dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
-        dt = dt.astimezone(TAIPEI)
-        return dt if dt.year > 1971 else None
-    except Exception:
-        return None
-
-
 def request_text(url, headers=None, timeout=18):
     base_headers = {
-        "User-Agent":"Mozilla/5.0 NTUE-Opinion-Monitor/6.0",
+        "User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/150 Safari/537.36",
         "Accept-Language":"zh-TW,zh;q=0.9,en;q=0.7",
     }
     if headers:
@@ -132,11 +116,40 @@ def fetch_bing_web_rss(query, limit=50):
         title = (node.findtext("title") or "").strip()
         link = (node.findtext("link") or "").strip()
         desc = (node.findtext("description") or "").strip()
-        pub = (node.findtext("pubDate") or "").strip()
         if not title or not link:
             continue
-        dt = parse_rfc822(pub)
-        rows.append({"title":title,"url":link,"publisher":urlparse(link).netloc or "Bing Web","publish_time":dt.isoformat() if dt else None,"description":desc,"discovery":"bing_web"})
+        rows.append({"title":title,"url":link,"publisher":urlparse(link).netloc or "Bing Web","publish_time":None,"description":desc,"discovery":"bing_web"})
+    return rows
+
+
+def fetch_duckduckgo_html(query, limit=40):
+    url = "https://html.duckduckgo.com/html/?" + urllib.parse.urlencode({"q":query})
+    page = request_text(url, headers={"Referer":"https://duckduckgo.com/"}, timeout=20)
+    rows = []
+    blocks = re.findall(r'<div class="result[^>]*>(.*?)</div>\s*</div>', page, re.I | re.S)
+    if not blocks:
+        blocks = re.findall(r'<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>(.*?)</a>', page, re.I | re.S)
+        for href, title_html in blocks[:limit]:
+            link = html.unescape(href)
+            if "uddg=" in link:
+                qs = parse_qs(urlparse(link).query)
+                link = qs.get("uddg", [link])[0]
+            title = re.sub(r"<[^>]+>", "", html.unescape(title_html)).strip()
+            rows.append({"title":title,"url":link,"publisher":urlparse(link).netloc or "DuckDuckGo","publish_time":None,"description":"","discovery":"duckduckgo"})
+        return rows
+
+    for block in blocks[:limit]:
+        m = re.search(r'<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>(.*?)</a>', block, re.I | re.S)
+        if not m:
+            continue
+        link = html.unescape(m.group(1))
+        if "uddg=" in link:
+            qs = parse_qs(urlparse(link).query)
+            link = qs.get("uddg", [link])[0]
+        title = re.sub(r"<[^>]+>", "", html.unescape(m.group(2))).strip()
+        sm = re.search(r'class="result__snippet"[^>]*>(.*?)</', block, re.I | re.S)
+        desc = re.sub(r"<[^>]+>", "", html.unescape(sm.group(1))).strip() if sm else ""
+        rows.append({"title":title,"url":link,"publisher":urlparse(link).netloc or "DuckDuckGo","publish_time":None,"description":desc,"discovery":"duckduckgo"})
     return rows
 
 
@@ -187,88 +200,6 @@ def fetch_social_task(spec):
     return items, engine_counts
 
 
-def load_threads_state():
-    if not THREADS_STATE_FILE.exists():
-        return {"last_official_fetch":None,"items":[]}
-    try:
-        data = json.loads(THREADS_STATE_FILE.read_text(encoding="utf-8"))
-        return data if isinstance(data, dict) else {"last_official_fetch":None,"items":[]}
-    except Exception:
-        return {"last_official_fetch":None,"items":[]}
-
-
-def save_threads_state(items):
-    THREADS_STATE_FILE.write_text(json.dumps({
-        "last_official_fetch": now_local().isoformat(),
-        "items": items[:500],
-    }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-
-
-def threads_cache_is_fresh(state):
-    dt = parse_iso(state.get("last_official_fetch"))
-    return bool(dt and now_local() - dt < timedelta(hours=THREADS_OFFICIAL_REFRESH_HOURS))
-
-
-def fetch_threads_official_api(token):
-    rows, seen = [], set()
-    since = (now_local() - timedelta(days=30)).isoformat()
-    until = now_local().isoformat()
-    fields = "id,text,timestamp,permalink,username"
-    for keyword in KEYWORDS:
-        params = urllib.parse.urlencode({
-            "q": keyword,
-            "search_type": "RECENT",
-            "search_mode": "KEYWORD",
-            "fields": fields,
-            "limit": 50,
-            "since": since,
-            "until": until,
-            "access_token": token,
-        })
-        next_url = f"https://graph.threads.net/keyword_search?{params}"
-        pages = 0
-        while next_url and pages < 2:
-            pages += 1
-            try:
-                data = json.loads(request_text(next_url, timeout=25))
-            except Exception as exc:
-                print(f"[threads:official:{keyword}:page{pages}] failed: {exc}", file=sys.stderr)
-                break
-            if isinstance(data, dict) and data.get("error"):
-                print(f"[threads:official:{keyword}] API error: {data['error']}", file=sys.stderr)
-                break
-            for post in data.get("data", []):
-                text = (post.get("text") or "").strip()
-                matched = relevance_keyword(text)
-                permalink = post.get("permalink") or ""
-                pid = str(post.get("id") or permalink)
-                if not text or not matched or not pid or pid in seen:
-                    continue
-                seen.add(pid)
-                dt = parse_iso(post.get("timestamp"))
-                rows.append({"title":text[:300],"url":permalink,"source":"Threads","publisher":post.get("username") or "Threads","publish_time":dt.isoformat() if dt else None,"discovered_at":now_local().isoformat(),"keyword":matched,"task":"threads","discovery":"threads_official"})
-            next_url = ((data.get("paging") or {}).get("next") or "").strip()
-    return rows
-
-
-def fetch_threads_official():
-    token = (os.getenv("THREADS_ACCESS_TOKEN") or "").strip()
-    if not token:
-        return [], {"status":"token_missing","fresh":0,"cached":0}
-
-    state = load_threads_state()
-    cached = [x for x in state.get("items", []) if isinstance(x, dict)]
-    if threads_cache_is_fresh(state):
-        return cached, {"status":"cached","fresh":0,"cached":len(cached)}
-
-    fresh = fetch_threads_official_api(token)
-    merged = deduplicate(fresh + cached)
-    cutoff = now_local() - timedelta(days=60)
-    kept = [x for x in merged if (retention_datetime(x) and retention_datetime(x) >= cutoff)]
-    save_threads_state(kept)
-    return kept, {"status":"refreshed","fresh":len(fresh),"cached":len(kept)}
-
-
 def meta_content(page, prop):
     patterns = [
         rf'<meta[^>]+property=["\']{re.escape(prop)}["\'][^>]+content=["\']([^"\']+)',
@@ -281,70 +212,133 @@ def meta_content(page, prop):
     return ""
 
 
-def fetch_threads_anonymous():
+def normalize_threads_url(link):
+    link = html.unescape(link or "").replace("\\/", "/")
+    if link.startswith("//"):
+        link = "https:" + link
+    parsed = urlparse(link)
+    host = (parsed.netloc or "").lower()
+    if host not in {"threads.com","www.threads.com","threads.net","www.threads.net"}:
+        return ""
+    if "/post/" not in parsed.path or "/@" not in parsed.path:
+        return ""
+    return f"https://www.threads.com{parsed.path}".split("?",1)[0]
+
+
+def extract_threads_candidate(row):
+    link = normalize_threads_url(row.get("url"))
+    if not link:
+        return None
+    searchable = f'{row.get("title", "")} {row.get("description", "")}'
+    matched = relevance_keyword(searchable)
+    if not matched:
+        return None
+    return {
+        "title": row.get("title") or searchable[:300],
+        "url": link,
+        "source": "Threads",
+        "publisher": row.get("publisher") or "Threads",
+        "publish_time": row.get("publish_time"),
+        "discovered_at": now_local().isoformat(),
+        "keyword": matched,
+        "task": "threads",
+        "discovery": row.get("discovery") or "public_search",
+    }
+
+
+def fetch_threads_direct_search():
     headers = {"User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/150 Safari/537.36"}
-    links, seen_links = [], set()
+    found = []
     for keyword in KEYWORDS:
-        urls = [
-            "https://www.threads.com/search/?" + urllib.parse.urlencode({"q":keyword,"serp_type":"recent"}),
-            "https://www.threads.net/search?q=" + urllib.parse.quote(keyword),
-        ]
-        for url in urls:
+        for base in ("https://www.threads.com/search/", "https://www.threads.net/search"):
+            url = base + "?" + urllib.parse.urlencode({"q":keyword,"serp_type":"recent"})
             try:
                 page = request_text(url, headers=headers, timeout=18)
             except Exception as exc:
-                print(f"[threads:web:{keyword}] failed: {exc}", file=sys.stderr)
+                print(f"[threads:direct:{keyword}] failed: {exc}", file=sys.stderr)
                 continue
             normalized = page.replace("\\/", "/").replace("\\u0026", "&")
-            candidates = re.findall(r'https?://(?:www\.)?threads\.(?:com|net)/@[^"\'<>\\\s]+/post/[A-Za-z0-9_-]+', normalized, re.I)
-            candidates += ['https://www.threads.com' + p for p in re.findall(r'(/@[^"\'<>\\\s]+/post/[A-Za-z0-9_-]+)', normalized, re.I)]
-            for link in candidates:
-                link = link.split("?", 1)[0]
-                if link not in seen_links:
-                    seen_links.add(link); links.append(link)
-        if len(links) >= 60:
-            break
+            for candidate in re.findall(r'https?://(?:www\.)?threads\.(?:com|net)/@[^"\'<>\\\s]+/post/[A-Za-z0-9_-]+', normalized, re.I):
+                link = normalize_threads_url(candidate)
+                if link:
+                    found.append({"title":keyword,"url":link,"publisher":"Threads","publish_time":None,"description":keyword,"discovery":"threads_direct"})
+            for path in re.findall(r'(/@[^"\'<>\\\s]+/post/[A-Za-z0-9_-]+)', normalized, re.I):
+                found.append({"title":keyword,"url":"https://www.threads.com"+path,"publisher":"Threads","publish_time":None,"description":keyword,"discovery":"threads_direct"})
+    return found
 
-    items = []
-    for link in links[:60]:
-        try:
-            page = request_text(link, headers=headers, timeout=14)
-        except Exception:
-            continue
-        text = meta_content(page, "og:description") or meta_content(page, "og:title")
+
+def enrich_threads_public_page(item):
+    try:
+        page = request_text(item["url"], timeout=14)
+    except Exception:
+        return item
+    text = meta_content(page, "og:description") or meta_content(page, "og:title")
+    if text:
         matched = relevance_keyword(text)
-        if not text or not matched:
-            continue
-        taken = re.search(r'"taken_at"\s*:\s*(\d{10})', page)
-        dt = datetime.fromtimestamp(int(taken.group(1)), timezone.utc).astimezone(TAIPEI) if taken else None
-        author_match = re.search(r'/@([^/]+)/post/', link)
-        author = author_match.group(1) if author_match else "Threads"
-        items.append({"title":text[:300],"url":link,"source":"Threads","publisher":author,"publish_time":dt.isoformat() if dt else None,"discovered_at":now_local().isoformat(),"keyword":matched,"task":"threads","discovery":"threads_web"})
-    return deduplicate(items), len(items)
-
-
-def fetch_threads_search_fallback():
-    spec = {"task":"threads","source":"Threads","google_filter":"site:threads.com OR site:threads.net","bing_filter":"site:threads.com OR site:threads.net","domains":("threads.com","threads.net"),"days":60}
-    return fetch_social_task(spec)
+        if not matched:
+            return None
+        item["title"] = text[:300]
+        item["keyword"] = matched
+    author_match = re.search(r'/@([^/]+)/post/', item["url"])
+    if author_match:
+        item["publisher"] = author_match.group(1)
+    taken = re.search(r'"taken_at"\s*:\s*(\d{10})', page)
+    if taken:
+        try:
+            item["publish_time"] = datetime.fromtimestamp(int(taken.group(1)), timezone.utc).astimezone(TAIPEI).isoformat()
+        except Exception:
+            pass
+    return item
 
 
 def fetch_threads_task():
-    combined = []
-    counts = {"official":0,"official_status":"token_missing","threads_web":0,"google_news":0,"bing_web":0}
-    official, official_meta = fetch_threads_official()
-    counts["official"] = len(official)
-    counts["official_status"] = official_meta.get("status", "unknown")
-    counts["official_fresh"] = official_meta.get("fresh", 0)
+    rows = []
+    counts = {"threads_direct":0,"google_news":0,"bing_web":0,"duckduckgo":0}
+    queries = []
+    for keyword in KEYWORDS:
+        queries.extend([
+            ("google_news", f'"{keyword}" (site:threads.com OR site:threads.net) when:90d'),
+            ("bing_web", f'"{keyword}" (site:threads.com OR site:threads.net)'),
+            ("duckduckgo", f'"{keyword}" site:threads.com/@'),
+            ("duckduckgo", f'"{keyword}" site:threads.net/@'),
+        ])
 
-    web_items, web_count = fetch_threads_anonymous()
-    counts["threads_web"] = web_count
+    rows.extend(fetch_threads_direct_search())
+    counts["threads_direct"] = len(rows)
 
-    fallback, engines = fetch_threads_search_fallback()
-    counts["google_news"] = engines.get("google_news", 0)
-    counts["bing_web"] = engines.get("bing_web", 0)
+    for engine, query in queries:
+        try:
+            if engine == "google_news":
+                batch = fetch_google_news_rss(query, 90, 100)
+            elif engine == "bing_web":
+                batch = fetch_bing_web_rss(query, 50)
+            else:
+                batch = fetch_duckduckgo_html(query, 40)
+        except Exception as exc:
+            print(f"[threads:{engine}] failed: {exc}", file=sys.stderr)
+            continue
+        for row in batch:
+            candidate = extract_threads_candidate(row)
+            if candidate:
+                rows.append(candidate)
+                counts[engine] += 1
 
-    combined = deduplicate(official + web_items + fallback)
-    return combined, counts
+    provisional = []
+    for row in rows:
+        if row.get("source") != "Threads":
+            candidate = extract_threads_candidate(row)
+            if candidate:
+                provisional.append(candidate)
+        else:
+            provisional.append(row)
+
+    provisional = deduplicate(provisional)
+    enriched = []
+    for item in provisional[:100]:
+        checked = enrich_threads_public_page(item.copy())
+        if checked:
+            enriched.append(checked)
+    return deduplicate(enriched + provisional), counts
 
 
 def load_previous():
@@ -417,10 +411,10 @@ def main():
             print(f'[{spec["task"]}] FAILED: {exc}', file=sys.stderr)
 
     try:
-        threads_items, threads_counts = fetch_threads_task()
+        threads_items, thread_counts = fetch_threads_task()
         fresh.extend(threads_items)
-        health.append({"task":"threads","source":"Threads","status":"healthy","count":len(threads_items),"error":None,"engine_counts":threads_counts})
-        print(f"[threads] {len(threads_items)} items {threads_counts}")
+        health.append({"task":"threads","source":"Threads","status":"healthy","count":len(threads_items),"error":None,"engine_counts":thread_counts})
+        print(f"[threads] {len(threads_items)} items {thread_counts}")
     except Exception as exc:
         health.append({"task":"threads","source":"Threads","status":"failed","count":0,"error":str(exc)[:240]})
         print(f"[threads] FAILED: {exc}", file=sys.stderr)
@@ -435,10 +429,10 @@ def main():
             kept.append(item)
 
     kept.sort(key=lambda x:x.get("publish_time") or x.get("discovered_at") or "", reverse=True)
-    kept = kept[:1200]
+    kept = kept[:1500]
     pubs = sorted({x.get("publisher") or x.get("source") for x in kept if x.get("task") == "google_news"})
     payload = {
-        "schema_version":7,
+        "schema_version":8,
         "updated_at":now_local().isoformat(),
         "keywords":KEYWORDS,
         "items":kept,
