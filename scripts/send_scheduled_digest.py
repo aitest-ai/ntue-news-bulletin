@@ -133,15 +133,16 @@ def build_message(settings, feed, slot):
         if url:
             lines.append(f"  {url}")
     lines.extend(["", f"完整輿情報告：{base_url}/reports"])
-    return subject, "\n".join(lines)
+    return subject, "\n".join(lines), f"{base_url}/settings"
 
 
-def submit_to_formsubmit(recipient, subject, message):
+def submit_to_formsubmit(recipient, subject, message, source_url):
     endpoint = f"https://formsubmit.co/ajax/{urllib.parse.quote(recipient, safe='@.+-_')}"
     data = urllib.parse.urlencode({
         "_subject": subject,
         "_template": "table",
         "_captcha": "false",
+        "_url": source_url,
         "系統": "國立臺北教育大學輿情監測系統",
         "報告內容": message,
     }).encode("utf-8")
@@ -151,7 +152,9 @@ def submit_to_formsubmit(recipient, subject, message):
         headers={
             "Accept": "application/json",
             "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-            "User-Agent": "NTUE-Opinion-Monitor/1.0",
+            "Origin": "https://ntue-news-bulletin.vercel.app",
+            "Referer": source_url,
+            "User-Agent": "Mozilla/5.0 NTUE-Opinion-Monitor/1.0",
         },
         method="POST",
     )
@@ -159,8 +162,15 @@ def submit_to_formsubmit(recipient, subject, message):
         with urllib.request.urlopen(req, timeout=30) as resp:
             body = resp.read().decode("utf-8", errors="ignore")
             status = resp.status
-        print(f"[digest] FormSubmit response HTTP {status} for {recipient}: {body[:400]}")
-        return 200 <= status < 300
+        try:
+            payload = json.loads(body)
+        except Exception:
+            payload = {}
+        success = str(payload.get("success", "")).lower() == "true"
+        print(f"[digest] FormSubmit response HTTP {status} for {recipient}: {body[:500]}")
+        if not success:
+            print(f"[digest] FormSubmit rejected submission for {recipient}")
+        return success
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode("utf-8", errors="ignore")
         print(f"[digest] FormSubmit HTTP {exc.code} for {recipient}: {detail[:800]}")
@@ -176,8 +186,8 @@ def send_email(settings, feed, slot):
         print("[digest] no recipients configured; cannot send email")
         return False
 
-    subject, message = build_message(settings, feed, slot)
-    results = [submit_to_formsubmit(email, subject, message) for email in recipients]
+    subject, message, source_url = build_message(settings, feed, slot)
+    results = [submit_to_formsubmit(email, subject, message, source_url) for email in recipients]
     success_count = sum(1 for ok in results if ok)
     print(f"[digest] FormSubmit accepted {success_count}/{len(recipients)} recipient submission(s) for slot {slot}")
     return success_count == len(recipients)
