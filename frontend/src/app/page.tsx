@@ -1,228 +1,243 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type NewsItem = {
-  id: number;
   title: string;
   url: string;
   source: string;
-  publish_time: string | null;
+  publisher?: string;
+  publish_time: string;
   keyword: string;
+  task: string;
 };
 
-type KeywordItem = { id: number; word: string };
+type HealthItem = {
+  task: string;
+  source: string;
+  status: string;
+  count: number;
+  error?: string | null;
+};
 
-const socialSources = new Set(["Dcard", "PTT", "Threads", "Instagram"]);
+type Feed = {
+  updated_at: string | null;
+  keywords: string[];
+  items: NewsItem[];
+  source_health: HealthItem[];
+  summary: {
+    total: number;
+    fresh_this_run: number;
+    healthy_tasks: number;
+    failed_tasks: number;
+  };
+};
+
+const SOCIAL = new Set(["Dcard", "PTT", "Threads", "Instagram"]);
 
 export default function Home() {
-  const [token, setToken] = useState<string | null>(null);
-  const [password, setPassword] = useState("");
-  const [news, setNews] = useState<NewsItem[]>([]);
-  const [keywords, setKeywords] = useState<KeywordItem[]>([]);
-  const [selectedKeyword, setSelectedKeyword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [running, setRunning] = useState(false);
-  const [message, setMessage] = useState("");
-
-  useEffect(() => {
-    const saved = typeof window !== "undefined" ? localStorage.getItem("bulletin_token") : null;
-    if (saved) setToken(saved);
-  }, []);
-
-  useEffect(() => {
-    if (token) refresh();
-  }, [token, selectedKeyword]);
-
-  const headers = useMemo(() => ({
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token || ""}`,
-  }), [token]);
-
-  async function api(path: string, options: RequestInit = {}) {
-    const res = await fetch(path, { ...options, headers: { ...headers, ...(options.headers || {}) } });
-    if (res.status === 401) {
-      localStorage.removeItem("bulletin_token");
-      setToken(null);
-      throw new Error("登入已過期");
-    }
-    return res;
-  }
-
-  async function login(e: FormEvent) {
-    e.preventDefault();
-    setMessage("");
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
-    });
-    if (!res.ok) return setMessage("密碼錯誤");
-    const data = await res.json();
-    localStorage.setItem("bulletin_token", data.access_token);
-    setToken(data.access_token);
-  }
+  const [feed, setFeed] = useState<Feed | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [keyword, setKeyword] = useState("");
+  const [source, setSource] = useState("");
+  const [query, setQuery] = useState("");
 
   async function refresh() {
     setLoading(true);
+    setError("");
     try {
-      const kw = selectedKeyword ? `&keyword=${encodeURIComponent(selectedKeyword)}` : "";
-      const [newsRes, kwRes] = await Promise.all([
-        api(`/api/news?skip=0&limit=100${kw}`),
-        api("/api/keywords"),
-      ]);
-      const newsData = await newsRes.json();
-      const kwData = await kwRes.json();
-      setNews(newsData.items || []);
-      setKeywords(kwData || []);
+      const res = await fetch(`/data/news.json?t=${Date.now()}`, { cache: "no-store" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setFeed(await res.json());
     } catch (err: any) {
-      setMessage(err?.message || "載入失敗");
+      setError(`資料載入失敗：${err?.message || "未知錯誤"}`);
     } finally {
       setLoading(false);
     }
   }
 
-  async function runNow() {
-    setRunning(true);
-    setMessage("正在啟動抓取任務…");
-    try {
-      const res = await api("/api/news/fetch", { method: "POST" });
-      const data = await res.json();
-      setMessage(data.message || "已啟動背景抓取");
-    } catch (err: any) {
-      setMessage(err?.message || "啟動失敗");
-    } finally {
-      setRunning(false);
-    }
-  }
+  useEffect(() => { refresh(); }, []);
+
+  const sources = useMemo(() => {
+    return Array.from(new Set((feed?.items || []).map(item => item.source))).sort();
+  }, [feed]);
+
+  const filtered = useMemo(() => {
+    const text = query.trim().toLowerCase();
+    return (feed?.items || []).filter(item => {
+      if (keyword && item.keyword !== keyword) return false;
+      if (source && item.source !== source) return false;
+      if (text) {
+        const haystack = `${item.title} ${item.source} ${item.publisher || ""}`.toLowerCase();
+        if (!haystack.includes(text)) return false;
+      }
+      return true;
+    });
+  }, [feed, keyword, source, query]);
 
   const stats = useMemo(() => {
-    const social = news.filter(n => socialSources.has(n.source)).length;
-    const sources = new Set(news.map(n => n.source)).size;
+    const items = feed?.items || [];
     const today = new Date().toLocaleDateString("zh-TW", { timeZone: "Asia/Taipei" });
-    const todayCount = news.filter(n => {
-      if (!n.publish_time) return false;
-      return new Date(n.publish_time).toLocaleDateString("zh-TW", { timeZone: "Asia/Taipei" }) === today;
+    const todayCount = items.filter(item => {
+      const d = new Date(item.publish_time);
+      return !Number.isNaN(d.getTime()) && d.toLocaleDateString("zh-TW", { timeZone: "Asia/Taipei" }) === today;
     }).length;
-    return { total: news.length, social, sources, todayCount };
-  }, [news]);
+    return {
+      total: items.length,
+      today: todayCount,
+      social: items.filter(item => SOCIAL.has(item.source)).length,
+      sources: new Set(items.map(item => item.source)).size,
+    };
+  }, [feed]);
 
-  if (!token) {
-    return <main style={styles.loginPage}>
-      <form onSubmit={login} style={styles.loginCard}>
-        <div style={styles.badge}>NTUE Opinion Monitor</div>
-        <h1 style={styles.loginTitle}>國北教大輿情系統</h1>
-        <p style={styles.muted}>輸入管理密碼後進入系統</p>
-        <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="管理密碼" style={styles.input} />
-        <button style={styles.primary}>登入</button>
-        {message && <p style={styles.error}>{message}</p>}
-      </form>
-    </main>;
-  }
-
-  return <main style={styles.page}>
-    <header style={styles.header}>
-      <div>
-        <div style={styles.badge}>NTUE Opinion Monitor · Task-to-Task</div>
-        <h1 style={styles.title}>國北教大輿情監測</h1>
-        <p style={styles.muted}>各來源獨立抓取；單一來源失敗，不影響整體任務。</p>
-      </div>
-      <div style={styles.actions}>
-        <button onClick={refresh} style={styles.secondary}>{loading ? "更新中…" : "重新整理"}</button>
-        <button onClick={runNow} disabled={running} style={styles.primary}>{running ? "啟動中…" : "立即抓取"}</button>
-        <button onClick={() => { localStorage.removeItem("bulletin_token"); setToken(null); }} style={styles.ghost}>登出</button>
-      </div>
-    </header>
-
-    {message && <div style={styles.notice}>{message}</div>}
-
-    <section style={styles.statsGrid}>
-      <Stat label="目前顯示" value={stats.total} note="則內容" />
-      <Stat label="今日內容" value={stats.todayCount} note="依發布日期" />
-      <Stat label="社群／論壇" value={stats.social} note="Dcard・PTT・Threads" />
-      <Stat label="資料來源" value={stats.sources} note="獨立來源" />
-    </section>
-
-    <section style={styles.toolbar}>
-      <div>
-        <strong>監測關鍵字</strong>
-        <div style={styles.chips}>
-          <button onClick={() => setSelectedKeyword("")} style={selectedKeyword === "" ? styles.chipActive : styles.chip}>全部</button>
-          {keywords.map(k => <button key={k.id} onClick={() => setSelectedKeyword(k.word)} style={selectedKeyword === k.word ? styles.chipActive : styles.chip}>{k.word}</button>)}
+  return (
+    <main style={styles.page}>
+      <header style={styles.header}>
+        <div>
+          <div style={styles.badge}>NTUE Opinion Monitor · Resilient Tasks</div>
+          <h1 style={styles.title}>國北教大輿情監測</h1>
+          <p style={styles.muted}>公開新聞與社群來源自動彙整；各來源獨立執行，單一來源失敗不影響其他來源。</p>
         </div>
-      </div>
-    </section>
+        <div style={styles.headerRight}>
+          <div style={styles.updated}>最後更新：{formatUpdated(feed?.updated_at)}</div>
+          <button onClick={refresh} style={styles.primary}>{loading ? "更新中…" : "重新讀取"}</button>
+        </div>
+      </header>
 
-    <section style={styles.contentGrid}>
-      <div style={styles.panel}>
-        <div style={styles.panelHeader}>
-          <div>
-            <h2 style={styles.panelTitle}>最新輿情</h2>
-            <p style={styles.muted}>新聞、校務與社群內容集中顯示</p>
+      {error && <div style={styles.errorBox}>{error}</div>}
+
+      <section style={styles.statsGrid}>
+        <Stat label="目前資料" value={stats.total} note="近 30 天相關內容" />
+        <Stat label="今日內容" value={stats.today} note="依原始發布日期" />
+        <Stat label="社群／論壇" value={stats.social} note="Dcard・PTT・Threads・IG" />
+        <Stat label="實際來源" value={stats.sources} note="新聞媒體與社群平台" />
+      </section>
+
+      <section style={styles.filterPanel}>
+        <div style={styles.filterGroup}>
+          <span style={styles.filterLabel}>關鍵字</span>
+          <div style={styles.chips}>
+            <Chip active={!keyword} onClick={() => setKeyword("")}>全部</Chip>
+            {(feed?.keywords || []).map(k => <Chip key={k} active={keyword === k} onClick={() => setKeyword(k)}>{k}</Chip>)}
           </div>
         </div>
-        <div>
-          {loading && news.length === 0 ? <p style={styles.empty}>資料載入中…</p> : news.length === 0 ? <p style={styles.empty}>目前沒有資料，請按「立即抓取」。</p> : news.map(item => <article key={item.id} style={styles.newsRow}>
-            <div style={styles.sourcePill}>{item.source}</div>
-            <div style={{ flex: 1 }}>
-              <a href={item.url.startsWith("http") ? item.url : "#"} target="_blank" rel="noreferrer" style={styles.newsTitle}>{item.title}</a>
-              <div style={styles.meta}>{item.keyword} · {formatDate(item.publish_time)}</div>
-            </div>
-          </article>)}
+        <div style={styles.filterRow}>
+          <select value={source} onChange={e => setSource(e.target.value)} style={styles.select}>
+            <option value="">全部來源</option>
+            {sources.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <input value={query} onChange={e => setQuery(e.target.value)} placeholder="搜尋標題、來源…" style={styles.search} />
+          {(keyword || source || query) && <button onClick={() => { setKeyword(""); setSource(""); setQuery(""); }} style={styles.clear}>清除篩選</button>}
         </div>
-      </div>
+      </section>
 
-      <aside style={styles.panel}>
-        <h2 style={styles.panelTitle}>系統狀態</h2>
-        <p style={styles.muted}>新版先保留最需要的監控資訊。</p>
-        <Status name="Google News" text="獨立 Task" />
-        <Status name="社群搜尋" text="獨立 Task" />
-        <Status name="日期防呆" text="已啟用" />
-        <Status name="URL 去重" text="已啟用" />
-        <div style={styles.infoBox}>
-          <strong>新版差異</strong>
-          <p style={{ ...styles.muted, marginBottom: 0 }}>抓取來源現在各自執行；Google News 或社群來源其中一邊失敗，另一邊仍會保存結果。</p>
+      <section style={styles.contentGrid}>
+        <div style={styles.panel}>
+          <div style={styles.panelHeader}>
+            <div>
+              <h2 style={styles.panelTitle}>最新相關內容</h2>
+              <p style={styles.muted}>目前顯示 {filtered.length} 筆；日期不明或 1970 異常資料不會進入清單。</p>
+            </div>
+          </div>
+
+          {loading && !feed ? <p style={styles.empty}>資料載入中…</p> : filtered.length === 0 ? <p style={styles.empty}>目前沒有符合條件的內容。</p> : filtered.map((item, index) => (
+            <article key={`${item.url}-${index}`} style={styles.newsRow}>
+              <div style={SOCIAL.has(item.source) ? styles.socialPill : styles.sourcePill}>{item.source}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <a href={item.url} target="_blank" rel="noreferrer" style={styles.newsTitle}>{item.title}</a>
+                <div style={styles.meta}>
+                  {item.publisher && item.publisher !== item.source ? `${item.publisher} · ` : ""}{item.keyword} · {formatDate(item.publish_time)}
+                </div>
+              </div>
+            </article>
+          ))}
         </div>
-      </aside>
-    </section>
-  </main>;
+
+        <aside style={styles.panel}>
+          <h2 style={styles.panelTitle}>來源健康狀態</h2>
+          <p style={styles.muted}>每次收集都分開記錄，某一來源失敗時仍保留其他來源結果。</p>
+          {(feed?.source_health || []).map(h => (
+            <div key={h.task} style={styles.statusRow}>
+              <div>
+                <span style={h.status === "healthy" ? styles.dotOk : h.status === "failed" ? styles.dotBad : styles.dotWait}>●</span>
+                <strong>{h.source}</strong>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <div style={styles.statusCount}>{h.count} 筆</div>
+                <div style={styles.statusText}>{statusText(h.status)}</div>
+              </div>
+            </div>
+          ))}
+          <div style={styles.infoBox}>
+            <strong>目前正式架構</strong>
+            <p style={{ ...styles.muted, marginBottom: 0 }}>GitHub Actions 定時收集 → JSON 保存 → Vercel 自動部署。網站不再依賴 Render 或外部資料庫，因此不會因資料庫連線或冷啟動整站失效。</p>
+          </div>
+        </aside>
+      </section>
+    </main>
+  );
 }
 
 function Stat({ label, value, note }: { label: string; value: number; note: string }) {
   return <div style={styles.stat}><div style={styles.statLabel}>{label}</div><div style={styles.statValue}>{value}</div><div style={styles.muted}>{note}</div></div>;
 }
 
-function Status({ name, text }: { name: string; text: string }) {
-  return <div style={styles.statusRow}><span><span style={styles.dot}>●</span> {name}</span><span style={styles.muted}>{text}</span></div>;
+function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return <button onClick={onClick} style={active ? styles.chipActive : styles.chip}>{children}</button>;
 }
 
-function formatDate(value: string | null) {
-  if (!value) return "日期未提供";
+function formatDate(value: string) {
   const d = new Date(value);
   if (Number.isNaN(d.getTime()) || d.getFullYear() <= 1971) return "日期未提供";
   return d.toLocaleString("zh-TW", { timeZone: "Asia/Taipei", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
 }
 
+function formatUpdated(value?: string | null) {
+  if (!value) return "尚未完成首次收集";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "未知";
+  return d.toLocaleString("zh-TW", { timeZone: "Asia/Taipei", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
+
+function statusText(value: string) {
+  if (value === "healthy") return "正常";
+  if (value === "failed") return "本輪失敗";
+  return "等待首次執行";
+}
+
 const styles: Record<string, React.CSSProperties> = {
-  page: { minHeight: "100vh", background: "#f5f7fb", color: "#172033", padding: "36px", fontFamily: "Arial, 'Noto Sans TC', sans-serif" },
-  loginPage: { minHeight: "100vh", display: "grid", placeItems: "center", background: "#eef3fb", padding: 24 },
-  loginCard: { width: "min(420px, 92vw)", background: "white", borderRadius: 24, padding: 32, boxShadow: "0 20px 60px rgba(30,55,90,.12)" },
-  header: { display: "flex", justifyContent: "space-between", gap: 20, alignItems: "flex-start", maxWidth: 1400, margin: "0 auto 24px" },
-  title: { fontSize: 32, margin: "8px 0" }, loginTitle: { fontSize: 30, margin: "12px 0 8px" },
-  badge: { display: "inline-block", fontSize: 12, fontWeight: 700, letterSpacing: 1, color: "#315caa", background: "#eaf1ff", padding: "7px 10px", borderRadius: 999 },
-  muted: { color: "#758096", fontSize: 14 }, error: { color: "#b42318" }, notice: { maxWidth: 1400, margin: "0 auto 20px", padding: "12px 16px", background: "#eef6ff", border: "1px solid #d6e7ff", borderRadius: 12 },
-  actions: { display: "flex", gap: 8, flexWrap: "wrap" },
-  primary: { border: 0, borderRadius: 10, padding: "11px 16px", background: "#2357a5", color: "white", fontWeight: 700, cursor: "pointer" },
-  secondary: { border: "1px solid #ccd6e6", borderRadius: 10, padding: "11px 16px", background: "white", color: "#263248", fontWeight: 700, cursor: "pointer" },
-  ghost: { border: 0, borderRadius: 10, padding: "11px 14px", background: "transparent", color: "#657086", cursor: "pointer" },
-  input: { width: "100%", boxSizing: "border-box", margin: "18px 0 12px", padding: "13px 14px", border: "1px solid #ccd6e6", borderRadius: 10, fontSize: 16 },
-  statsGrid: { maxWidth: 1400, margin: "0 auto 22px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 14 },
-  stat: { background: "white", borderRadius: 18, padding: 20, boxShadow: "0 4px 18px rgba(30,55,90,.05)" }, statLabel: { fontSize: 14, fontWeight: 700 }, statValue: { fontSize: 34, fontWeight: 800, margin: "6px 0" },
-  toolbar: { maxWidth: 1400, margin: "0 auto 18px", background: "white", borderRadius: 18, padding: 18 }, chips: { display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 },
-  chip: { border: "1px solid #dce3ee", background: "white", borderRadius: 999, padding: "8px 11px", cursor: "pointer" }, chipActive: { border: "1px solid #2357a5", background: "#2357a5", color: "white", borderRadius: 999, padding: "8px 11px", cursor: "pointer" },
-  contentGrid: { maxWidth: 1400, margin: "0 auto", display: "grid", gridTemplateColumns: "minmax(0, 2fr) minmax(280px, .8fr)", gap: 18 },
-  panel: { background: "white", borderRadius: 20, padding: 22, boxShadow: "0 4px 18px rgba(30,55,90,.05)" }, panelHeader: { display: "flex", justifyContent: "space-between" }, panelTitle: { margin: "0 0 4px", fontSize: 20 },
-  newsRow: { display: "flex", gap: 14, padding: "17px 0", borderBottom: "1px solid #edf0f5" }, sourcePill: { alignSelf: "flex-start", minWidth: 74, textAlign: "center", fontSize: 12, fontWeight: 700, color: "#315caa", background: "#edf3ff", padding: "7px 9px", borderRadius: 999 },
-  newsTitle: { color: "#172033", textDecoration: "none", fontWeight: 700, lineHeight: 1.55 }, meta: { marginTop: 7, color: "#8a94a7", fontSize: 12 }, empty: { color: "#8a94a7", padding: "28px 0" },
-  statusRow: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "13px 0", borderBottom: "1px solid #edf0f5", fontSize: 14 }, dot: { color: "#2e9b67" }, infoBox: { marginTop: 18, padding: 16, background: "#f7f9fc", borderRadius: 14 },
+  page: { minHeight: "100vh", background: "#f5f7fb", color: "#182033", padding: "34px 28px 50px", fontFamily: "Arial, 'Noto Sans TC', sans-serif" },
+  header: { maxWidth: 1420, margin: "0 auto 24px", display: "flex", justifyContent: "space-between", gap: 24, alignItems: "flex-start", flexWrap: "wrap" },
+  headerRight: { display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", justifyContent: "flex-end" },
+  badge: { display: "inline-block", fontSize: 12, fontWeight: 800, letterSpacing: .7, color: "#315caa", background: "#e9f1ff", padding: "7px 11px", borderRadius: 999 },
+  title: { fontSize: 34, lineHeight: 1.2, margin: "9px 0 8px" },
+  muted: { color: "#758096", fontSize: 14, lineHeight: 1.6 },
+  updated: { color: "#667085", fontSize: 13 },
+  primary: { border: 0, borderRadius: 11, padding: "11px 17px", background: "#2458a6", color: "white", fontWeight: 800, cursor: "pointer" },
+  errorBox: { maxWidth: 1420, margin: "0 auto 18px", padding: "13px 16px", color: "#a31616", background: "#fff0f0", border: "1px solid #ffd1d1", borderRadius: 12 },
+  statsGrid: { maxWidth: 1420, margin: "0 auto 18px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 14 },
+  stat: { background: "white", borderRadius: 18, padding: 20, boxShadow: "0 4px 18px rgba(30,55,90,.05)" },
+  statLabel: { fontSize: 14, fontWeight: 800 }, statValue: { fontSize: 35, fontWeight: 850, margin: "7px 0" },
+  filterPanel: { maxWidth: 1420, margin: "0 auto 18px", background: "white", borderRadius: 18, padding: 18, boxShadow: "0 4px 18px rgba(30,55,90,.04)" },
+  filterGroup: { marginBottom: 14 }, filterLabel: { display: "block", fontWeight: 800, fontSize: 14, marginBottom: 10 },
+  chips: { display: "flex", flexWrap: "wrap", gap: 8 },
+  chip: { border: "1px solid #d9e1ed", background: "white", borderRadius: 999, padding: "8px 12px", color: "#475467", cursor: "pointer" },
+  chipActive: { border: "1px solid #2458a6", background: "#2458a6", color: "white", borderRadius: 999, padding: "8px 12px", cursor: "pointer" },
+  filterRow: { display: "flex", gap: 10, flexWrap: "wrap" },
+  select: { minWidth: 160, padding: "10px 12px", border: "1px solid #d9e1ed", borderRadius: 10, background: "white" },
+  search: { flex: "1 1 250px", minWidth: 210, padding: "10px 13px", border: "1px solid #d9e1ed", borderRadius: 10, fontSize: 14 },
+  clear: { border: 0, background: "#f2f4f7", borderRadius: 10, padding: "10px 13px", color: "#475467", cursor: "pointer" },
+  contentGrid: { maxWidth: 1420, margin: "0 auto", display: "grid", gridTemplateColumns: "minmax(0, 2fr) minmax(285px, .72fr)", gap: 18 },
+  panel: { background: "white", borderRadius: 20, padding: 22, boxShadow: "0 4px 18px rgba(30,55,90,.05)" },
+  panelHeader: { display: "flex", justifyContent: "space-between", gap: 12 }, panelTitle: { margin: "0 0 5px", fontSize: 20 },
+  newsRow: { display: "flex", gap: 14, padding: "17px 0", borderBottom: "1px solid #edf0f5" },
+  sourcePill: { alignSelf: "flex-start", minWidth: 78, textAlign: "center", fontSize: 12, fontWeight: 800, color: "#315caa", background: "#edf3ff", padding: "7px 9px", borderRadius: 999 },
+  socialPill: { alignSelf: "flex-start", minWidth: 78, textAlign: "center", fontSize: 12, fontWeight: 800, color: "#7a3e00", background: "#fff3e6", padding: "7px 9px", borderRadius: 999 },
+  newsTitle: { color: "#172033", textDecoration: "none", fontWeight: 750, lineHeight: 1.6, overflowWrap: "anywhere" },
+  meta: { marginTop: 7, color: "#8a94a7", fontSize: 12, lineHeight: 1.5 }, empty: { color: "#8a94a7", padding: "30px 0" },
+  statusRow: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "13px 0", borderBottom: "1px solid #edf0f5", fontSize: 14 },
+  dotOk: { color: "#2d9a66", marginRight: 7 }, dotBad: { color: "#d04444", marginRight: 7 }, dotWait: { color: "#98a2b3", marginRight: 7 },
+  statusCount: { fontWeight: 800, fontSize: 13 }, statusText: { color: "#98a2b3", fontSize: 11, marginTop: 2 },
+  infoBox: { marginTop: 18, padding: 16, background: "#f7f9fc", borderRadius: 14 },
 };
