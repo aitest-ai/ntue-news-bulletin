@@ -1,66 +1,47 @@
 import { NextRequest, NextResponse } from "next/server";
 import nodemailer from "nodemailer";
-
-// Shared secret key to protect this endpoint from public abuse.
-// We use the system's default admin password as the secret key.
-const SHARED_SECRET = "ntue1234";
+import { ADMIN_SESSION_COOKIE, isValidSession } from "../../../lib/auth";
 
 export async function POST(req: NextRequest) {
+  const session = req.cookies.get(ADMIN_SESSION_COOKIE)?.value;
+  if (!(await isValidSession(session))) {
+    return NextResponse.json({ error: "登入已逾時，請重新登入" }, { status: 401 });
+  }
+
   try {
     const body = await req.json();
-    const { 
-      secret, 
-      smtp_host, 
-      smtp_port, 
-      smtp_username, 
-      smtp_password, 
-      to, 
-      subject, 
-      html, 
-      text 
-    } = body;
+    const to = Array.isArray(body?.to) ? body.to : [body?.to].filter(Boolean);
+    const subject = String(body?.subject || "國北教大輿情通知");
+    const html = String(body?.html || "");
+    const text = String(body?.text || "");
 
-    // Validate request auth
-    if (secret !== SHARED_SECRET) {
-      return NextResponse.json({ error: "Unauthorized access key" }, { status: 401 });
+    const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
+    const smtpPort = Number(process.env.SMTP_PORT || 587);
+    const smtpUsername = process.env.SMTP_USERNAME || "";
+    const smtpPassword = process.env.SMTP_PASSWORD || "";
+
+    if (!smtpUsername || !smtpPassword || to.length === 0) {
+      return NextResponse.json({ error: "SMTP 尚未設定或沒有收件者" }, { status: 503 });
     }
 
-    if (!smtp_username || !smtp_password || !to) {
-      return NextResponse.json({ error: "Missing required SMTP configurations or recipient email" }, { status: 400 });
-    }
-
-    console.log(`[Relay] Attempting to send email to ${to} via SMTP ${smtp_host}:${smtp_port} using user ${smtp_username}...`);
-
-    // Create nodemailer transporter
     const transporter = nodemailer.createTransport({
-      host: smtp_host || "smtp.gmail.com",
-      port: Number(smtp_port) || 587,
-      secure: Number(smtp_port) === 465, // true for 465, false for 587
-      auth: {
-        user: smtp_username,
-        pass: smtp_password,
-      },
-      tls: {
-        rejectUnauthorized: false
-      }
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpPort === 465,
+      auth: { user: smtpUsername, pass: smtpPassword },
     });
 
-    // Send mail
     const info = await transporter.sendMail({
-      from: `國北教大新聞公佈欄 <${smtp_username}>`,
+      from: `國北教大輿情監測 <${smtpUsername}>`,
       to,
       subject,
       text,
       html,
     });
 
-    console.log(`[Relay] Email successfully sent: ${info.messageId}`);
     return NextResponse.json({ success: true, messageId: info.messageId });
   } catch (err: any) {
-    console.error("[Relay] SMTP send error:", err);
-    return NextResponse.json({ 
-      success: false, 
-      error: err.message || "Failed to send email" 
-    }, { status: 500 });
+    console.error("SMTP send error", err);
+    return NextResponse.json({ error: err?.message || "寄信失敗" }, { status: 500 });
   }
 }
