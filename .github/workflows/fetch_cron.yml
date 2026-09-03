@@ -35,8 +35,6 @@ jobs:
           python-version: "3.11"
 
       - name: Collect public opinion data
-        env:
-          THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
         run: python scripts/collect_static.py
 
       - name: Send scheduled bulletin when due
@@ -51,15 +49,12 @@ jobs:
 
       - name: Commit refreshed data and delivery state
         run: |
-          if git diff --quiet -- frontend/public/data/news.json frontend/public/data/email-state.json frontend/public/data/threads-state.json; then
+          if git diff --quiet -- frontend/public/data/news.json frontend/public/data/email-state.json; then
             echo "No data changes."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add frontend/public/data/news.json frontend/public/data/email-state.json
-          if [ -f frontend/public/data/threads-state.json ]; then
-            git add frontend/public/data/threads-state.json
-          fi
           git commit -m "data: refresh NTUE opinion feed"
           git push origin HEAD:master
