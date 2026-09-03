@@ -9,6 +9,7 @@ on:
       - "scripts/collect_threads_browser.py"
       - "scripts/send_scheduled_digest.py"
       - "frontend/public/data/settings.json"
+      - "frontend/public/data/email-state.json"
       - ".github/workflows/fetch_cron.yml"
   schedule:
     - cron: "*/10 * * * *"
