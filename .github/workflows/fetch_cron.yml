@@ -13,7 +13,6 @@ on:
       - "frontend/src/app/api/ai-report/scheduled/route.ts"
       - "frontend/src/middleware.ts"
       - "frontend/public/data/settings.json"
-      - "frontend/public/data/email-state.json"
       - ".github/workflows/fetch_cron.yml"
   schedule:
     - cron: "*/10 * * * *"
@@ -21,6 +20,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 concurrency:
   group: ntue-opinion-collector
@@ -52,12 +52,12 @@ jobs:
 
       - name: Generate AI PDF report and send scheduled bulletin when due
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GITHUB_WORKFLOW_TOKEN: ${{ github.token }}
           PUBLIC_BASE_URL: https://ntue-news-bulletin.vercel.app
         run: |
           if python scripts/send_scheduled_digest.py --is-due; then
             echo "Bulletin is due; generating verified AI report and PDF attachment."
-            python -m pip install --quiet reportlab
+            python -m pip install --quiet reportlab requests
             python scripts/send_scheduled_digest_with_ai.py
           else
             echo "No scheduled bulletin due."
@@ -75,7 +75,12 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          cp frontend/public/data/news.json /tmp/news.json
+          cp frontend/public/data/email-state.json /tmp/email-state.json
+          git fetch origin master
+          git reset --hard origin/master
+          cp /tmp/news.json frontend/public/data/news.json
+          cp /tmp/email-state.json frontend/public/data/email-state.json
           git add frontend/public/data/news.json frontend/public/data/email-state.json
           git commit -m "data: refresh NTUE opinion feed"
-          git pull --rebase origin master
           git push origin HEAD:master
