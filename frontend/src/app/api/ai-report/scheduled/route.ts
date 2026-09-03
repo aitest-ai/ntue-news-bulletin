@@ -14,11 +14,9 @@ type FeedItem = {
   risk_score?: number;
 };
 
-async function verifyGithubCommit(sha: string) {
-  const token = (process.env.GITHUB_PAT || process.env.GITHUB_TOKEN || "").trim();
-  if (!token || !sha) return false;
-
-  const response = await fetch(`https://api.github.com/repos/${REPO}/commits/${encodeURIComponent(sha)}`, {
+async function verifyGithubRun(token: string, runId: string, sha: string) {
+  if (!token || !runId || !/^[0-9]+$/.test(runId) || !/^[0-9a-f]{40}$/i.test(sha)) return false;
+  const response = await fetch(`https://api.github.com/repos/${REPO}/actions/runs/${encodeURIComponent(runId)}`, {
     headers: {
       Authorization: `Bearer ${token}`,
       Accept: "application/vnd.github+json",
@@ -26,19 +24,27 @@ async function verifyGithubCommit(sha: string) {
     },
     cache: "no-store",
   });
-  if (!response.ok) return false;
-
-  const commit = await response.json();
-  const committedAt = Date.parse(commit?.commit?.committer?.date || commit?.commit?.author?.date || "");
-  const recent = Number.isFinite(committedAt) && Math.abs(Date.now() - committedAt) <= 30 * 60 * 1000;
-  return Boolean(recent && commit?.sha === sha);
+  if (!response.ok) {
+    console.error("scheduled workflow verification HTTP", response.status);
+    return false;
+  }
+  const run = await response.json();
+  return Boolean(
+    String(run?.id) === runId &&
+    run?.head_sha === sha &&
+    run?.head_branch === "master" &&
+    run?.repository?.full_name === REPO &&
+    ["push", "schedule", "workflow_dispatch"].includes(run?.event)
+  );
 }
 
 export async function POST(req: NextRequest) {
   try {
+    const token = req.headers.get("x-github-workflow-token") || "";
+    const runId = req.headers.get("x-github-run-id") || "";
     const sha = req.headers.get("x-github-sha") || "";
-    if (!(await verifyGithubCommit(sha))) {
-      return NextResponse.json({ error: "GitHub commit verification failed" }, { status: 403 });
+    if (!(await verifyGithubRun(token, runId, sha))) {
+      return NextResponse.json({ error: "GitHub workflow verification failed" }, { status: 403 });
     }
 
     const apiKey = (process.env.GEMINI_API_KEY || "").trim();
