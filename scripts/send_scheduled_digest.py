@@ -136,31 +136,37 @@ def build_email(settings, feed, slot):
 
 
 def send_email(settings, feed, slot):
-    api_key = os.getenv("RESEND_API_KEY", "").strip()
+    api_key = os.getenv("BREVO_API_KEY", "").strip()
+    sender_email = os.getenv("BREVO_SENDER_EMAIL", "").strip()
+    sender_name = os.getenv("BREVO_SENDER_NAME", "國北教大輿情監測").strip() or "國北教大輿情監測"
     recipients = [str(x).strip() for x in settings.get("recipients", []) if str(x).strip()]
+
     if not api_key:
-        print("[digest] RESEND_API_KEY missing; cannot send email")
+        print("[digest] BREVO_API_KEY missing; cannot send email")
+        return False
+    if not sender_email:
+        print("[digest] BREVO_SENDER_EMAIL missing; verify a sender in Brevo and set this secret")
         return False
     if not recipients:
         print("[digest] no recipients configured; cannot send email")
         return False
 
     subject, html, text = build_email(settings, feed, slot)
-    from_email = os.getenv("RESEND_FROM", "國北教大輿情監測 <onboarding@resend.dev>").strip()
     payload = json.dumps({
-        "from": from_email,
-        "to": recipients,
+        "sender": {"name": sender_name, "email": sender_email},
+        "to": [{"email": email} for email in recipients],
         "subject": subject,
-        "html": html,
-        "text": text,
+        "htmlContent": html,
+        "textContent": text,
     }, ensure_ascii=False).encode("utf-8")
 
     req = urllib.request.Request(
-        "https://api.resend.com/emails",
+        "https://api.brevo.com/v3/smtp/email",
         data=payload,
         headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
+            "api-key": api_key,
+            "accept": "application/json",
+            "content-type": "application/json",
             "User-Agent": "NTUE-Opinion-Monitor/1.0",
         },
         method="POST",
@@ -169,14 +175,14 @@ def send_email(settings, feed, slot):
         with urllib.request.urlopen(req, timeout=30) as resp:
             body = resp.read().decode("utf-8", errors="ignore")
             data = json.loads(body) if body else {}
-        print(f"[digest] Resend accepted email id={data.get('id','unknown')} to {len(recipients)} recipient(s) for slot {slot}")
+        print(f"[digest] Brevo accepted messageId={data.get('messageId','unknown')} to {len(recipients)} recipient(s) for slot {slot}")
         return True
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode("utf-8", errors="ignore")
-        print(f"[digest] Resend HTTP {exc.code}: {detail[:800]}")
+        print(f"[digest] Brevo HTTP {exc.code}: {detail[:800]}")
         return False
     except Exception as exc:
-        print(f"[digest] Resend send failed: {exc}")
+        print(f"[digest] Brevo send failed: {exc}")
         return False
 
 
