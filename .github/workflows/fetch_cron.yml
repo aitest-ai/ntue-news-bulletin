@@ -45,8 +45,8 @@ jobs:
       - name: Send scheduled bulletin when due
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
-          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM: ${{ secrets.RESEND_FROM }}
           PUBLIC_BASE_URL: https://ntue-news-bulletin.vercel.app
         run: python scripts/send_scheduled_digest.py
 
