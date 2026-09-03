@@ -1,12 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { NTUE_LOGO_DATA_URI } from "../branding";
 
 export default function LoginPage() {
   const router = useRouter();
-  const params = useSearchParams();
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,7 +20,7 @@ export default function LoginPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "登入失敗");
-      const next = params.get("next") || "/";
+      const next = typeof window !== "undefined" ? (new URLSearchParams(window.location.search).get("next") || "/") : "/";
       router.replace(next);
       router.refresh();
     } catch (e: any) {
