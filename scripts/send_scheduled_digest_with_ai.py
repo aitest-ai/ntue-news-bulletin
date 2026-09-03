@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
+import base64
+import html
 import json
 import os
 import sys
 import urllib.error
-import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -46,7 +47,7 @@ def generate_via_vercel(selected, attention, days):
             "x-github-run-id": run_id,
             "x-github-sha": sha,
             "x-github-workflow-token": workflow_token,
-            "User-Agent": "NTUE-GitHub-Actions-Scheduled-Report/2.0",
+            "User-Agent": "NTUE-GitHub-Actions-Scheduled-Report/3.0",
         },
         method="POST",
     )
@@ -69,46 +70,85 @@ def generate_via_vercel(selected, attention, days):
     return _original_generate(selected, attention, days)
 
 
-def submit_with_requests(recipient, subject, body_fields, source_url, pdf_path):
-    import requests
+def _body_to_html(body_fields):
+    rows = []
+    for label, value in body_fields.items():
+        safe_label = html.escape(str(label))
+        safe_value = html.escape(str(value)).replace("\n", "<br>")
+        rows.append(
+            f'<tr><td style="padding:10px 12px;background:#f4f7fa;font-weight:700;vertical-align:top;width:150px">{safe_label}</td>'
+            f'<td style="padding:10px 12px;vertical-align:top">{safe_value}</td></tr>'
+        )
+    return (
+        '<div style="font-family:Arial,\'Noto Sans TC\',sans-serif;color:#222;line-height:1.65">'
+        '<h2 style="color:#17365d;margin:0 0 16px">國立臺北教育大學輿情快報</h2>'
+        '<table style="border-collapse:collapse;width:100%;max-width:760px;border:1px solid #d9e1e8">'
+        + "".join(rows)
+        + '</table><p style="color:#666;font-size:12px;margin-top:16px">完整分析請見本信 PDF 附件。</p></div>'
+    )
 
-    endpoint = f"https://formsubmit.co/{urllib.parse.quote(recipient, safe='@.+-_')}"
-    fields = {
-        "_subject": subject,
-        "_template": "box",
-        "_captcha": "false",
-        "_url": source_url,
-        **body_fields,
-    }
+
+def submit_via_brevo(recipient, subject, body_fields, source_url, pdf_path):
+    api_key = os.getenv("BREVO_API_KEY", "").strip()
+    sender_email = os.getenv("BREVO_SENDER_EMAIL", "").strip()
+    sender_name = os.getenv("BREVO_SENDER_NAME", "國北教大輿情監測").strip() or "國北教大輿情監測"
+    if not api_key:
+        print("[digest] BREVO_API_KEY missing; cannot send PDF bulletin")
+        return False
+    if not sender_email:
+        print("[digest] BREVO_SENDER_EMAIL missing; verify a sender in Brevo and set this secret")
+        return False
+
     pdf = Path(pdf_path)
+    attachment_b64 = base64.b64encode(pdf.read_bytes()).decode("ascii")
+    text_content = "\n\n".join(f"{k}\n{v}" for k, v in body_fields.items())
+    payload = json.dumps(
+        {
+            "sender": {"name": sender_name, "email": sender_email},
+            "to": [{"email": recipient}],
+            "subject": subject,
+            "htmlContent": _body_to_html(body_fields),
+            "textContent": text_content,
+            "attachment": [{"content": attachment_b64, "name": pdf.name}],
+            "headers": {"X-NTUE-Report-Source": source_url},
+        },
+        ensure_ascii=False,
+    ).encode("utf-8")
+
+    req = urllib.request.Request(
+        "https://api.brevo.com/v3/smtp/email",
+        data=payload,
+        headers={
+            "api-key": api_key,
+            "accept": "application/json",
+            "content-type": "application/json",
+            "User-Agent": "NTUE-Opinion-Monitor/5.0",
+        },
+        method="POST",
+    )
     try:
-        with pdf.open("rb") as fh:
-            response = requests.post(
-                endpoint,
-                data=fields,
-                files={"attachment": (pdf.name, fh, "application/pdf")},
-                headers={
-                    "Origin": "https://ntue-news-bulletin.vercel.app",
-                    "Referer": source_url,
-                    "User-Agent": "Mozilla/5.0 NTUE-Opinion-Monitor/4.0",
-                },
-                timeout=45,
-                allow_redirects=True,
-            )
-        lower = response.text.lower()
-        success = response.ok and "unable to submit" not in lower and "error" not in lower
+        with urllib.request.urlopen(req, timeout=45) as resp:
+            body = resp.read().decode("utf-8", errors="ignore")
+            status = resp.status
+        data = json.loads(body) if body else {}
+        message_id = data.get("messageId")
+        success = 200 <= status < 300 and bool(message_id)
         print(
-            f"[digest] FormSubmit requests upload HTTP {response.status_code} for {recipient}; "
-            f"attachment={pdf.stat().st_size}B multipart={'multipart/form-data' in response.request.headers.get('Content-Type','')}"
+            f"[digest] Brevo HTTP {status}; messageId={message_id or 'missing'}; "
+            f"attachment={pdf.stat().st_size}B recipient={recipient}"
         )
         return success
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="ignore")
+        print(f"[digest] Brevo HTTP {exc.code}: {detail[:800]}")
+        return False
     except Exception as exc:
-        print(f"[digest] FormSubmit requests upload failed for {recipient}: {exc}")
+        print(f"[digest] Brevo send failed: {exc}")
         return False
 
 
 digest.generate_ai_report = generate_via_vercel
-digest.submit_to_formsubmit = submit_with_requests
+digest.submit_to_formsubmit = submit_via_brevo
 
 if __name__ == "__main__":
     digest.main()
