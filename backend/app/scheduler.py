@@ -29,6 +29,16 @@ def _unique_url(item):
     return f"hash://{platform}/{digest}"
 
 
+def _safe_publish_time(value):
+    """Never manufacture a publish date. Unknown or invalid dates remain NULL."""
+    if value is None:
+        return None
+    year = getattr(value, "year", None)
+    if year is None or year <= 1971:
+        return None
+    return value
+
+
 def fetch_all_keywords_news():
     if not FETCH_LOCK.acquire(blocking=False):
         print(f"[{datetime.now()}] Fetch already in progress. Skipping.")
@@ -67,6 +77,7 @@ def fetch_all_keywords_news():
                 "keyword": kw.word,
                 "status": result["status"],
                 "count": result["count"],
+                "source_counts": result.get("source_counts", {}),
                 "tasks": result["tasks"],
             })
 
@@ -76,15 +87,11 @@ def fetch_all_keywords_news():
                 if exists:
                     continue
 
-                publish_time = item.get("publish_time")
-                if not publish_time or getattr(publish_time, "year", 1970) <= 1971:
-                    publish_time = datetime.utcnow()
-
                 db.add(models.News(
                     title=item.get("title", "未命名內容"),
                     url=unique_url,
                     source=item.get("source", "Unknown"),
-                    publish_time=publish_time,
+                    publish_time=_safe_publish_time(item.get("publish_time")),
                     keyword=item.get("keyword", kw.word),
                     crawled_at=datetime.utcnow(),
                 ))
