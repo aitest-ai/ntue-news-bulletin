@@ -2,7 +2,7 @@
 
 本系統是一套受密碼保護的定時新聞公佈欄，專門為國立臺北教育大學（NTUE）相關網路新聞設計。
 
-> Deployment trigger: GitHub–Vercel connection refreshed on 2026-09-03.
+> Deployment trigger: GitHub–Vercel connection confirmed after repository linking on 2026-09-03.
 
 ## 🌟 系統特色
 - **密碼安全保護**：首頁設有密碼鎖定（預設密碼：`ntue1234`），登入成功後才會取得 JWT 憑證，並載入新聞內容。後端所有 API 皆受憑證保護。
