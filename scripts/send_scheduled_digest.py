@@ -2,6 +2,7 @@
 import json
 import os
 import urllib.error
+import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -100,7 +101,7 @@ def select_items(feed, days):
     return selected
 
 
-def build_email(settings, feed, slot):
+def build_message(settings, feed, slot):
     days = int(settings.get("report_days", 1) or 1)
     selected = select_items(feed, days)
     news_count = sum(1 for x in selected if x.get("source") not in SOCIAL)
@@ -112,61 +113,44 @@ def build_email(settings, feed, slot):
     now = datetime.now(TAIPEI)
     subject = f"{settings.get('subject_prefix','【國北教大輿情快報】')}{now.strftime('%Y/%m/%d')} {slot}"
 
-    rows = "".join(
-        f"<tr><td style='padding:8px;border-bottom:1px solid #e5e7eb'>{x.get('source','')}</td>"
-        f"<td style='padding:8px;border-bottom:1px solid #e5e7eb'><a href='{x.get('url','#')}'>{x.get('title','')}</a></td></tr>"
-        for x in latest
-    )
-    html = f"""
-    <div style='font-family:Arial,"Noto Sans TC",sans-serif;color:#172033;max-width:760px;margin:auto'>
-      <h2 style='color:#0d2147;margin-bottom:4px'>國立臺北教育大學 輿情快報</h2>
-      <div style='color:#667085;margin-bottom:18px'>{now.strftime('%Y/%m/%d %H:%M')} · 最近 {days} 天</div>
-      <div style='display:flex;gap:10px;margin-bottom:18px'>
-        <div style='padding:12px 16px;background:#f3f6fa;border-radius:10px'>總資料 <b>{len(selected)}</b></div>
-        <div style='padding:12px 16px;background:#f3f6fa;border-radius:10px'>新聞 <b>{news_count}</b></div>
-        <div style='padding:12px 16px;background:#f3f6fa;border-radius:10px'>社群 <b>{social_count}</b></div>
-      </div>
-      <h3 style='color:#0d2147'>AI 摘要</h3><p style='line-height:1.75'>{summary}</p>
-      <p><a href='{base_url}/reports' style='display:inline-block;background:#0d2147;color:white;padding:10px 14px;border-radius:8px;text-decoration:none'>開啟完整輿情報告</a></p>
-      <h3 style='color:#0d2147;margin-top:24px'>最新訊息</h3>
-      <table style='width:100%;border-collapse:collapse;font-size:14px'>{rows}</table>
-    </div>"""
-    text = f"國北教大輿情快報\n\n{summary}\n\n完整報告：{base_url}/reports"
-    return subject, html, text
+    lines = [
+        "國立臺北教育大學 輿情快報",
+        f"產生時間：{now.strftime('%Y/%m/%d %H:%M')}",
+        f"統計期間：最近 {days} 天",
+        "",
+        f"總資料：{len(selected)}｜新聞：{news_count}｜社群：{social_count}",
+        "",
+        "【AI 摘要】",
+        summary,
+        "",
+        "【最新訊息】",
+    ]
+    for item in latest:
+        title = str(item.get("title") or "（無標題）").strip()
+        source = str(item.get("source") or "").strip()
+        url = str(item.get("url") or "").strip()
+        lines.append(f"• [{source}] {title}")
+        if url:
+            lines.append(f"  {url}")
+    lines.extend(["", f"完整輿情報告：{base_url}/reports"])
+    return subject, "\n".join(lines)
 
 
-def send_email(settings, feed, slot):
-    api_key = os.getenv("BREVO_API_KEY", "").strip()
-    sender_email = os.getenv("BREVO_SENDER_EMAIL", "").strip()
-    sender_name = os.getenv("BREVO_SENDER_NAME", "國北教大輿情監測").strip() or "國北教大輿情監測"
-    recipients = [str(x).strip() for x in settings.get("recipients", []) if str(x).strip()]
-
-    if not api_key:
-        print("[digest] BREVO_API_KEY missing; cannot send email")
-        return False
-    if not sender_email:
-        print("[digest] BREVO_SENDER_EMAIL missing; verify a sender in Brevo and set this secret")
-        return False
-    if not recipients:
-        print("[digest] no recipients configured; cannot send email")
-        return False
-
-    subject, html, text = build_email(settings, feed, slot)
-    payload = json.dumps({
-        "sender": {"name": sender_name, "email": sender_email},
-        "to": [{"email": email} for email in recipients],
-        "subject": subject,
-        "htmlContent": html,
-        "textContent": text,
-    }, ensure_ascii=False).encode("utf-8")
-
+def submit_to_formsubmit(recipient, subject, message):
+    endpoint = f"https://formsubmit.co/ajax/{urllib.parse.quote(recipient, safe='@.+-_')}"
+    data = urllib.parse.urlencode({
+        "_subject": subject,
+        "_template": "table",
+        "_captcha": "false",
+        "系統": "國立臺北教育大學輿情監測系統",
+        "報告內容": message,
+    }).encode("utf-8")
     req = urllib.request.Request(
-        "https://api.brevo.com/v3/smtp/email",
-        data=payload,
+        endpoint,
+        data=data,
         headers={
-            "api-key": api_key,
-            "accept": "application/json",
-            "content-type": "application/json",
+            "Accept": "application/json",
+            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
             "User-Agent": "NTUE-Opinion-Monitor/1.0",
         },
         method="POST",
@@ -174,16 +158,29 @@ def send_email(settings, feed, slot):
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
             body = resp.read().decode("utf-8", errors="ignore")
-            data = json.loads(body) if body else {}
-        print(f"[digest] Brevo accepted messageId={data.get('messageId','unknown')} to {len(recipients)} recipient(s) for slot {slot}")
-        return True
+            status = resp.status
+        print(f"[digest] FormSubmit response HTTP {status} for {recipient}: {body[:400]}")
+        return 200 <= status < 300
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode("utf-8", errors="ignore")
-        print(f"[digest] Brevo HTTP {exc.code}: {detail[:800]}")
+        print(f"[digest] FormSubmit HTTP {exc.code} for {recipient}: {detail[:800]}")
         return False
     except Exception as exc:
-        print(f"[digest] Brevo send failed: {exc}")
+        print(f"[digest] FormSubmit failed for {recipient}: {exc}")
         return False
+
+
+def send_email(settings, feed, slot):
+    recipients = [str(x).strip() for x in settings.get("recipients", []) if str(x).strip()]
+    if not recipients:
+        print("[digest] no recipients configured; cannot send email")
+        return False
+
+    subject, message = build_message(settings, feed, slot)
+    results = [submit_to_formsubmit(email, subject, message) for email in recipients]
+    success_count = sum(1 for ok in results if ok)
+    print(f"[digest] FormSubmit accepted {success_count}/{len(recipients)} recipient submission(s) for slot {slot}")
+    return success_count == len(recipients)
 
 
 def main():
