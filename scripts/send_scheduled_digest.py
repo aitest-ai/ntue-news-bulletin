@@ -40,7 +40,8 @@ def due_slots(settings, state, now):
             continue
         key = f"{now.date().isoformat()}@{slot}"
         delta = (now - target).total_seconds() / 60
-        if 0 <= delta <= 25 and sent.get(slot) != key:
+        # GitHub Actions can start late; keep a wide retry window while preventing duplicates.
+        if 0 <= delta <= 60 and sent.get(slot) != key:
             slots.append((slot, key))
     return slots
 
