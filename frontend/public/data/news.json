@@ -1,0 +1,20 @@
+{
+  "schema_version": 3,
+  "updated_at": null,
+  "keywords": [
+    "國立臺北教育大學",
+    "國北教大",
+    "北教大",
+    "NTUE",
+    "National Taipei University of Education"
+  ],
+  "items": [],
+  "source_health": [
+    {"task":"google_news","source":"新聞媒體","status":"waiting","count":0,"error":null},
+    {"task":"dcard","source":"Dcard","status":"waiting","count":0,"error":null},
+    {"task":"ptt","source":"PTT","status":"waiting","count":0,"error":null},
+    {"task":"threads","source":"Threads","status":"waiting","count":0,"error":null},
+    {"task":"instagram","source":"Instagram","status":"waiting","count":0,"error":null}
+  ],
+  "summary": {"total":0,"fresh_this_run":0,"healthy_tasks":0,"failed_tasks":0}
+}
