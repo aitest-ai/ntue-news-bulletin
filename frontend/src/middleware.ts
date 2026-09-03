@@ -3,7 +3,20 @@ import { ADMIN_SESSION_COOKIE, isValidSession } from "./lib/auth";
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  if (pathname === "/login" || pathname.startsWith("/api/auth/")) return NextResponse.next();
+
+  const publicPaths = new Set([
+    "/login",
+    "/ntue-logo.svg",
+    "/favicon.ico",
+  ]);
+
+  if (
+    publicPaths.has(pathname) ||
+    pathname.startsWith("/api/auth/") ||
+    pathname.startsWith("/_next/")
+  ) {
+    return NextResponse.next();
+  }
 
   const token = req.cookies.get(ADMIN_SESSION_COOKIE)?.value;
   if (await isValidSession(token)) return NextResponse.next();
