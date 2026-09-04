@@ -1,10 +1,10 @@
 {
   "email_enabled": true,
   "recipients": [
-    "kancollect126@gmail.com"
+    "khyang.sinica@gmail.com"
   ],
   "schedules": [
-    "09:35"
+    "09:41"
   ],
   "timezone": "Asia/Taipei",
   "report_days": 7,
