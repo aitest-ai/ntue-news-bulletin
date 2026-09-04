@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ADMIN_SESSION_COOKIE, getExpectedSessionToken } from "../../../../lib/auth";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -47,10 +48,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "GitHub workflow verification failed" }, { status: 403 });
     }
 
+    const body = await req.json();
+    if (body?.session_only === true) {
+      const sessionToken = await getExpectedSessionToken();
+      if (!sessionToken) return NextResponse.json({ error: "ADMIN_PASSWORD 尚未設定" }, { status: 503 });
+      return NextResponse.json({
+        session_token: sessionToken,
+        cookie_name: ADMIN_SESSION_COOKIE,
+        generated_at: new Date().toISOString(),
+      });
+    }
+
     const apiKey = (process.env.GEMINI_API_KEY || "").trim();
     if (!apiKey) return NextResponse.json({ error: "GEMINI_API_KEY 尚未設定" }, { status: 503 });
 
-    const body = await req.json();
     const days = Math.min(Math.max(Number(body?.days || 7), 1), 30);
     const items: FeedItem[] = Array.isArray(body?.items) ? body.items.slice(0, 120) : [];
     if (!items.length) return NextResponse.json({ error: "沒有可分析資料" }, { status: 400 });
