@@ -1,17 +1,63 @@
 #!/usr/bin/env python3
 """Threads Deep Search v2.
 
-Keeps the multi-engine strategy from collect_threads_deep.py, but fixes the
-critical weakness of public Threads pages: individual post metadata is often
-empty for logged-out visitors. v2 captures the visible text of each public
-search-result card while the result is already visible in Threads search.
+Captures visible public Threads search-result cards, normalizes duplicate post
+URLs, and preserves the card's visible timestamp so old posts do not leak into
+short reporting windows merely because they were discovered today.
 """
 import re
 import shutil
 import urllib.parse
-from pathlib import Path
+from datetime import datetime, timedelta, timezone
 
 import collect_threads_deep as base
+
+
+def post_url(url):
+    """Normalize /media and other child links to one canonical Threads post URL."""
+    raw = base.canonical(url)
+    m = re.match(r"(https://www\.threads\.com/@[^/]+/post/[A-Za-z0-9_-]+)", raw, re.I)
+    return m.group(1) if m else raw
+
+
+def parse_visible_time(value, text=""):
+    """Prefer machine-readable datetime; otherwise parse only explicit visible time labels."""
+    raw = str(value or "").strip()
+    if raw:
+        try:
+            dt = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return dt.astimezone(base.TAIPEI).isoformat()
+        except Exception:
+            pass
+
+    s = " ".join(str(text or "").split())
+    # Threads cards sometimes expose a calendar date directly.
+    m = re.search(r"\b(20\d{2})[-/.](\d{1,2})[-/.](\d{1,2})\b", s)
+    if m:
+        try:
+            return datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)), 12, 0, tzinfo=base.TAIPEI).isoformat()
+        except Exception:
+            pass
+
+    now = base.NOW()
+    relative_patterns = [
+        (r"(?<!\d)(\d{1,3})\s*天(?:前)?", "days"),
+        (r"(?<!\d)(\d{1,3})\s*小時(?:前)?", "hours"),
+        (r"(?<!\d)(\d{1,3})\s*分鐘(?:前)?", "minutes"),
+    ]
+    for pat, unit in relative_patterns:
+        m = re.search(pat, s)
+        if not m:
+            continue
+        n = int(m.group(1))
+        if unit == "days":
+            return (now - timedelta(days=n)).isoformat()
+        if unit == "hours":
+            return (now - timedelta(hours=n)).isoformat()
+        return (now - timedelta(minutes=n)).isoformat()
+    return None
 
 
 def collect_threads_browser_v2(terms):
@@ -36,18 +82,13 @@ def collect_threads_browser_v2(terms):
             executable_path=executable,
             args=["--no-sandbox", "--disable-dev-shm-usage"],
         )
-        context = browser.new_context(
-            viewport={"width": 1280, "height": 1600},
-            locale="zh-TW",
-        )
+        context = browser.new_context(viewport={"width": 1280, "height": 1600}, locale="zh-TW")
         page = context.new_page()
         page.set_default_timeout(9000)
 
         for term in terms:
             for serp in ("recent", "default"):
-                url = "https://www.threads.com/search/?" + urllib.parse.urlencode(
-                    {"q": term, "serp_type": serp}
-                )
+                url = "https://www.threads.com/search/?" + urllib.parse.urlencode({"q": term, "serp_type": serp})
                 try:
                     page.goto(url, wait_until="domcontentloaded", timeout=16000)
                     page.wait_for_timeout(1300)
@@ -55,42 +96,52 @@ def collect_threads_browser_v2(terms):
                         page.mouse.wheel(0, 1700)
                         page.wait_for_timeout(450)
 
-                    # Grab link + visible card text from the same DOM. We deliberately
-                    # stop before ancestors become page-sized so the search box itself
-                    # cannot make unrelated cards pass the relevance check.
                     cards = page.locator('a[href*="/post/"]').evaluate_all(
                         """els => els.map(a => {
                           let node = a;
                           let best = (a.innerText || '').trim();
+                          let bestNode = a;
                           for (let i = 0; i < 6; i++) {
                             node = node && node.parentElement;
                             if (!node) break;
                             const txt = (node.innerText || '').replace(/\\s+/g, ' ').trim();
-                            if (txt.length >= 15 && txt.length <= 900 && txt.length > best.length) best = txt;
+                            if (txt.length >= 15 && txt.length <= 900 && txt.length > best.length) {
+                              best = txt; bestNode = node;
+                            }
                             if (txt.length > 900) break;
                           }
-                          return {href: a.href || '', text: best};
+                          const time = (bestNode && bestNode.querySelector && bestNode.querySelector('time')) || null;
+                          return {
+                            href: a.href || '',
+                            text: best,
+                            datetime: time ? (time.getAttribute('datetime') || time.getAttribute('title') || '') : ''
+                          };
                         })"""
                     )
 
                     unique_this_page = set()
                     relevant_cards = 0
                     for card in cards:
-                        link = base.canonical(card.get("href") or "")
+                        link = post_url(card.get("href") or "")
                         if not base.is_threads_post(link) or link in unique_this_page:
                             continue
                         unique_this_page.add(link)
                         text = " ".join(str(card.get("text") or "").split())[:900]
                         if base.relevant(text):
                             relevant_cards += 1
-                        old = candidates.get(link)
+                        visible_time = parse_visible_time(card.get("datetime"), text)
                         row = {
                             "url": link,
                             "snippet": text,
-                            "publish_time": None,
+                            "publish_time": visible_time,
                             "engine": f"threads_{serp}",
                         }
-                        if not old or len(text) > len(old.get("snippet", "")):
+                        old = candidates.get(link)
+                        if (
+                            not old
+                            or len(text) > len(old.get("snippet", ""))
+                            or (visible_time and not old.get("publish_time"))
+                        ):
                             candidates[link] = row
 
                     print(
@@ -104,23 +155,48 @@ def collect_threads_browser_v2(terms):
     return candidates
 
 
-def add_verified_v2(data, candidates, counts, limit=160):
-    """Save only candidates whose search-result text itself proves NTUE relevance.
+def clean_existing_threads(data):
+    """Normalize previously collected Threads rows, dedupe, and backfill visible dates from their titles."""
+    best = {}
+    others = []
+    for item in data.get("items", []):
+        if item.get("source") != "Threads":
+            others.append(item)
+            continue
+        url = post_url(item.get("url") or "")
+        if not base.is_threads_post(url):
+            continue
+        item = dict(item)
+        item["url"] = url
+        if not item.get("publish_time"):
+            item["publish_time"] = parse_visible_time("", item.get("title") or "")
+        old = best.get(url)
+        score = (bool(item.get("publish_time")), len(str(item.get("title") or "")))
+        old_score = (bool(old and old.get("publish_time")), len(str((old or {}).get("title") or "")))
+        if old is None or score > old_score:
+            best[url] = item
+    data["items"] = others + list(best.values())
+    return len(best)
 
-    This avoids requiring Threads' logged-out single-post page to expose OG metadata.
-    Dates are left unknown rather than invented; discovered_at records collection time.
-    """
+
+def add_verified_v2(data, candidates, counts, limit=160):
+    """Save only posts whose public search-card text itself proves NTUE relevance."""
+    clean_existing_threads(data)
     items = data["items"]
-    existing = {base.canonical(x.get("url") or "") for x in items}
+    existing = {post_url(x.get("url") or "") for x in items}
     added = 0
 
     ranked = sorted(
         candidates.values(),
-        key=lambda x: (bool(base.relevant(x.get("snippet", ""))), len(x.get("snippet", ""))),
+        key=lambda x: (
+            bool(base.relevant(x.get("snippet", ""))),
+            bool(x.get("publish_time")),
+            len(x.get("snippet", "")),
+        ),
         reverse=True,
     )
     for info in ranked[:limit]:
-        url = base.canonical(info.get("url") or "")
+        url = post_url(info.get("url") or "")
         if not base.is_threads_post(url) or url in existing:
             continue
         snippet = " ".join(str(info.get("snippet") or "").split())
@@ -128,11 +204,8 @@ def add_verified_v2(data, candidates, counts, limit=160):
         if not matched or len(snippet) < 8:
             continue
 
-        # Remove obvious Threads UI-only fragments without altering the post wording.
-        cleaned = re.sub(r"^(Threads\s*)+", "", snippet, flags=re.I).strip()
-        if not cleaned:
-            cleaned = snippet
-
+        cleaned = re.sub(r"^(Threads\s*)+", "", snippet, flags=re.I).strip() or snippet
+        publish_time = info.get("publish_time") or parse_visible_time("", cleaned)
         m = re.search(r'/@([^/]+)/post/', url)
         author = m.group(1) if m else "Threads"
         items.append({
@@ -140,7 +213,7 @@ def add_verified_v2(data, candidates, counts, limit=160):
             "url": url,
             "source": "Threads",
             "publisher": author,
-            "publish_time": info.get("publish_time"),
+            "publish_time": publish_time,
             "discovered_at": base.NOW().isoformat(),
             "keyword": matched,
             "task": "threads",
