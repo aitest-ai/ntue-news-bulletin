@@ -1,7 +1,8 @@
 {
   "email_enabled": true,
   "recipients": [
-    "khyang.sinica@gmail.com"
+    "khyang.sinica@gmail.com",
+    "kancollect126@gmail.com"
   ],
   "schedules": [
     "08:00"
