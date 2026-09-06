@@ -11,6 +11,7 @@ on:
       - "scripts/filter_relevance.py"
       - "scripts/send_scheduled_digest.py"
       - "scripts/send_scheduled_digest_with_ai.py"
+      - "scripts/send_scheduled_digest_reliable.py"
       - "frontend/src/app/api/ai-report/scheduled/route.ts"
       - "frontend/src/middleware.ts"
       - "frontend/public/data/settings.json"
@@ -66,10 +67,10 @@ jobs:
           BREVO_SENDER_NAME: 國北教大輿情監測
           PUBLIC_BASE_URL: https://ntue-news-bulletin.vercel.app
         run: |
-          if python scripts/send_scheduled_digest.py --is-due; then
-            echo "Bulletin is due; rendering the live /reports page to PDF and sending it through Brevo."
+          if python scripts/send_scheduled_digest_reliable.py --is-due; then
+            echo "Bulletin is due or missed earlier today; rendering the live /reports page to PDF and sending it through Brevo."
             python -m pip install --quiet reportlab playwright
-            python scripts/send_scheduled_digest_with_ai.py
+            python scripts/send_scheduled_digest_reliable.py
           else
             echo "No scheduled bulletin due."
           fi
