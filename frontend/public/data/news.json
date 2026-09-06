@@ -1,6 +1,6 @@
 {
   "schema_version": 8,
-  "updated_at": "2026-09-06T07:24:29.881518+08:00",
+  "updated_at": "2026-09-06T09:19:05.814575+08:00",
   "keywords": [
     "國立臺北教育大學",
     "國北教大",
@@ -1718,15 +1718,15 @@
       "discovery": "threads_default"
     },
     {
-      "title": "dddd11114588 國北教大偷拍 2026-5-29",
-      "url": "https://www.threads.com/@dddd11114588/post/DY6UkV-DzeJ",
+      "title": "you_qi_ 國北教大廁所偷拍 2026-5-29",
+      "url": "https://www.threads.com/@you_qi_/post/DY6JFxjCUzV",
       "source": "Threads",
-      "publisher": "dddd11114588",
-      "publish_time": "2026-05-29T13:43:50+08:00",
-      "discovered_at": "2026-09-06T07:26:31.902508+08:00",
+      "publisher": "you_qi_",
+      "publish_time": "2026-05-29T12:03:32+08:00",
+      "discovered_at": "2026-09-06T09:21:55.849471+08:00",
       "keyword": "國北教大",
       "task": "threads",
-      "discovery": "threads_recent"
+      "discovery": "threads_default"
     },
     {
       "title": "ntue.official 2026-1-21",
@@ -1734,30 +1734,52 @@
       "source": "Threads",
       "publisher": "ntue.official",
       "publish_time": "2026-01-21T14:39:04+08:00",
-      "discovered_at": "2026-09-06T07:26:31.902640+08:00",
+      "discovered_at": "2026-09-06T09:21:55.849568+08:00",
       "keyword": "NTUE",
       "task": "threads",
       "discovery": "threads_default"
     },
     {
-      "title": "c._tfs 國北教大 2025-8-21",
-      "url": "https://www.threads.com/@c._tfs/post/DNneHaTzLKC",
+      "title": "tieiejewwee 國北教大 2025-8-22",
+      "url": "https://www.threads.com/@tieiejewwee/post/DNqGCBNS3ja",
       "source": "Threads",
-      "publisher": "c._tfs",
-      "publish_time": "2025-08-21T20:16:21+08:00",
-      "discovered_at": "2026-09-06T07:26:31.902691+08:00",
+      "publisher": "tieiejewwee",
+      "publish_time": "2025-08-22T20:43:37+08:00",
+      "discovered_at": "2026-09-06T09:21:55.849532+08:00",
       "keyword": "國北教大",
       "task": "threads",
       "discovery": "threads_default"
     },
     {
-      "title": "gotohome_2 國北教 2025-3-14",
-      "url": "https://www.threads.com/@gotohome_2/post/DHLY1uIyKM0",
+      "title": "wangnew8 國北教大 2025-8-21",
+      "url": "https://www.threads.com/@wangnew8/post/DNmgVScx3mv",
       "source": "Threads",
-      "publisher": "gotohome_2",
-      "publish_time": "2025-03-14T19:23:09+08:00",
-      "discovered_at": "2026-09-06T07:26:31.902582+08:00",
+      "publisher": "wangnew8",
+      "publish_time": "2025-08-21T11:16:57+08:00",
+      "discovered_at": "2026-09-06T09:21:55.849595+08:00",
       "keyword": "國北教大",
+      "task": "threads",
+      "discovery": "threads_default"
+    },
+    {
+      "title": "yuki.codfish 國北教大 2025-6-12",
+      "url": "https://www.threads.com/@yuki.codfish/post/DKyXZd9yisA",
+      "source": "Threads",
+      "publisher": "yuki.codfish",
+      "publish_time": "2025-06-12T12:15:07+08:00",
+      "discovered_at": "2026-09-06T09:21:55.849443+08:00",
+      "keyword": "國北教大",
+      "task": "threads",
+      "discovery": "threads_default"
+    },
+    {
+      "title": "ntue.official 國北教大 2024-7-18",
+      "url": "https://www.threads.com/@ntue.official/post/C9i3oT0yC1j",
+      "source": "Threads",
+      "publisher": "ntue.official",
+      "publish_time": "2024-07-18T09:00:47+08:00",
+      "discovered_at": "2026-09-06T09:21:55.849399+08:00",
+      "keyword": "NTUE",
       "task": "threads",
       "discovery": "threads_default"
     }
@@ -1766,25 +1788,18 @@
     {
       "task": "google_news",
       "source": "新聞媒體",
-      "status": "healthy",
-      "count": 18,
-      "error": null,
-      "keyword_counts": {
-        "國立臺北教育大學": 8,
-        "國北教大": 9,
-        "北教大": 9,
-        "NTUE": 0,
-        "National Taipei University of Education": 0
-      }
+      "status": "failed",
+      "count": 0,
+      "error": "HTTP Error 503: Service Unavailable"
     },
     {
       "task": "dcard",
       "source": "Dcard",
       "status": "healthy",
-      "count": 33,
+      "count": 0,
       "error": null,
       "engine_counts": {
-        "google_news": 33,
+        "google_news": 0,
         "bing_web": 0
       }
     },
@@ -1803,10 +1818,10 @@
       "task": "instagram",
       "source": "Instagram",
       "status": "healthy",
-      "count": 63,
+      "count": 0,
       "error": null,
       "engine_counts": {
-        "google_news": 63,
+        "google_news": 0,
         "bing_web": 0
       }
     },
@@ -1814,7 +1829,7 @@
       "task": "threads",
       "source": "Threads",
       "status": "healthy",
-      "count": 16,
+      "count": 18,
       "error": null,
       "engine_counts": {
         "threads_direct": 0,
@@ -1824,10 +1839,9 @@
         "bing": 0,
         "yahoo": 0,
         "mojeek": 0,
-        "threads_recent": 1,
-        "threads_default": 3
+        "threads_default": 6
       },
-      "deep_search_last_run": "2026-09-06T07:26:35.253777+08:00",
+      "deep_search_last_run": "2026-09-06T09:21:59.947842+08:00",
       "deep_search_terms": [
         "國北教大",
         "北教大",
@@ -1846,10 +1860,10 @@
     }
   ],
   "summary": {
-    "total": 170,
-    "fresh_this_run": 114,
-    "healthy_tasks": 5,
-    "failed_tasks": 0,
-    "news_publishers": 19
+    "total": 162,
+    "fresh_this_run": 0,
+    "healthy_tasks": 4,
+    "failed_tasks": 1,
+    "news_publishers": 11
   }
 }
