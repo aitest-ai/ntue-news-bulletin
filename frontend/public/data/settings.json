@@ -1,13 +1,45 @@
 {
+  "timezone": "Asia/Taipei",
+  "delivery_profiles": [
+    {
+      "id": "legacy-0800-0",
+      "name": "08:00 電子報",
+      "enabled": true,
+      "time": "08:00",
+      "report_days": 3,
+      "include_latest_items": 20,
+      "recipients": [
+        "khyang.sinica@gmail.com",
+        "kancollect126@gmail.com"
+      ],
+      "subject_prefix": "【國北教大輿情快報】",
+      "sender_name": "",
+      "sender_email": "",
+      "channel": "email"
+    },
+    {
+      "id": "profile-1788790140270-xgzww",
+      "name": "新的推送任務",
+      "enabled": true,
+      "time": "22:11",
+      "report_days": 7,
+      "include_latest_items": 20,
+      "recipients": [],
+      "subject_prefix": "【國北教大輿情快報】",
+      "sender_name": "",
+      "sender_email": "",
+      "channel": "email"
+    }
+  ],
   "email_enabled": true,
   "recipients": [
     "khyang.sinica@gmail.com",
     "kancollect126@gmail.com"
   ],
   "schedules": [
-    "08:00"
+    "08:00",
+    "22:11"
   ],
-  "timezone": "Asia/Taipei",
   "report_days": 3,
   "include_latest_items": 20,
   "subject_prefix": "【國北教大輿情快報】"
