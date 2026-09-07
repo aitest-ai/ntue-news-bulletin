@@ -9,6 +9,7 @@ on:
       - "scripts/collect_threads_deep.py"
       - "scripts/collect_threads_deep_v2.py"
       - "scripts/refine_threads_quality.py"
+      - "scripts/refine_news_quality.py"
       - "scripts/filter_relevance.py"
       - "scripts/send_scheduled_digest.py"
       - "scripts/send_scheduled_digest_with_ai.py"
@@ -60,6 +61,9 @@ jobs:
 
       - name: Enforce exact Threads dates and readable topics
         run: python scripts/refine_threads_quality.py
+
+      - name: Verify original news dates and exclude school-only mentions
+        run: python scripts/refine_news_quality.py
 
       - name: Remove unrelated general news
         run: python scripts/filter_relevance.py
