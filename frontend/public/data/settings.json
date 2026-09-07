@@ -24,7 +24,9 @@
       "time": "22:11",
       "report_days": 7,
       "include_latest_items": 20,
-      "recipients": [],
+      "recipients": [
+        "kancollect126@gmail.com"
+      ],
       "subject_prefix": "【國北教大輿情快報】",
       "sender_name": "",
       "sender_email": "",
