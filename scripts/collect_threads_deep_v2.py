@@ -169,6 +169,8 @@ def clean_post_body(text, author=""):
         flags=re.I,
     )
     s = re.sub(r"(?<!\d)\d{1,3}\s*(?:週|天|小時|分鐘)(?:前)?(?!\w)", " ", s)
+    s = re.sub(r"\s*翻譯(?:\s+[\d,]+){1,8}\s*$", "", s)
+    s = re.sub(r"(?:\s+[\d,]+){3,8}\s*$", "", s)
     s = " ".join(s.split()).strip(" ·•|—–-:：")
 
     clauses = re.split(r"(?<=[。！？!?])\s+", s)
@@ -217,9 +219,20 @@ def topic_title(text, author="", matched=""):
         if len(stripped) >= 6:
             meaningful.append(clause)
 
-    chosen = meaningful[0] if meaningful else body
+    school_clauses = [
+        clause for clause in meaningful
+        if any(base.norm(token) in base.norm(clause) for token in SCHOOL_ONLY)
+    ]
+    chosen = school_clauses[0] if school_clauses else (meaningful[0] if meaningful else body)
+
     if len(chosen) < 28 and len(meaningful) > 1:
-        chosen = f"{chosen} {meaningful[1]}"
+        try:
+            idx = meaningful.index(chosen)
+        except ValueError:
+            idx = 0
+        neighbor = meaningful[idx + 1] if idx + 1 < len(meaningful) else meaningful[0]
+        if neighbor != chosen:
+            chosen = f"{chosen} {neighbor}"
 
     chosen = " ".join(chosen.split()).strip(" ·•|—–-:：")
     if len(chosen) > 90:
