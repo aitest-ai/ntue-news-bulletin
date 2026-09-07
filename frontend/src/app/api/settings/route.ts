@@ -3,6 +3,33 @@ import { ADMIN_SESSION_COOKIE, isValidSession } from "../../../lib/auth";
 
 const REPO = "aitest-ai/ntue-news-bulletin";
 const PATH = "frontend/public/data/settings.json";
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+function cleanEmails(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return Array.from(new Set(value.map((x) => String(x).trim()).filter(Boolean))).slice(0, 100);
+}
+
+function cleanProfiles(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, 30).map((raw: any, index: number) => {
+    const id = String(raw?.id || `profile-${Date.now()}-${index}`).replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 80) || `profile-${index + 1}`;
+    const time = TIME_RE.test(String(raw?.time || "")) ? String(raw.time) : "08:00";
+    return {
+      id,
+      name: String(raw?.name || `推送任務 ${index + 1}`).trim().slice(0, 80),
+      enabled: Boolean(raw?.enabled),
+      time,
+      report_days: Math.min(Math.max(Number(raw?.report_days || 1), 1), 30),
+      include_latest_items: Math.min(Math.max(Number(raw?.include_latest_items || 20), 5), 100),
+      recipients: cleanEmails(raw?.recipients),
+      subject_prefix: String(raw?.subject_prefix || "【國北教大輿情快報】").slice(0, 80),
+      sender_name: String(raw?.sender_name || "").trim().slice(0, 80),
+      sender_email: String(raw?.sender_email || "").trim().slice(0, 160),
+      channel: "email",
+    };
+  });
+}
 
 export async function POST(req: NextRequest) {
   const token = req.cookies.get(ADMIN_SESSION_COOKIE)?.value;
@@ -17,21 +44,18 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const recipients = Array.isArray(body?.recipients)
-      ? body.recipients.map((x: unknown) => String(x).trim()).filter(Boolean)
-      : [];
-    const schedules = Array.isArray(body?.schedules)
-      ? body.schedules.map((x: unknown) => String(x).trim()).filter((x: string) => /^([01]\d|2[0-3]):[0-5]\d$/.test(x))
-      : [];
+    const profiles = cleanProfiles(body?.delivery_profiles);
 
     const settings = {
-      email_enabled: Boolean(body?.email_enabled),
-      recipients,
-      schedules: Array.from(new Set(schedules)).sort(),
       timezone: "Asia/Taipei",
-      report_days: Math.min(Math.max(Number(body?.report_days || 1), 1), 30),
-      include_latest_items: Math.min(Math.max(Number(body?.include_latest_items || 20), 5), 100),
-      subject_prefix: String(body?.subject_prefix || "【國北教大輿情快報】").slice(0, 80),
+      delivery_profiles: profiles,
+      // Keep legacy keys for backward compatibility with older scripts/tools.
+      email_enabled: profiles.some((p) => p.enabled),
+      recipients: Array.from(new Set(profiles.flatMap((p) => p.recipients))),
+      schedules: Array.from(new Set(profiles.filter((p) => p.enabled).map((p) => p.time))).sort(),
+      report_days: profiles[0]?.report_days || 1,
+      include_latest_items: profiles[0]?.include_latest_items || 20,
+      subject_prefix: profiles[0]?.subject_prefix || "【國北教大輿情快報】",
     };
 
     const headers = {
@@ -51,7 +75,7 @@ export async function POST(req: NextRequest) {
       method: "PUT",
       headers,
       body: JSON.stringify({
-        message: "config: update bulletin delivery settings",
+        message: "config: update delivery profiles",
         content: Buffer.from(JSON.stringify(settings, null, 2) + "\n", "utf8").toString("base64"),
         sha: currentJson.sha,
         branch: "master",
