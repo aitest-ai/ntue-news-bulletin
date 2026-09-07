@@ -12,12 +12,32 @@ TERMS = [
     "國立臺北教育大學", "國立台北教育大學", "臺北教育大學", "台北教育大學",
     "國北教大", "國北教", "北教大", "ntue", "national taipei university of education",
 ]
+AFFILIATE_SCHOOL_PHRASES = [
+    "國立臺北教育大學附設實驗國民小學", "國立台北教育大學附設實驗國民小學",
+    "臺北教育大學附設實驗國民小學", "台北教育大學附設實驗國民小學",
+    "國立臺北教育大學附設實驗小學", "國立台北教育大學附設實驗小學",
+    "國北教大實小", "北教大實小", "國北實小",
+]
 TAIPEI = timezone(timedelta(hours=8))
 MAX_THREADS_AGE_DAYS = 45
 
 
 def norm(value):
     return " ".join(str(value or "").replace("臺", "台").lower().split())
+
+
+def _school_only_mention(item):
+    text = norm(" ".join([
+        str(item.get("title") or ""),
+        str(item.get("description") or ""),
+        str(item.get("snippet") or ""),
+    ]))
+    if not any(norm(p) in text for p in AFFILIATE_SCHOOL_PHRASES):
+        return False
+    stripped = text
+    for phrase in sorted(AFFILIATE_SCHOOL_PHRASES, key=len, reverse=True):
+        stripped = stripped.replace(norm(phrase), " ")
+    return not any(norm(term) in stripped for term in TERMS)
 
 
 def _valid_threads_date(item):
@@ -64,6 +84,11 @@ def keep(item):
     url = str(item.get("url") or "")
     host = (urlparse(url).netloc or "").lower()
 
+    # The affiliated elementary school is a separate monitoring entity. A hit
+    # that mentions only the school name must not be treated as university news.
+    if _school_only_mention(item):
+        return False
+
     # Threads gets a stricter evidence-quality gate. Search engines can surface
     # months-old posts with no date and Threads cards can expose only the account
     # header; neither is useful in a current executive report.
@@ -96,11 +121,15 @@ def main():
     kept = []
     removed_unrelated = 0
     removed_threads_quality = 0
+    removed_school_only = 0
 
     for item in items:
         is_thread = item.get("source") == "Threads" or item.get("task") == "threads"
+        school_only = _school_only_mention(item)
         if keep(item):
             kept.append(item)
+        elif school_only:
+            removed_school_only += 1
         elif is_thread:
             removed_threads_quality += 1
         else:
@@ -110,11 +139,14 @@ def main():
     if isinstance(data.get("meta"), dict):
         data["meta"]["post_filter_items"] = len(kept)
         data["meta"]["removed_threads_quality"] = removed_threads_quality
+        data["meta"]["removed_school_only"] = removed_school_only
+    if isinstance(data.get("summary"), dict):
+        data["summary"]["removed_school_only_relevance"] = removed_school_only
 
     NEWS_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(
         f"[relevance] kept={len(kept)} removed_unrelated={removed_unrelated} "
-        f"removed_threads_quality={removed_threads_quality}"
+        f"removed_threads_quality={removed_threads_quality} removed_school_only={removed_school_only}"
     )
 
 
