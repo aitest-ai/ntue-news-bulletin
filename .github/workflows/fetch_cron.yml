@@ -12,6 +12,7 @@ on:
       - "scripts/send_scheduled_digest.py"
       - "scripts/send_scheduled_digest_with_ai.py"
       - "scripts/send_scheduled_digest_reliable.py"
+      - "scripts/send_delivery_profiles.py"
       - "frontend/src/app/api/ai-report/scheduled/route.ts"
       - "frontend/src/middleware.ts"
       - "frontend/public/data/settings.json"
@@ -59,7 +60,7 @@ jobs:
       - name: Remove unrelated general news
         run: python scripts/filter_relevance.py
 
-      - name: Generate website-identical AI PDF report and send scheduled bulletin when due
+      - name: Send all due delivery profiles
         env:
           GITHUB_WORKFLOW_TOKEN: ${{ github.token }}
           BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
@@ -67,12 +68,12 @@ jobs:
           BREVO_SENDER_NAME: 國北教大輿情監測
           PUBLIC_BASE_URL: https://ntue-news-bulletin.vercel.app
         run: |
-          if python scripts/send_scheduled_digest_reliable.py --is-due; then
-            echo "Bulletin is due or missed earlier today; rendering the live /reports page to PDF and sending it through Brevo."
+          if python scripts/send_delivery_profiles.py --is-due; then
+            echo "One or more delivery profiles are due; rendering live /reports PDFs and sending through Brevo."
             python -m pip install --quiet reportlab playwright
-            python scripts/send_scheduled_digest_reliable.py
+            python scripts/send_delivery_profiles.py
           else
-            echo "No scheduled bulletin due."
+            echo "No delivery profile due."
           fi
 
       - name: Commit refreshed data and delivery state
