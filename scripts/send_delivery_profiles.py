@@ -60,7 +60,6 @@ def normalize_profiles(settings):
             })
         return profiles
 
-    # Backward-compatible migration path for existing single-list settings.
     recipients = [str(x).strip() for x in settings.get("recipients", []) if str(x).strip()]
     for index, slot in enumerate(settings.get("schedules", [])):
         slot = str(slot).strip()
@@ -94,8 +93,6 @@ def due_profiles(settings, state, now):
         except Exception:
             continue
         key = f"{now.date().isoformat()}@{profile['time']}"
-        # Same-day catch-up: once the target time has passed, keep retrying on later
-        # workflow wakes until this profile is actually delivered successfully.
         if now >= target and sent.get(profile["id"]) != key:
             due.append((profile, key))
     return due
@@ -121,7 +118,13 @@ def send_profile(profile, feed):
             f"[profiles] sending id={profile['id']} name={profile['name']!r} "
             f"time={profile['time']} days={profile['report_days']} recipients={len(profile['recipients'])}"
         )
-        return bool(digest.build_and_send(run_settings, feed, profile["time"]))
+        try:
+            return bool(digest.build_and_send(run_settings, feed, profile["time"]))
+        except Exception as exc:
+            # Important: a failed live /reports render must not mark the profile
+            # delivered. Leave state untouched so the next workflow wake retries.
+            print(f"[profiles] delivery aborted id={profile['id']}: {exc}")
+            return False
     finally:
         if previous_sender_name is None:
             os.environ.pop("BREVO_SENDER_NAME", None)
