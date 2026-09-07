@@ -60,6 +60,8 @@ jobs:
       - name: Remove unrelated general news
         run: python scripts/filter_relevance.py
 
+      # Format lock: scheduled email may only send the browser-rendered live
+      # /reports PDF. The legacy ReportLab fallback must never be delivered.
       - name: Send all due delivery profiles
         env:
           GITHUB_WORKFLOW_TOKEN: ${{ github.token }}
