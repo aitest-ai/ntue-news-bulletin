@@ -8,7 +8,7 @@
     "08:00"
   ],
   "timezone": "Asia/Taipei",
-  "report_days": 7,
+  "report_days": 3,
   "include_latest_items": 20,
   "subject_prefix": "【國北教大輿情快報】"
 }
