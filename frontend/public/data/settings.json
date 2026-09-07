@@ -31,21 +31,6 @@
       "sender_name": "",
       "sender_email": "",
       "channel": "email"
-    },
-    {
-      "id": "test-threads-quality-20260908",
-      "name": "Threads 品質修正測試",
-      "enabled": true,
-      "time": "06:20",
-      "report_days": 7,
-      "include_latest_items": 30,
-      "recipients": [
-        "kancollect126@gmail.com"
-      ],
-      "subject_prefix": "【國北教大輿情測試】",
-      "sender_name": "",
-      "sender_email": "",
-      "channel": "email"
     }
   ],
   "email_enabled": true,
