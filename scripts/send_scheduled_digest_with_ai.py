@@ -17,8 +17,6 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 import send_scheduled_digest as digest  # noqa: E402
 
-_original_generate = digest.generate_ai_report
-_original_create_pdf = digest.create_pdf
 _rendered_pdf_bytes = None
 
 
@@ -29,7 +27,7 @@ def _workflow_headers():
         "x-github-run-id": os.getenv("GITHUB_RUN_ID", "").strip(),
         "x-github-sha": os.getenv("GITHUB_SHA", "").strip(),
         "x-github-workflow-token": os.getenv("GITHUB_WORKFLOW_TOKEN", "").strip(),
-        "User-Agent": "NTUE-GitHub-Actions-Scheduled-Report/6.0",
+        "User-Agent": "NTUE-GitHub-Actions-Scheduled-Report/7.0",
     }
 
 
@@ -76,12 +74,18 @@ def _launch_browser(playwright):
 
 def generate_via_reports_page(selected, attention, days):
     global _rendered_pdf_bytes
+    _rendered_pdf_bytes = None
     base_url = os.getenv("PUBLIC_BASE_URL", "https://ntue-news-bulletin.vercel.app").rstrip("/")
     run_id = os.getenv("GITHUB_RUN_ID", "").strip()
     sha = os.getenv("GITHUB_SHA", "").strip()
     workflow_token = os.getenv("GITHUB_WORKFLOW_TOKEN", "").strip()
-    if not run_id or not sha or not workflow_token or not selected:
-        return _original_generate(selected, attention, days)
+
+    # Scheduled email reports must always use the live /reports design. Never
+    # silently downgrade to the old ReportLab fallback.
+    if not run_id or not sha or not workflow_token:
+        raise RuntimeError("scheduled workflow authentication is incomplete; refusing legacy PDF fallback")
+    if not selected:
+        raise RuntimeError("no report data available; refusing legacy PDF fallback")
 
     try:
         from playwright.sync_api import sync_playwright
@@ -128,7 +132,7 @@ def generate_via_reports_page(selected, attention, days):
                 page.get_by_role("button", name="產生輿情報告").click()
             response = response_info.value
             if not response.ok:
-                raise RuntimeError(f"website AI report HTTP {response.status}: {response.text()[:500]}")
+                raise RuntimeError(f"website AI report HTTP {response.status}: {response.text()[:800]}")
             data = response.json()
             full_report = data.get("report")
             if not isinstance(full_report, dict):
@@ -143,6 +147,9 @@ def generate_via_reports_page(selected, attention, days):
                 prefer_css_page_size=True,
             )
             browser.close()
+
+        if not _rendered_pdf_bytes or len(_rendered_pdf_bytes) < 50000:
+            raise RuntimeError(f"browser-rendered PDF is unexpectedly small ({len(_rendered_pdf_bytes or b'')}B)")
 
         topics = [str(x.get("topic") or "").strip() for x in full_report.get("topics", []) if str(x.get("topic") or "").strip()]
         recommendations = []
@@ -171,22 +178,21 @@ def generate_via_reports_page(selected, attention, days):
         }
         print(
             f"[digest] report rendered through live /reports page; run={run_id}; "
-            f"pdf={len(_rendered_pdf_bytes or b'')}B ai_generated=True"
+            f"pdf={len(_rendered_pdf_bytes)}B ai_generated=True"
         )
         return mapped, True
     except Exception as exc:
-        print(f"[digest] live /reports rendering failed; falling back to legacy report: {exc}")
         _rendered_pdf_bytes = None
-        return _original_generate(selected, attention, days)
+        print(f"[digest] live /reports rendering failed; delivery will NOT fall back to legacy PDF: {exc}")
+        raise RuntimeError(f"live /reports rendering required but failed: {exc}") from exc
 
 
 def create_pdf_from_reports_page(path, report, meta, attention, ai_generated):
     target = Path(path)
-    if _rendered_pdf_bytes:
-        target.write_bytes(_rendered_pdf_bytes)
-        print(f"[digest] wrote browser-rendered /reports PDF: {target} ({target.stat().st_size}B)")
-        return
-    _original_create_pdf(path, report, meta, attention, ai_generated)
+    if not _rendered_pdf_bytes:
+        raise RuntimeError("browser-rendered /reports PDF missing; refusing legacy PDF generation")
+    target.write_bytes(_rendered_pdf_bytes)
+    print(f"[digest] wrote browser-rendered /reports PDF: {target} ({target.stat().st_size}B)")
 
 
 def _body_to_html(body_fields):
@@ -219,6 +225,10 @@ def submit_via_brevo(recipient, subject, body_fields, source_url, pdf_path):
         return False
 
     pdf = Path(pdf_path)
+    if not pdf.exists() or pdf.stat().st_size < 50000:
+        print(f"[digest] refusing to send invalid/small PDF attachment: {pdf} size={pdf.stat().st_size if pdf.exists() else 0}B")
+        return False
+
     attachment_b64 = base64.b64encode(pdf.read_bytes()).decode("ascii")
     text_content = "\n\n".join(f"{k}\n{v}" for k, v in body_fields.items())
     payload = json.dumps(
@@ -241,7 +251,7 @@ def submit_via_brevo(recipient, subject, body_fields, source_url, pdf_path):
             "api-key": api_key,
             "accept": "application/json",
             "content-type": "application/json",
-            "User-Agent": "NTUE-Opinion-Monitor/6.0",
+            "User-Agent": "NTUE-Opinion-Monitor/7.0",
         },
         method="POST",
     )
