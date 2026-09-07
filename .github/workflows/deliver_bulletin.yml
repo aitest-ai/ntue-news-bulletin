@@ -1,6 +1,11 @@
 name: NTUE Bulletin Delivery Guard
 
 on:
+  push:
+    branches: [master]
+    paths:
+      - "scripts/send_scheduled_digest_guard.py"
+      - ".github/workflows/deliver_bulletin.yml"
   schedule:
     # GitHub cron uses UTC. These are redundant pre-warm and fallback triggers
     # around 08:00 Asia/Taipei (UTC+8), intentionally avoiding dependence on
