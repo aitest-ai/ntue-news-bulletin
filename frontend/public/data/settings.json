@@ -31,21 +31,6 @@
       "sender_name": "",
       "sender_email": "",
       "channel": "email"
-    },
-    {
-      "id": "test-news-quality-20260908",
-      "name": "新聞日期與實小排除測試",
-      "enabled": true,
-      "time": "06:34",
-      "report_days": 7,
-      "include_latest_items": 30,
-      "recipients": [
-        "kancollect126@gmail.com"
-      ],
-      "subject_prefix": "【國北教大新聞品質測試】",
-      "sender_name": "",
-      "sender_email": "",
-      "channel": "email"
     }
   ],
   "email_enabled": true,
