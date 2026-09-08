@@ -9,6 +9,7 @@ on:
       - "scripts/send_scheduled_digest_with_ai.py"
       - "scripts/send_scheduled_digest.py"
       - "frontend/public/data/settings.json"
+      - "frontend/public/data/news.json"
       - "frontend/src/app/api/ai-report/scheduled/route.ts"
       - "frontend/src/middleware.ts"
       - ".github/workflows/deliver_bulletin.yml"
