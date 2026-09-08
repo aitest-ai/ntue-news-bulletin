@@ -48,6 +48,21 @@
       "sender_name": "",
       "sender_email": "",
       "channel": "email"
+    },
+    {
+      "id": "test-v3-alt-1959",
+      "name": "一次性 v3 另一收件人測試",
+      "enabled": true,
+      "time": "19:59",
+      "report_days": 1,
+      "include_latest_items": 100,
+      "recipients": [
+        "khyang.sinica@gmail.com"
+      ],
+      "subject_prefix": "【國北教大輿情快報｜v3 測試】",
+      "sender_name": "",
+      "sender_email": "",
+      "channel": "email"
     }
   ],
   "email_enabled": true,
@@ -58,9 +73,10 @@
   "schedules": [
     "07:30",
     "15:30",
+    "19:59",
     "22:30"
   ],
   "report_days": 1,
-  "include_latest_items": 20,
+  "include_latest_items": 100,
   "subject_prefix": "【國北教大輿情快報】"
 }
