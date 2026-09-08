@@ -10,6 +10,7 @@ on:
       - "scripts/collect_threads_deep_v2.py"
       - "scripts/refine_threads_quality.py"
       - "scripts/refine_news_quality.py"
+      - "scripts/resolve_source_urls.py"
       - "scripts/filter_relevance.py"
       - ".github/workflows/fetch_cron.yml"
   schedule:
@@ -56,6 +57,9 @@ jobs:
 
       - name: Verify original news dates and exclude school-only mentions
         run: python scripts/refine_news_quality.py
+
+      - name: Resolve recent source URLs
+        run: python scripts/resolve_source_urls.py
 
       - name: Remove unrelated general news
         run: python scripts/filter_relevance.py
