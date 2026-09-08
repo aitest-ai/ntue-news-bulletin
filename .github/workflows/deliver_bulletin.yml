@@ -7,6 +7,7 @@ on:
       - "scripts/send_scheduled_digest_guard.py"
       - "scripts/send_delivery_profiles.py"
       - "scripts/send_scheduled_digest_with_ai.py"
+      - "scripts/send_email_brief_v2.py"
       - "scripts/send_scheduled_digest.py"
       - "frontend/public/data/settings.json"
       - "frontend/public/data/news.json"
