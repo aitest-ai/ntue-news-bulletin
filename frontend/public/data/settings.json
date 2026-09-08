@@ -3,16 +3,16 @@
   "delivery_profiles": [
     {
       "id": "legacy-0800-0",
-      "name": "08:00 電子報",
+      "name": "07:30 電子報",
       "enabled": true,
-      "time": "08:00",
-      "report_days": 3,
+      "time": "07:30",
+      "report_days": 1,
       "include_latest_items": 20,
       "recipients": [
         "khyang.sinica@gmail.com",
         "kancollect126@gmail.com"
       ],
-      "subject_prefix": "【國北教大輿情快報】",
+      "subject_prefix": "【國北教大輿情快報】07:30",
       "sender_name": "",
       "sender_email": "",
       "channel": "email"
@@ -39,10 +39,10 @@
     "kancollect126@gmail.com"
   ],
   "schedules": [
-    "08:00",
+    "07:30",
     "22:15"
   ],
-  "report_days": 3,
+  "report_days": 1,
   "include_latest_items": 20,
-  "subject_prefix": "【國北教大輿情快報】"
+  "subject_prefix": "【國北教大輿情快報】07:30"
 }
