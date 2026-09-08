@@ -11,13 +11,6 @@ on:
       - "scripts/refine_threads_quality.py"
       - "scripts/refine_news_quality.py"
       - "scripts/filter_relevance.py"
-      - "scripts/send_scheduled_digest.py"
-      - "scripts/send_scheduled_digest_with_ai.py"
-      - "scripts/send_scheduled_digest_reliable.py"
-      - "scripts/send_delivery_profiles.py"
-      - "frontend/src/app/api/ai-report/scheduled/route.ts"
-      - "frontend/src/middleware.ts"
-      - "frontend/public/data/settings.json"
       - ".github/workflows/fetch_cron.yml"
   schedule:
     - cron: "*/10 * * * *"
@@ -25,7 +18,6 @@ on:
 
 permissions:
   contents: write
-  actions: read
 
 concurrency:
   group: ntue-opinion-collector
@@ -68,38 +60,33 @@ jobs:
       - name: Remove unrelated general news
         run: python scripts/filter_relevance.py
 
-      # Format lock: scheduled email may only send the browser-rendered live
-      # /reports PDF. The legacy ReportLab fallback must never be delivered.
-      - name: Send all due delivery profiles
-        env:
-          GITHUB_WORKFLOW_TOKEN: ${{ github.token }}
-          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
-          BREVO_SENDER_EMAIL: ${{ secrets.BREVO_SENDER_EMAIL }}
-          BREVO_SENDER_NAME: 國北教大輿情監測
-          PUBLIC_BASE_URL: https://ntue-news-bulletin.vercel.app
+      # Collection never writes email-state.json. Delivery state belongs only
+      # to NTUE Bulletin Delivery Guard, preventing stale state overwrites and
+      # duplicate/missed sends when collector and mail jobs overlap.
+      - name: Commit refreshed opinion data
         run: |
-          if python scripts/send_delivery_profiles.py --is-due; then
-            echo "One or more delivery profiles are due; rendering live /reports PDFs and sending through Brevo."
-            python -m pip install --quiet reportlab playwright
-            python scripts/send_delivery_profiles.py
-          else
-            echo "No delivery profile due."
-          fi
-
-      - name: Commit refreshed data and delivery state
-        run: |
-          if git diff --quiet -- frontend/public/data/news.json frontend/public/data/email-state.json; then
+          if git diff --quiet -- frontend/public/data/news.json; then
             echo "No data changes."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           cp frontend/public/data/news.json /tmp/news.json
-          cp frontend/public/data/email-state.json /tmp/email-state.json
-          git fetch origin master
-          git reset --hard origin/master
-          cp /tmp/news.json frontend/public/data/news.json
-          cp /tmp/email-state.json frontend/public/data/email-state.json
-          git add frontend/public/data/news.json frontend/public/data/email-state.json
-          git commit -m "data: refresh NTUE opinion feed"
-          git push origin HEAD:master
+          for attempt in 1 2 3 4 5; do
+            git fetch origin master
+            git reset --hard origin/master
+            cp /tmp/news.json frontend/public/data/news.json
+            git add frontend/public/data/news.json
+            if git diff --cached --quiet; then
+              echo "Opinion data already current."
+              exit 0
+            fi
+            git commit -m "data: refresh NTUE opinion feed" || true
+            if git push origin HEAD:master; then
+              exit 0
+            fi
+            echo "Data push raced with another workflow; retrying ($attempt/5)."
+            sleep 2
+          done
+          echo "Failed to persist refreshed opinion data after retries."
+          exit 1
