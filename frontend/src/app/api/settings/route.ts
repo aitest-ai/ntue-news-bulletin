@@ -20,7 +20,8 @@ function cleanProfiles(value: unknown) {
       name: String(raw?.name || `推送任務 ${index + 1}`).trim().slice(0, 80),
       enabled: Boolean(raw?.enabled),
       time,
-      report_days: Math.min(Math.max(Number(raw?.report_days || 1), 1), 30),
+      // Supervisor-facing scheduled bulletins always use a rolling 24-hour window.
+      report_days: 1,
       include_latest_items: Math.min(Math.max(Number(raw?.include_latest_items || 20), 5), 100),
       recipients: cleanEmails(raw?.recipients),
       subject_prefix: String(raw?.subject_prefix || "【國北教大輿情快報】").slice(0, 80),
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest) {
       email_enabled: profiles.some((p) => p.enabled),
       recipients: Array.from(new Set(profiles.flatMap((p) => p.recipients))),
       schedules: Array.from(new Set(profiles.filter((p) => p.enabled).map((p) => p.time))).sort(),
-      report_days: profiles[0]?.report_days || 1,
+      report_days: 1,
       include_latest_items: profiles[0]?.include_latest_items || 20,
       subject_prefix: profiles[0]?.subject_prefix || "【國北教大輿情快報】",
     };
