@@ -8,14 +8,12 @@ import os
 import urllib.error
 import urllib.request
 from datetime import datetime
-from pathlib import Path
 from urllib.parse import urlparse
 
 import send_scheduled_digest as legacy
 
 TAIPEI = legacy.TAIPEI
 SOCIAL = legacy.SOCIAL
-MAX_EMAIL_ITEMS = 100
 
 
 def _is_google_news(url):
@@ -99,11 +97,12 @@ def _section(title, items, social=False):
 
 def build_email(summary, suggestion, selected, slot):
     now = datetime.now(TAIPEI)
+    # Include every item that passed the strict rolling-24h quality filters.
     ordered = sorted(
         selected,
         key=lambda item: legacy._parse_publish_time(item.get("publish_time")) or datetime.min.replace(tzinfo=TAIPEI),
         reverse=True,
-    )[:MAX_EMAIL_ITEMS]
+    )
     news = [x for x in ordered if x.get("source") not in SOCIAL]
     social = [x for x in ordered if x.get("source") in SOCIAL]
 
@@ -123,7 +122,7 @@ def build_email(summary, suggestion, selected, slot):
         '</div>'
         + _section("新聞報導", news, social=False)
         + _section("社群討論", social, social=True)
-        + '<div style="font-size:11.5px;color:#7a8494;margin:14px 4px 0">本快報由公開新聞與社群資料自動蒐集與摘要；點選標題或「查看原文」即可前往來源。重要內容仍請以原始來源為準。</div>'
+        + '<div style="font-size:11.5px;color:#7a8494;margin:14px 4px 0">本快報由公開新聞與社群資料自動蒐集與摘要；點選標題或來源按鈕即可前往來源。重要內容仍請以原始來源為準。</div>'
         '</div></div>'
     )
 
