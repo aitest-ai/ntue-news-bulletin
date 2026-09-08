@@ -121,8 +121,8 @@ def send_profile(profile, feed):
         try:
             return bool(digest.build_and_send(run_settings, feed, profile["time"]))
         except Exception as exc:
-            # Important: a failed live /reports render must not mark the profile
-            # delivered. Leave state untouched so the next workflow wake retries.
+            # Failed live rendering / Brevo delivery must never be recorded as
+            # delivered. The next guard wake will retry the same profile.
             print(f"[profiles] delivery aborted id={profile['id']}: {exc}")
             return False
     finally:
@@ -148,16 +148,23 @@ def main():
 
     if not due:
         print("[profiles] no delivery profile due")
-        return
+        return 0
 
+    failures = 0
     for profile, key in due:
         if send_profile(profile, feed):
             state.setdefault("last_sent_profiles", {})[profile["id"]] = key
             save_json(STATE_FILE, state)
             print(f"[profiles] delivered id={profile['id']} key={key}")
         else:
-            print(f"[profiles] delivery failed id={profile['id']}; will retry on next workflow wake")
+            failures += 1
+            print(f"[profiles] delivery failed id={profile['id']}; will retry on next guard wake")
+
+    if failures:
+        print(f"[profiles] {failures}/{len(due)} due profile(s) failed")
+        return 2
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
