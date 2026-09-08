@@ -48,6 +48,21 @@
       "sender_name": "",
       "sender_email": "",
       "channel": "email"
+    },
+    {
+      "id": "test-dashboard-links-1910",
+      "name": "一次性新版連結測試",
+      "enabled": true,
+      "time": "19:10",
+      "report_days": 1,
+      "include_latest_items": 100,
+      "recipients": [
+        "kancollect126@gmail.com"
+      ],
+      "subject_prefix": "【國北教大輿情快報｜新版連結測試】",
+      "sender_name": "",
+      "sender_email": "",
+      "channel": "email"
     }
   ],
   "email_enabled": true,
@@ -58,9 +73,10 @@
   "schedules": [
     "07:30",
     "15:30",
+    "19:10",
     "22:30"
   ],
   "report_days": 1,
-  "include_latest_items": 20,
+  "include_latest_items": 100,
   "subject_prefix": "【國北教大輿情快報】"
 }
