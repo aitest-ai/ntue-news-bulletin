@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""HTML-only NTUE bulletin that mirrors the dashboard's news/social feed cards."""
+"""HTML-only NTUE bulletin with mobile-friendly dashboard-style source cards."""
 from __future__ import annotations
 
 import html
 import json
 import os
+import re
 import urllib.error
 import urllib.request
 from datetime import datetime
@@ -41,63 +42,120 @@ def _fmt_time(item):
     return dt.strftime("%m/%d %H:%M") if dt else "時間未確認"
 
 
+def _clean_summary(text):
+    """Remove letter-like greetings so the bulletin starts directly with content."""
+    value = str(text or "").strip()
+    value = re.sub(
+        r"^(?:各位)?(?:主管|長官|同仁)?(?:您好|好)[！!，,。：:\s]*",
+        "",
+        value,
+        flags=re.I,
+    ).strip()
+    value = re.sub(r"^(?:您好|大家好)[！!，,。：:\s]*", "", value, flags=re.I).strip()
+    return value or "過去 24 小時內未產生可用摘要，請直接參閱下方來源。"
+
+
+def _platform_visual(item):
+    """Small image-free avatar that survives clients blocking remote images."""
+    source = str(item.get("source") or "").strip()
+    s = source.lower()
+    if "yahoo" in s:
+        return "Y!", "#6f2dbd", "#ffffff"
+    if source == "Dcard" or "dcard" in s:
+        return "D", "#006aa6", "#ffffff"
+    if source == "Threads" or "threads" in s:
+        return "@", "#111111", "#ffffff"
+    if source == "Instagram" or "instagram" in s:
+        return "IG", "#b13b78", "#ffffff"
+    if source == "PTT" or "ptt" in s:
+        return "PTT", "#263238", "#ffffff"
+    if "facebook" in s or source == "Facebook":
+        return "f", "#1877f2", "#ffffff"
+    if source in SOCIAL:
+        return "社", "#a65a16", "#ffffff"
+    return "新", "#315caa", "#ffffff"
+
+
+def _compact_snippet(item, title):
+    snippet = " ".join(str(item.get("snippet") or "").split())
+    if not snippet or snippet == title or snippet.startswith(title):
+        return ""
+    if len(snippet) > 105:
+        snippet = snippet[:102].rstrip() + "…"
+    return snippet
+
+
 def _card(item, social=False):
-    title = str(item.get("title") or "（無標題）").strip()
+    title = " ".join(str(item.get("title") or "（無標題）").split())
     source = str(item.get("source") or "公開來源").strip()
     publisher = str(item.get("publisher") or "").strip()
-    meta_parts = []
-    if publisher and publisher != source:
+    link, direct = best_link(item)
+    avatar, avatar_bg, avatar_fg = _platform_visual(item)
+    snippet = _compact_snippet(item, title)
+
+    meta_parts = [source]
+    if publisher and publisher.lower() != source.lower():
         meta_parts.append(publisher)
     meta_parts.append(_fmt_time(item))
     meta = " · ".join(meta_parts)
-    link, direct = best_link(item)
 
-    pill_bg = "#fff3e6" if social else "#edf3ff"
-    pill_fg = "#7a3e00" if social else "#315caa"
     if link:
         title_html = (
             f'<a href="{html.escape(link, quote=True)}" '
-            'style="color:#14213d;text-decoration:none;font-weight:700;line-height:1.55">'
+            'style="color:#17233b;text-decoration:none;font-size:16px;font-weight:800;line-height:1.48">'
             f'{html.escape(title)}</a>'
         )
         cta = (
             f'<a href="{html.escape(link, quote=True)}" '
-            'style="display:inline-block;margin-top:7px;color:#0b5cab;text-decoration:none;font-size:12px;font-weight:700">'
-            + ("查看原文 →" if direct else "開啟來源 →") + "</a>"
+            'style="display:inline-block;margin-top:8px;color:#1769aa;text-decoration:none;font-size:13px;font-weight:800">'
+            + ("查看原文&nbsp;→" if direct else "開啟來源&nbsp;→") + "</a>"
         )
     else:
-        title_html = f'<span style="font-weight:700;color:#14213d;line-height:1.55">{html.escape(title)}</span>'
+        title_html = f'<span style="color:#17233b;font-size:16px;font-weight:800;line-height:1.48">{html.escape(title)}</span>'
         cta = ""
 
+    snippet_html = (
+        f'<div style="font-size:13px;line-height:1.55;color:#5f6b7a;margin-top:6px">{html.escape(snippet)}</div>'
+        if snippet else ""
+    )
+
+    # Table layout is much more reliable than flexbox in Gmail/Outlook mobile clients.
     return (
-        '<div style="display:flex;gap:11px;padding:14px 0;border-bottom:1px solid #edf0f4">'
-        f'<div style="flex:0 0 auto;align-self:flex-start;min-width:72px;text-align:center;font-size:11.5px;'
-        f'font-weight:800;padding:6px 8px;border-radius:999px;color:{pill_fg};background:{pill_bg}">{html.escape(source)}</div>'
-        '<div style="min-width:0;flex:1">'
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" '
+        'style="width:100%;border-collapse:collapse;border-bottom:1px solid #e8edf3">'
+        '<tr>'
+        '<td width="56" valign="top" style="width:56px;padding:15px 12px 15px 0">'
+        f'<div style="width:44px;height:44px;line-height:44px;border-radius:50%;text-align:center;'
+        f'font-family:Arial,sans-serif;font-size:{"12" if len(avatar)>2 else "16"}px;font-weight:900;'
+        f'background:{avatar_bg};color:{avatar_fg};">{html.escape(avatar)}</div>'
+        '</td>'
+        '<td valign="top" style="padding:14px 0 15px 0">'
         f'<div>{title_html}</div>'
-        f'<div style="font-size:11.5px;color:#8a94a7;margin-top:5px">{html.escape(meta)}</div>'
-        f'{cta}</div></div>'
+        f'<div style="font-size:12px;color:#7b8798;margin-top:5px;line-height:1.45">{html.escape(meta)}</div>'
+        f'{snippet_html}{cta}'
+        '</td>'
+        '</tr></table>'
     )
 
 
 def _section(title, items, social=False):
     if not items:
-        body = '<div style="padding:22px 4px;color:#8a94a7;text-align:center">目前沒有符合條件的內容</div>'
+        body = '<div style="padding:22px 2px;color:#8a94a7;text-align:center;font-size:13px">目前沒有符合條件的內容</div>'
     else:
         body = "".join(_card(item, social=social) for item in items)
     return (
-        '<div style="background:#fff;border:1px solid #e5eaf1;border-radius:14px;padding:17px 18px;margin-top:16px">'
-        '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;'
-        'border-bottom:2px solid #0d2147;padding-bottom:10px">'
-        f'<div style="font-size:19px;font-weight:800;color:#0d2147">{html.escape(title)}</div>'
-        f'<div style="font-size:12px;color:#667085">{len(items)} 筆</div></div>'
+        '<div style="background:#ffffff;border:1px solid #dfe6ee;border-radius:14px;padding:16px 18px;margin-top:14px">'
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse">'
+        '<tr><td style="padding-bottom:9px;border-bottom:2px solid #17345e">'
+        f'<span style="font-size:19px;font-weight:900;color:#17345e">{html.escape(title)}</span>'
+        f'<span style="font-size:12px;color:#7a8494;margin-left:7px">{len(items)} 筆</span>'
+        '</td></tr></table>'
         f'{body}</div>'
     )
 
 
 def build_email(summary, suggestion, selected, slot):
     now = datetime.now(TAIPEI)
-    # Include every item that passed the strict rolling-24h quality filters.
     ordered = sorted(
         selected,
         key=lambda item: legacy._parse_publish_time(item.get("publish_time")) or datetime.min.replace(tzinfo=TAIPEI),
@@ -105,30 +163,37 @@ def build_email(summary, suggestion, selected, slot):
     )
     news = [x for x in ordered if x.get("source") not in SOCIAL]
     social = [x for x in ordered if x.get("source") in SOCIAL]
+    summary = _clean_summary(summary)
 
     html_content = (
-        '<div style="font-family:Arial,\'Noto Sans TC\',sans-serif;background:#f3f6fa;color:#14213d;padding:18px 8px;line-height:1.65">'
-        '<div style="max-width:920px;margin:0 auto">'
-        '<div style="background:#fff;border-top:5px solid #0d2147;border-radius:16px;padding:19px 22px">'
-        '<div style="font-size:23px;font-weight:900;color:#102a56">國立臺北教育大學輿情快報</div>'
-        f'<div style="font-size:12px;color:#6b7280;margin-top:5px">監測時間：{now.strftime("%Y/%m/%d %H:%M")}｜排程：{html.escape(slot)}｜過去 24 小時</div>'
-        f'<div style="margin-top:15px;padding:14px 16px;background:#f5f8fc;border:1px solid #d9e4f0;border-radius:11px">'
-        f'<div style="font-weight:800;color:#0d2147;margin-bottom:5px">本期摘要</div>'
-        f'<div style="color:#2b3340">{html.escape(summary).replace(chr(10), "<br>")}</div></div>'
-        f'<div style="margin-top:11px;padding:12px 16px;background:#fbfcfe;border:1px solid #e5eaf1;border-radius:11px">'
-        f'<div style="font-weight:800;color:#0d2147;margin-bottom:4px">簡單建議</div>'
-        f'<div style="color:#42526b">{html.escape(suggestion).replace(chr(10), "<br>")}</div></div>'
-        f'<div style="margin-top:12px;font-size:12px;color:#667085">共 {len(ordered)} 則（新聞 {len(news)}｜社群 {len(social)}）</div>'
+        '<div style="margin:0;padding:0;background:#f2f5f9;font-family:Arial,\'Noto Sans TC\',sans-serif;color:#17233b;line-height:1.65">'
+        '<div style="max-width:760px;margin:0 auto;padding:14px 8px 24px">'
+        '<div style="background:#ffffff;border-top:5px solid #17345e;border-radius:14px;padding:20px 20px 18px">'
+        '<div style="font-size:24px;font-weight:900;color:#17345e;line-height:1.25">國立臺北教育大學輿情快報</div>'
+        f'<div style="font-size:12px;color:#7b8798;margin-top:6px">{now.strftime("%Y/%m/%d %H:%M")}　｜　過去 24 小時　｜　排程 {html.escape(slot)}</div>'
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:15px;width:100%;border-collapse:collapse">'
+        '<tr>'
+        f'<td style="width:33%;padding:10px 6px;text-align:center;background:#f5f8fc;border-radius:9px 0 0 9px"><div style="font-size:20px;font-weight:900;color:#17345e">{len(ordered)}</div><div style="font-size:11px;color:#7b8798">全部</div></td>'
+        f'<td style="width:33%;padding:10px 6px;text-align:center;background:#f5f8fc;border-left:1px solid #dfe6ee"><div style="font-size:20px;font-weight:900;color:#315caa">{len(news)}</div><div style="font-size:11px;color:#7b8798">新聞</div></td>'
+        f'<td style="width:34%;padding:10px 6px;text-align:center;background:#f5f8fc;border-left:1px solid #dfe6ee;border-radius:0 9px 9px 0"><div style="font-size:20px;font-weight:900;color:#a65a16">{len(social)}</div><div style="font-size:11px;color:#7b8798">社群</div></td>'
+        '</tr></table>'
+        '<div style="margin-top:15px;padding:14px 15px;background:#f5f8fc;border:1px solid #d9e4f0;border-radius:10px">'
+        '<div style="font-size:14px;font-weight:900;color:#17345e;margin-bottom:5px">本期摘要</div>'
+        f'<div style="font-size:14px;color:#293548;line-height:1.7">{html.escape(summary).replace(chr(10), "<br>")}</div></div>'
+        '<div style="margin-top:10px;padding:12px 15px;background:#fbfcfe;border:1px solid #e4e9f0;border-radius:10px">'
+        '<div style="font-size:13px;font-weight:900;color:#17345e;margin-bottom:4px">簡單建議</div>'
+        f'<div style="font-size:13px;color:#536176;line-height:1.65">{html.escape(suggestion).replace(chr(10), "<br>")}</div></div>'
         '</div>'
         + _section("新聞報導", news, social=False)
         + _section("社群討論", social, social=True)
-        + '<div style="font-size:11.5px;color:#7a8494;margin:14px 4px 0">本快報由公開新聞與社群資料自動蒐集與摘要；點選標題或來源按鈕即可前往來源。重要內容仍請以原始來源為準。</div>'
+        + '<div style="font-size:11px;color:#8590a0;line-height:1.6;margin:13px 5px 0">本快報自動蒐集公開新聞與社群內容並進行摘要。點選標題或「查看原文」可直接前往來源；重要資訊仍以原始來源為準。</div>'
         '</div></div>'
     )
 
     lines = [
         "國立臺北教育大學輿情快報",
-        f"監測時間：{now.strftime('%Y/%m/%d %H:%M')}｜排程：{slot}｜過去 24 小時",
+        f"{now.strftime('%Y/%m/%d %H:%M')}｜過去 24 小時｜排程 {slot}",
+        f"共 {len(ordered)} 則（新聞 {len(news)}｜社群 {len(social)}）",
         "",
         "本期摘要",
         summary,
@@ -175,7 +240,7 @@ def submit_via_brevo(recipient, subject, html_content, text_content):
         data = json.loads(body) if body else {}
         message_id = data.get("messageId")
         ok = 200 <= status < 300 and bool(message_id)
-        print(f"[digest] Brevo HTTP {status}; messageId={message_id or 'missing'}; html-cards=true recipient={recipient}")
+        print(f"[digest] Brevo HTTP {status}; messageId={message_id or 'missing'}; html-cards=v3 recipient={recipient}")
         return ok
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode("utf-8", errors="ignore")
@@ -204,6 +269,6 @@ def build_and_send(settings, feed, slot):
     fallback_count = sum(1 for item in selected if best_link(item)[0] and not best_link(item)[1])
     print(
         f"[digest] Brevo accepted {success_count}/{len(recipients)}; window=24h relevant={len(selected)} "
-        f"direct_links={direct_count} index_fallback={fallback_count} ai_generated={ai_generated} attachment=none"
+        f"direct_links={direct_count} index_fallback={fallback_count} ai_generated={ai_generated} attachment=none ui=v3"
     )
     return success_count == len(recipients)
