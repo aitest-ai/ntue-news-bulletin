@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 
-type Profile={id:string;name:string;enabled:boolean;time:string;report_days:number;include_latest_items:number;recipients:string[];subject_prefix:string;sender_name:string;sender_email:string;channel:"email"};
+type Profile={id:string;name:string;enabled:boolean;time:string;report_days:number;include_latest_items:number;recipients:string[];subject_prefix:string;sender_name:string;sender_email:string;exclude_holidays:boolean;channel:"email"};
 
-const blankProfile=():Profile=>({id:`profile-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,name:"新的推送任務",enabled:true,time:"08:00",report_days:1,include_latest_items:20,recipients:[],subject_prefix:"【國北教大輿情快報】",sender_name:"",sender_email:"",channel:"email"});
+const blankProfile=():Profile=>({id:`profile-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,name:"新的推送任務",enabled:true,time:"08:00",report_days:1,include_latest_items:100,recipients:[],subject_prefix:"【國北教大輿情快報】",sender_name:"",sender_email:"",exclude_holidays:false,channel:"email"});
 
 export default function SettingsPage(){
   const [profiles,setProfiles]=useState<Profile[]>([]);
@@ -13,21 +13,21 @@ export default function SettingsPage(){
 
   useEffect(()=>{
     fetch(`/data/settings.json?t=${Date.now()}`,{cache:"no-store"}).then(r=>r.json()).then(s=>{
-      if(Array.isArray(s.delivery_profiles)&&s.delivery_profiles.length){setProfiles(s.delivery_profiles.map((p:Profile)=>({...p,report_days:1})));return;}
+      if(Array.isArray(s.delivery_profiles)&&s.delivery_profiles.length){setProfiles(s.delivery_profiles.map((p:any)=>({...p,report_days:1,include_latest_items:100,exclude_holidays:Boolean(p.exclude_holidays)})));return;}
       const recipients=Array.isArray(s.recipients)?s.recipients:[];
       const schedules=Array.isArray(s.schedules)&&s.schedules.length?s.schedules:["08:00"];
-      setProfiles(schedules.map((time:string,i:number)=>({id:`legacy-${time.replace(":","")}-${i}`,name:`${time} 電子報`,enabled:Boolean(s.email_enabled),time,report_days:1,include_latest_items:Number(s.include_latest_items||20),recipients:[...recipients],subject_prefix:s.subject_prefix||"【國北教大輿情快報】",sender_name:"",sender_email:"",channel:"email" as const})));
+      setProfiles(schedules.map((time:string,i:number)=>({id:`legacy-${time.replace(":","")}-${i}`,name:`${time} 電子報`,enabled:Boolean(s.email_enabled),time,report_days:1,include_latest_items:100,recipients:[...recipients],subject_prefix:s.subject_prefix||"【國北教大輿情快報】",sender_name:"",sender_email:"",exclude_holidays:false,channel:"email" as const})));
     }).catch(()=>setMessage("無法讀取目前設定"));
   },[]);
 
-  function patch(id:string,changes:Partial<Profile>){setProfiles(ps=>ps.map(p=>p.id===id?{...p,...changes,report_days:1}:p))}
+  function patch(id:string,changes:Partial<Profile>){setProfiles(ps=>ps.map(p=>p.id===id?{...p,...changes,report_days:1,include_latest_items:100}:p))}
   function addRecipient(id:string,value:string){const v=value.trim();if(!v)return;setProfiles(ps=>ps.map(p=>p.id===id?{...p,recipients:p.recipients.includes(v)?p.recipients:[...p.recipients,v]}:p))}
   function removeRecipient(id:string,value:string){setProfiles(ps=>ps.map(p=>p.id===id?{...p,recipients:p.recipients.filter(x=>x!==value)}:p))}
 
   async function save(){
     setSaving(true);setMessage("");
     try{
-      const r=await fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({delivery_profiles:profiles.map(p=>({...p,report_days:1}))})});
+      const r=await fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({delivery_profiles:profiles.map(p=>({...p,report_days:1,include_latest_items:100}))})});
       const d=await r.json();if(!r.ok)throw new Error(d?.error||"儲存失敗");setMessage("設定已儲存");
     }catch(e:any){setMessage(e?.message||"儲存失敗")}finally{setSaving(false)}
   }
@@ -35,11 +35,11 @@ export default function SettingsPage(){
   return <main className="settings-page">
     <section className="settings-card">
       <div className="settings-header">
-        <div className="header-copy"><h1>推送設定</h1><div className="header-sub">每個時段可設定自己的收件人與寄件資訊；輿情統計範圍固定為過去 24 小時</div></div>
+        <div className="header-copy"><h1>推送設定</h1><div className="header-sub">每個時段可設定自己的收件人、寄件資訊與是否排除休假日；輿情統計範圍固定為過去 24 小時</div></div>
         <a href="/" className="back-link">返回首頁</a>
       </div>
 
-      <div className="settings-note">網站仍只供你管理；收件者不需要登入系統，會直接收到信件版輿情快報，不再附加 PDF。快報只整理過去 24 小時抓到的公開訊息、摘要、簡單建議與來源連結；若排程偶爾延遲，系統會在下一次喚醒時自動補寄。</div>
+      <div className="settings-note">網站仍只供你管理；收件者不需要登入系統，會直接收到信件版輿情快報。勾選「排除週末與國定假日」時，系統會依政府行政機關辦公日曆自動判斷休假日；國定假日、補假與調整放假不寄，補班日則照常寄送。若排程偶爾延遲，系統會在下一次喚醒時自動補寄。</div>
 
       {profiles.map((p,index)=><ProfileCard key={p.id} profile={p} index={index} patch={patch} addRecipient={addRecipient} removeRecipient={removeRecipient} remove={()=>setProfiles(ps=>ps.filter(x=>x.id!==p.id))}/>)}
 
@@ -77,6 +77,10 @@ export default function SettingsPage(){
       .form-input{display:block;width:100%;min-width:0;padding:11px 12px;border:1px solid #cfd7e5;border-radius:9px;font-size:16px;background:#fff;color:#15213b;min-height:44px}
       .form-input:focus{outline:2px solid rgba(13,33,71,.12);border-color:#8fa2bd}
       .form-input[readonly]{background:#f6f8fb;color:#536176}
+      .holiday-option{margin:0 0 14px;padding:12px 14px;border:1px solid #d9e4f0;background:#f8fafc;border-radius:11px}
+      .holiday-toggle{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:900;color:#17345f;cursor:pointer}
+      .holiday-toggle input{width:19px;height:19px;margin:0;accent-color:#0d6efd;flex:0 0 auto}
+      .holiday-help{font-size:12px;color:#667085;line-height:1.55;margin:6px 0 0 28px}
       .recipient-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:stretch}
       .recipient-add{border:0;border-radius:9px;padding:10px 16px;background:#e8eef7;color:#0d2147;font-weight:800;cursor:pointer;min-height:44px;white-space:nowrap}
       .recipient-tags{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;min-width:0}
@@ -115,6 +119,7 @@ export default function SettingsPage(){
 
         .grid-three,.grid-two{grid-template-columns:1fr}
         .grid-three>.form-field:last-child{grid-column:auto}
+        .holiday-help{margin-left:28px}
         .recipient-row{grid-template-columns:1fr}
         .recipient-add{width:100%}
         .recipient-tags{gap:6px}
@@ -147,7 +152,12 @@ function ProfileCard({profile:p,index,patch,addRecipient,removeRecipient,remove}
     <div className="grid-three">
       <Field label="發送時間"><input type="time" value={p.time} onChange={e=>patch(p.id,{time:e.target.value})} className="form-input"/></Field>
       <Field label="統計範圍"><input value="過去 24 小時" readOnly className="form-input"/></Field>
-      <Field label="信件顯示訊息上限"><input type="number" min={5} max={100} value={p.include_latest_items} onChange={e=>patch(p.id,{include_latest_items:Number(e.target.value)})} className="form-input"/></Field>
+      <Field label="信件內容"><input value="24 小時內全部合格訊息" readOnly className="form-input"/></Field>
+    </div>
+
+    <div className="holiday-option">
+      <label className="holiday-toggle"><input type="checkbox" checked={p.exclude_holidays} onChange={e=>patch(p.id,{exclude_holidays:e.target.checked})}/><span>排除週末與國定假日</span></label>
+      <div className="holiday-help">依政府行政機關辦公日曆自動判斷；包含國定假日、補假與調整放假，補班日照常寄送。</div>
     </div>
 
     <div className="recipient-section"><div className="field-label">收件人</div><div className="recipient-row"><input value={newRecipient} onChange={e=>setNewRecipient(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();addRecipient(p.id,newRecipient);setNewRecipient("")}}} placeholder="name@example.com" inputMode="email" autoCapitalize="none" className="form-input"/><button onClick={()=>{addRecipient(p.id,newRecipient);setNewRecipient("")}} className="recipient-add">新增收件人</button></div><div className="recipient-tags">{p.recipients.map(x=><span key={x} className="recipient-tag"><span className="recipient-text">{x}</span><button onClick={()=>removeRecipient(p.id,x)} className="recipient-remove" aria-label={`移除 ${x}`}>×</button></span>)}</div></div>
