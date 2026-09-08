@@ -13,21 +13,21 @@ export default function SettingsPage(){
 
   useEffect(()=>{
     fetch(`/data/settings.json?t=${Date.now()}`,{cache:"no-store"}).then(r=>r.json()).then(s=>{
-      if(Array.isArray(s.delivery_profiles)&&s.delivery_profiles.length){setProfiles(s.delivery_profiles);return;}
+      if(Array.isArray(s.delivery_profiles)&&s.delivery_profiles.length){setProfiles(s.delivery_profiles.map((p:Profile)=>({...p,report_days:1})));return;}
       const recipients=Array.isArray(s.recipients)?s.recipients:[];
       const schedules=Array.isArray(s.schedules)&&s.schedules.length?s.schedules:["08:00"];
-      setProfiles(schedules.map((time:string,i:number)=>({id:`legacy-${time.replace(":","")}-${i}`,name:`${time} 電子報`,enabled:Boolean(s.email_enabled),time,report_days:Number(s.report_days||1),include_latest_items:Number(s.include_latest_items||20),recipients:[...recipients],subject_prefix:s.subject_prefix||"【國北教大輿情快報】",sender_name:"",sender_email:"",channel:"email" as const})));
+      setProfiles(schedules.map((time:string,i:number)=>({id:`legacy-${time.replace(":","")}-${i}`,name:`${time} 電子報`,enabled:Boolean(s.email_enabled),time,report_days:1,include_latest_items:Number(s.include_latest_items||20),recipients:[...recipients],subject_prefix:s.subject_prefix||"【國北教大輿情快報】",sender_name:"",sender_email:"",channel:"email" as const})));
     }).catch(()=>setMessage("無法讀取目前設定"));
   },[]);
 
-  function patch(id:string,changes:Partial<Profile>){setProfiles(ps=>ps.map(p=>p.id===id?{...p,...changes}:p))}
+  function patch(id:string,changes:Partial<Profile>){setProfiles(ps=>ps.map(p=>p.id===id?{...p,...changes,report_days:1}:p))}
   function addRecipient(id:string,value:string){const v=value.trim();if(!v)return;setProfiles(ps=>ps.map(p=>p.id===id?{...p,recipients:p.recipients.includes(v)?p.recipients:[...p.recipients,v]}:p))}
   function removeRecipient(id:string,value:string){setProfiles(ps=>ps.map(p=>p.id===id?{...p,recipients:p.recipients.filter(x=>x!==value)}:p))}
 
   async function save(){
     setSaving(true);setMessage("");
     try{
-      const r=await fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({delivery_profiles:profiles})});
+      const r=await fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({delivery_profiles:profiles.map(p=>({...p,report_days:1}))})});
       const d=await r.json();if(!r.ok)throw new Error(d?.error||"儲存失敗");setMessage("設定已儲存");
     }catch(e:any){setMessage(e?.message||"儲存失敗")}finally{setSaving(false)}
   }
@@ -35,11 +35,11 @@ export default function SettingsPage(){
   return <main className="settings-page">
     <section className="settings-card">
       <div className="settings-header">
-        <div className="header-copy"><h1>推送設定</h1><div className="header-sub">每個時段都能設定自己的搜尋天數、收件人與寄件資訊</div></div>
+        <div className="header-copy"><h1>推送設定</h1><div className="header-sub">每個時段可設定自己的收件人與寄件資訊；輿情統計範圍固定為過去 24 小時</div></div>
         <a href="/" className="back-link">返回首頁</a>
       </div>
 
-      <div className="settings-note">網站仍只供你管理；收件者不需要登入系統，會直接收到 PDF 輿情報告。若某次 GitHub 排程延遲，系統會在當天下一次醒來時自動補寄，且每個推送任務各自記錄，不會互相干擾。</div>
+      <div className="settings-note">網站仍只供你管理；收件者不需要登入系統，會直接收到信件版輿情快報，不再附加 PDF。快報只整理過去 24 小時抓到的公開訊息、摘要、簡單建議與來源連結；若排程偶爾延遲，系統會在下一次喚醒時自動補寄。</div>
 
       {profiles.map((p,index)=><ProfileCard key={p.id} profile={p} index={index} patch={patch} addRecipient={addRecipient} removeRecipient={removeRecipient} remove={()=>setProfiles(ps=>ps.filter(x=>x.id!==p.id))}/>)}
 
@@ -76,6 +76,7 @@ export default function SettingsPage(){
       .field-label{font-size:12px;color:#667085;font-weight:700;margin-bottom:7px;line-height:1.45}
       .form-input{display:block;width:100%;min-width:0;padding:11px 12px;border:1px solid #cfd7e5;border-radius:9px;font-size:16px;background:#fff;color:#15213b;min-height:44px}
       .form-input:focus{outline:2px solid rgba(13,33,71,.12);border-color:#8fa2bd}
+      .form-input[readonly]{background:#f6f8fb;color:#536176}
       .recipient-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:stretch}
       .recipient-add{border:0;border-radius:9px;padding:10px 16px;background:#e8eef7;color:#0d2147;font-weight:800;cursor:pointer;min-height:44px;white-space:nowrap}
       .recipient-tags{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;min-width:0}
@@ -145,8 +146,8 @@ function ProfileCard({profile:p,index,patch,addRecipient,removeRecipient,remove}
 
     <div className="grid-three">
       <Field label="發送時間"><input type="time" value={p.time} onChange={e=>patch(p.id,{time:e.target.value})} className="form-input"/></Field>
-      <Field label="搜尋最近幾天"><select value={p.report_days} onChange={e=>patch(p.id,{report_days:Number(e.target.value)})} className="form-input"><option value={1}>1 天</option><option value={2}>2 天</option><option value={3}>3 天</option><option value={7}>7 天</option><option value={14}>14 天</option><option value={30}>30 天</option></select></Field>
-      <Field label="最新訊息上限"><input type="number" min={5} max={100} value={p.include_latest_items} onChange={e=>patch(p.id,{include_latest_items:Number(e.target.value)})} className="form-input"/></Field>
+      <Field label="統計範圍"><input value="過去 24 小時" readOnly className="form-input"/></Field>
+      <Field label="信件顯示訊息上限"><input type="number" min={5} max={100} value={p.include_latest_items} onChange={e=>patch(p.id,{include_latest_items:Number(e.target.value)})} className="form-input"/></Field>
     </div>
 
     <div className="recipient-section"><div className="field-label">收件人</div><div className="recipient-row"><input value={newRecipient} onChange={e=>setNewRecipient(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();addRecipient(p.id,newRecipient);setNewRecipient("")}}} placeholder="name@example.com" inputMode="email" autoCapitalize="none" className="form-input"/><button onClick={()=>{addRecipient(p.id,newRecipient);setNewRecipient("")}} className="recipient-add">新增收件人</button></div><div className="recipient-tags">{p.recipients.map(x=><span key={x} className="recipient-tag"><span className="recipient-text">{x}</span><button onClick={()=>removeRecipient(p.id,x)} className="recipient-remove" aria-label={`移除 ${x}`}>×</button></span>)}</div></div>
