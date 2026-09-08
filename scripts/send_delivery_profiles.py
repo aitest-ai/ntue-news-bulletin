@@ -10,8 +10,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import send_scheduled_digest_with_ai as ai  # noqa: E402
+from taiwan_work_calendar import office_day_info  # noqa: E402
 
-# Importing the AI module applies the website-rendered PDF + Brevo monkey patches.
+# The AI module applies the current production email sender monkey patches.
 digest = ai.digest
 
 DATA_DIR = ROOT / "frontend" / "public" / "data"
@@ -56,6 +57,7 @@ def normalize_profiles(settings):
                 "subject_prefix": str(item.get("subject_prefix") or settings.get("subject_prefix") or "【國北教大輿情快報】").strip(),
                 "sender_name": str(item.get("sender_name") or "").strip(),
                 "sender_email": str(item.get("sender_email") or "").strip(),
+                "exclude_holidays": bool(item.get("exclude_holidays", False)),
                 "channel": "email",
             })
         return profiles
@@ -76,6 +78,7 @@ def normalize_profiles(settings):
             "subject_prefix": str(settings.get("subject_prefix") or "【國北教大輿情快報】").strip(),
             "sender_name": "",
             "sender_email": "",
+            "exclude_holidays": False,
             "channel": "email",
         })
     return profiles
@@ -83,6 +86,7 @@ def normalize_profiles(settings):
 
 def due_profiles(settings, state, now):
     sent = state.setdefault("last_sent_profiles", {})
+    skipped = state.setdefault("last_skipped_profiles", {})
     due = []
     for profile in normalize_profiles(settings):
         if not profile["enabled"] or not profile["recipients"]:
@@ -93,8 +97,23 @@ def due_profiles(settings, state, now):
         except Exception:
             continue
         key = f"{now.date().isoformat()}@{profile['time']}"
-        if now >= target and sent.get(profile["id"]) != key:
-            due.append((profile, key))
+        if now < target or sent.get(profile["id"]) == key or skipped.get(profile["id"]) == key:
+            continue
+
+        if profile.get("exclude_holidays"):
+            info = office_day_info(now.date())
+            if info.get("is_holiday"):
+                skipped[profile["id"]] = key
+                holiday_name = info.get("name") or info.get("category") or "休假日"
+                print(
+                    f"[profiles] skip holiday id={profile['id']} key={key} "
+                    f"holiday={holiday_name!r} source={info.get('source')}"
+                )
+                continue
+            if info.get("warning"):
+                print(f"[profiles] holiday calendar fallback workday: {info.get('warning')}")
+
+        due.append((profile, key))
     return due
 
 
@@ -121,8 +140,6 @@ def send_profile(profile, feed):
         try:
             return bool(digest.build_and_send(run_settings, feed, profile["time"]))
         except Exception as exc:
-            # Failed live rendering / Brevo delivery must never be recorded as
-            # delivered. The next guard wake will retry the same profile.
             print(f"[profiles] delivery aborted id={profile['id']}: {exc}")
             return False
     finally:
@@ -138,10 +155,14 @@ def send_profile(profile, feed):
 
 def main():
     settings = load_json(SETTINGS_FILE, {})
-    state = load_json(STATE_FILE, {"last_sent": {}, "last_sent_profiles": {}})
+    state = load_json(STATE_FILE, {"last_sent": {}, "last_sent_profiles": {}, "last_skipped_profiles": {}})
     feed = load_json(NEWS_FILE, {"items": []})
     now = datetime.now(TAIPEI)
+    before = json.dumps(state, ensure_ascii=False, sort_keys=True)
     due = due_profiles(settings, state, now)
+    after = json.dumps(state, ensure_ascii=False, sort_keys=True)
+    if before != after:
+        save_json(STATE_FILE, state)
 
     if "--is-due" in sys.argv:
         raise SystemExit(0 if due else 1)
