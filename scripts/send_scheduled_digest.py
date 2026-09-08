@@ -1,12 +1,22 @@
 #!/usr/bin/env python3
+"""Lightweight scheduled NTUE opinion bulletin sender.
+
+The email is a collection brief rather than an administrative decision report:
+- only items with a verifiable timestamp in the previous 24 hours;
+- concise AI-assisted summary with deterministic fallback;
+- deliberately non-departmental suggestion;
+- source links in the email body;
+- no PDF attachment.
+
+AI failure must never block email delivery.
+"""
 import html
 import json
 import os
 import sys
+import time
 import urllib.error
-import urllib.parse
 import urllib.request
-import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urlparse
@@ -45,19 +55,19 @@ def save_json(path, data):
 
 
 def due_slots(settings, state, now):
+    """Legacy direct-run support; profile delivery uses send_delivery_profiles.py."""
     if not settings.get("email_enabled"):
         return []
     sent = state.setdefault("last_sent", {})
     slots = []
     for slot in settings.get("schedules", []):
         try:
-            hh, mm = map(int, slot.split(":"))
+            hh, mm = map(int, str(slot).split(":"))
             target = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
         except Exception:
             continue
         key = f"{now.date().isoformat()}@{slot}"
-        delta = (now - target).total_seconds() / 60
-        if 0 <= delta <= 60 and sent.get(slot) != key:
+        if now >= target and sent.get(slot) != key:
             slots.append((slot, key))
     return slots
 
@@ -82,24 +92,31 @@ def is_ntue_relevant(item):
     return False
 
 
-def select_items(feed, days):
-    cutoff = datetime.now(TAIPEI) - timedelta(days=days)
+def _parse_publish_time(raw):
+    if not raw:
+        return None
+    try:
+        dt = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=TAIPEI)
+        return dt.astimezone(TAIPEI)
+    except Exception:
+        return None
+
+
+def select_items(feed, hours=24):
+    """Strict rolling window. Undated/unparseable items are excluded from email."""
+    now = datetime.now(TAIPEI)
+    cutoff = now - timedelta(hours=hours)
     selected = []
     for item in feed.get("items", []):
-        if not is_ntue_relevant(item):
+        if not isinstance(item, dict) or not is_ntue_relevant(item):
             continue
-        raw = item.get("publish_time")
-        if not raw:
-            selected.append(item)
+        dt = _parse_publish_time(item.get("publish_time"))
+        if dt is None:
             continue
-        try:
-            dt = datetime.fromisoformat(raw)
-            if dt.tzinfo is None:
-                dt = dt.replace(tzinfo=TAIPEI)
-            if dt >= cutoff:
-                selected.append(item)
-        except Exception:
-            selected.append(item)
+        if cutoff <= dt <= now + timedelta(minutes=10):
+            selected.append(dict(item))
     return selected
 
 
@@ -111,259 +128,256 @@ def risk_score(item):
     return score
 
 
-def resolve_original_url(url):
-    url = str(url or "").strip()
-    if not url:
-        return ""
-    host = (urlparse(url).netloc or "").lower()
-    if host not in {"news.google.com", "www.news.google.com"}:
+def safe_suggestion(selected):
+    """Never names a responsible office, department, or person."""
+    if not selected:
+        return "目前沒有新增相關公開訊息；維持例行監測即可。"
+    if any(risk_score(item) >= 7 for item in selected):
+        return "建議先閱讀相關原文並確認內容、時間與擴散情形；如後續資訊增加，再依校內既有流程研議是否需要進一步處理。"
+    if any(risk_score(item) >= 4 for item in selected):
+        return "建議先查看相關原文、確認事件脈絡，並持續觀察後續是否出現更多討論；本快報僅提供輿情蒐集與初步整理。"
+    return "目前以掌握公開訊息與持續觀察即可；如需進一步判讀，可再查閱原文或使用 AI 協助整理。"
+
+
+def fallback_summary(selected):
+    if not selected:
+        return "過去 24 小時內，系統未蒐集到可確認發布時間且與國立臺北教育大學明確相關的新增公開新聞或社群訊息。"
+    news_count = sum(1 for item in selected if item.get("source") not in SOCIAL)
+    social_count = len(selected) - news_count
+    titles = [str(item.get("title") or "").strip() for item in selected if str(item.get("title") or "").strip()][:4]
+    title_text = "、".join(f"「{title}」" for title in titles)
+    summary = f"過去 24 小時共蒐集到 {len(selected)} 則與國北教大明確相關的公開訊息，其中新聞 {news_count} 則、社群 {social_count} 則。"
+    if title_text:
+        summary += f"目前主要內容包括{title_text}。"
+    summary += "本快報僅依公開來源整理近期動態，不據此推定事件責任、嚴重程度或應由特定單位處理。"
+    return summary
+
+
+def _workflow_headers():
+    return {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "x-github-run-id": os.getenv("GITHUB_RUN_ID", "").strip(),
+        "x-github-sha": os.getenv("GITHUB_SHA", "").strip(),
+        "x-github-workflow-token": os.getenv("GITHUB_WORKFLOW_TOKEN", "").strip(),
+        "User-Agent": "NTUE-GitHub-Actions-Email-Brief/8.0",
+    }
+
+
+def generate_ai_summary(selected):
+    """Use verified Vercel AI when available; fallback without blocking email."""
+    if not selected:
+        return fallback_summary(selected), False
+
+    base_url = os.getenv("PUBLIC_BASE_URL", "https://ntue-news-bulletin.vercel.app").rstrip("/")
+    if not os.getenv("GITHUB_RUN_ID", "").strip() or not os.getenv("GITHUB_SHA", "").strip() or not os.getenv("GITHUB_WORKFLOW_TOKEN", "").strip():
+        print("[digest] workflow auth unavailable; using deterministic summary")
+        return fallback_summary(selected), False
+
+    items = [{
+        "title": item.get("title"),
+        "source": item.get("source"),
+        "publisher": item.get("publisher"),
+        "publish_time": item.get("publish_time"),
+        "risk_score": risk_score(item),
+    } for item in selected[:120]]
+    payload = json.dumps({"days": 1, "items": items, "email_brief": True}, ensure_ascii=False).encode("utf-8")
+    endpoint = f"{base_url}/api/ai-report/scheduled"
+    last_error = None
+
+    for attempt in range(1, 5):
+        try:
+            req = urllib.request.Request(endpoint, data=payload, headers=_workflow_headers(), method="POST")
+            with urllib.request.urlopen(req, timeout=45) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+            report = data.get("report") if isinstance(data, dict) else None
+            if isinstance(report, dict):
+                summary = str(report.get("summary") or report.get("overall") or "").strip()
+                if summary:
+                    print(f"[digest] AI summary generated via scheduled endpoint; attempt={attempt}")
+                    return summary, True
+            last_error = "scheduled endpoint returned no summary"
+        except urllib.error.HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="ignore")
+            last_error = f"HTTP {exc.code}: {detail[:300]}"
+        except Exception as exc:
+            last_error = str(exc)
+        if attempt < 4:
+            time.sleep(8)
+
+    print(f"[digest] AI summary unavailable; using deterministic fallback: {last_error}")
+    return fallback_summary(selected), False
+
+
+def source_link(item):
+    """Return only direct non-Google-news links already present in collected data."""
+    for key in ("original_url", "source_url", "url"):
+        url = str(item.get(key) or "").strip()
+        if not url.startswith(("http://", "https://")):
+            continue
+        host = (urlparse(url).netloc or "").lower()
+        if host in {"news.google.com", "www.news.google.com"}:
+            continue
         return url
-    try:
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept-Language": "zh-TW,zh;q=0.9"})
-        with urllib.request.urlopen(req, timeout=12) as resp:
-            final_url = resp.geturl()
-        final_host = (urlparse(final_url).netloc or "").lower()
-        if final_host and "google." not in final_host:
-            return final_url
-    except Exception:
-        pass
     return ""
 
 
-def attention_reason(item):
-    title = str(item.get("title") or "")
-    matched = [k for k, weight in RISK_KEYWORDS.items() if weight >= 3 and k in title][:3]
-    score = risk_score(item)
-    level = "優先檢視" if score >= 7 else "需注意" if score >= 5 else "持續觀察"
-    return f"{level}：涉及「{'、'.join(matched)}」等風險訊號" if matched else f"{level}：建議確認內容脈絡與後續擴散"
+def _format_item_time(item):
+    dt = _parse_publish_time(item.get("publish_time"))
+    return dt.strftime("%m/%d %H:%M") if dt else "時間未確認"
 
 
-def fallback_report(selected, attention, days):
-    if not selected:
-        return {
-            "overall": "本期未取得足夠且可確認與國北教大相關的公開資料。",
-            "immediate_action": "目前無需特別處理，建議確認資料來源是否正常。",
-            "themes": ["本期有效資料不足"],
-            "risk_assessment": "未偵測到可確認的重大風險訊號。",
-            "recommendations": ["維持例行監測"],
-            "watchlist": [],
-        }
-    if not attention:
-        return {
-            "overall": f"最近 {days} 天與國北教大明確相關的公開新聞與社群內容以一般校園、活動及學習資訊為主。",
-            "immediate_action": "本期無需特別處理，維持例行監測即可。",
-            "themes": ["一般校園資訊", "活動與學習資訊"],
-            "risk_assessment": "目前未偵測到明顯需要立即處理的風險訊號。",
-            "recommendations": ["維持例行監測", "留意同一議題是否跨平台快速增加"],
-            "watchlist": [],
-        }
-    return {
-        "overall": f"本期有 {len(attention)} 則與國北教大明確相關的訊息值得進一步檢視。",
-        "immediate_action": "先確認原文脈絡、真實性與擴散程度，再判斷是否需要行政回應。",
-        "themes": ["需關注公開討論"],
-        "risk_assessment": "目前偵測到少數風險訊號，但僅憑標題不足以認定事件嚴重程度。",
-        "recommendations": ["確認原文", "觀察跨平台擴散", "必要時轉交相關單位"],
-        "watchlist": [],
-    }
-
-
-def generate_ai_report(selected, attention, days):
-    api_key = os.getenv("GEMINI_API_KEY", "").strip()
-    if not api_key:
-        print("[digest] GEMINI_API_KEY missing; using deterministic report fallback")
-        return fallback_report(selected, attention, days), False
-    compact = [{
-        "title": item.get("title"), "source": item.get("source"), "publisher": item.get("publisher"),
-        "publish_time": item.get("publish_time"), "risk_score": risk_score(item),
-    } for item in selected[:120]]
-    prompt = (
-        "你是國立臺北教育大學校級輿情分析助理。請依已通過國北教大相關性篩選的公開新聞與社群標題，"
-        "產生主管用繁體中文輿情報告。不得因單一負面字詞就推論危機；沒有需要注意的事件就明確寫『本期無需特別關注』；"
-        "不得杜撰。只回傳 JSON，格式為："
-        '{"overall":"150-250字整體摘要","immediate_action":"是否需要立即處理及具體建議",'
-        '"themes":["主要議題"],"risk_assessment":"整體風險研判","recommendations":["建議"],"watchlist":["持續觀察議題"]}'
-        f"\n期間：最近 {days} 天\n資料：{json.dumps(compact, ensure_ascii=False)}"
+def build_email(summary, suggestion, selected, slot, include_latest_items):
+    now = datetime.now(TAIPEI)
+    selected = sorted(
+        selected,
+        key=lambda item: _parse_publish_time(item.get("publish_time")) or datetime.min.replace(tzinfo=TAIPEI),
+        reverse=True,
     )
+    display_items = selected[:max(1, min(int(include_latest_items or 20), 100))]
+    news_count = sum(1 for item in selected if item.get("source") not in SOCIAL)
+    social_count = len(selected) - news_count
+
+    item_html = []
+    item_text = []
+    for index, item in enumerate(display_items, start=1):
+        title = str(item.get("title") or "（無標題）").strip()
+        source = str(item.get("source") or "公開來源").strip()
+        publisher = str(item.get("publisher") or "").strip()
+        meta = "｜".join(value for value in [source, publisher, _format_item_time(item)] if value)
+        link = source_link(item)
+        link_html = (
+            f'<a href="{html.escape(link, quote=True)}" style="color:#0b5cab;text-decoration:underline;font-weight:700">查看來源連結</a>'
+            if link else '<span style="color:#7a8494">來源網址目前無法可靠解析</span>'
+        )
+        item_html.append(
+            '<div style="padding:13px 0;border-bottom:1px solid #e5e9ef">'
+            f'<div style="font-weight:700;color:#172033;margin-bottom:4px">{index}. {html.escape(title)}</div>'
+            f'<div style="font-size:12px;color:#6b7280;margin-bottom:5px">{html.escape(meta)}</div>'
+            f'<div style="font-size:13px">{link_html}</div>'
+            '</div>'
+        )
+        item_text.append(f"{index}. {title}\n   {meta}\n   {link or '來源網址目前無法可靠解析'}")
+
+    if not item_html:
+        item_html.append('<div style="color:#6b7280;padding:8px 0">過去 24 小時沒有符合條件的新增相關訊息。</div>')
+        item_text.append("過去 24 小時沒有符合條件的新增相關訊息。")
+
+    rows = [
+        ("主管快覽",
+         f"監測時間：{now.strftime('%Y/%m/%d %H:%M')}<br>"
+         f"排程時段：{html.escape(slot)}<br>"
+         "統計期間：過去 24 小時<br>"
+         f"有效相關資料：{len(selected)} 則（新聞 {news_count}｜社群 {social_count}）"),
+        ("本期研判摘要", html.escape(summary).replace("\n", "<br>")),
+        ("簡單建議", html.escape(suggestion).replace("\n", "<br>")),
+        ("相關訊息", "".join(item_html)),
+    ]
+    row_html = "".join(
+        '<tr>'
+        f'<td style="width:170px;background:#f1f4f7;padding:15px 16px;vertical-align:top;font-weight:800;color:#1f2937;border-bottom:1px solid #dfe5ec">{label}</td>'
+        f'<td style="padding:15px 16px;vertical-align:top;color:#2b3340;border-bottom:1px solid #dfe5ec">{value}</td>'
+        '</tr>'
+        for label, value in rows
+    )
+    html_content = (
+        '<div style="font-family:Arial,\'Noto Sans TC\',sans-serif;color:#222;line-height:1.7;background:#fff">'
+        '<div style="max-width:880px;margin:0 auto;padding:18px 10px">'
+        '<h2 style="color:#17365d;margin:0 0 22px;font-size:24px">國立臺北教育大學輿情快報</h2>'
+        '<table role="presentation" style="border-collapse:collapse;width:100%;border:1px solid #dfe5ec">'
+        f'{row_html}</table>'
+        '<p style="font-size:12px;color:#7a8494;margin-top:14px">'
+        '本快報由公開新聞與社群資料自動蒐集與摘要，目的為協助掌握輿情；重要內容仍請以原始來源為準。'
+        '</p></div></div>'
+    )
+    text_content = (
+        "國立臺北教育大學輿情快報\n\n"
+        f"監測時間：{now.strftime('%Y/%m/%d %H:%M')}\n"
+        f"排程時段：{slot}\n"
+        "統計期間：過去 24 小時\n"
+        f"有效相關資料：{len(selected)} 則（新聞 {news_count}｜社群 {social_count}）\n\n"
+        f"本期研判摘要\n{summary}\n\n"
+        f"簡單建議\n{suggestion}\n\n"
+        "相關訊息\n" + "\n\n".join(item_text) +
+        "\n\n本快報僅供輿情蒐集與初步整理；重要內容請回到原始來源確認。"
+    )
+    return html_content, text_content
+
+
+def submit_via_brevo(recipient, subject, html_content, text_content):
+    api_key = os.getenv("BREVO_API_KEY", "").strip()
+    sender_email = os.getenv("BREVO_SENDER_EMAIL", "").strip()
+    sender_name = os.getenv("BREVO_SENDER_NAME", "國北教大輿情監測").strip() or "國北教大輿情監測"
+    if not api_key or not sender_email:
+        print("[digest] Brevo sender configuration missing")
+        return False
+
     payload = json.dumps({
-        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-        "generationConfig": {"temperature": 0.15, "responseMimeType": "application/json", "maxOutputTokens": 1200},
-    }).encode("utf-8")
+        "sender": {"name": sender_name, "email": sender_email},
+        "to": [{"email": recipient}],
+        "subject": subject,
+        "htmlContent": html_content,
+        "textContent": text_content,
+    }, ensure_ascii=False).encode("utf-8")
     req = urllib.request.Request(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+        "https://api.brevo.com/v3/smtp/email",
         data=payload,
-        headers={"Content-Type": "application/json", "x-goog-api-key": api_key},
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=50) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-        text = "".join(p.get("text", "") for p in data.get("candidates", [{}])[0].get("content", {}).get("parts", [])).strip()
-        result = json.loads(text)
-        required = ["overall", "immediate_action", "themes", "risk_assessment", "recommendations", "watchlist"]
-        if not all(key in result for key in required):
-            raise ValueError("incomplete Gemini schema")
-        return result, True
-    except Exception as exc:
-        print(f"[digest] Gemini full report fallback: {exc}")
-        return fallback_report(selected, attention, days), False
-
-
-def create_pdf(path, report, meta, attention, ai_generated):
-    from reportlab.lib import colors
-    from reportlab.lib.enums import TA_CENTER
-    from reportlab.lib.pagesizes import A4
-    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-    from reportlab.lib.units import mm
-    from reportlab.pdfbase import pdfmetrics
-    from reportlab.pdfbase.cidfonts import UnicodeCIDFont
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-
-    try:
-        pdfmetrics.registerFont(UnicodeCIDFont("MSung-Light"))
-        font = "MSung-Light"
-    except Exception:
-        font = "Helvetica"
-    styles = getSampleStyleSheet()
-    title_style = ParagraphStyle("TitleTC", parent=styles["Title"], fontName=font, fontSize=19, leading=26, alignment=TA_CENTER, textColor=colors.HexColor("#17365D"), spaceAfter=8)
-    h_style = ParagraphStyle("HeadingTC", parent=styles["Heading2"], fontName=font, fontSize=13, leading=19, textColor=colors.HexColor("#17365D"), spaceBefore=8, spaceAfter=5)
-    body_style = ParagraphStyle("BodyTC", parent=styles["BodyText"], fontName=font, fontSize=10.5, leading=17, textColor=colors.HexColor("#222222"), spaceAfter=5)
-    small_style = ParagraphStyle("SmallTC", parent=body_style, fontSize=9, leading=14, textColor=colors.HexColor("#666666"))
-    doc = SimpleDocTemplate(str(path), pagesize=A4, rightMargin=18*mm, leftMargin=18*mm, topMargin=16*mm, bottomMargin=16*mm, title=f"國立臺北教育大學 輿情報告 {meta['date']}", author="NTUE Opinion Monitor")
-    story = [
-        Paragraph("國立臺北教育大學 輿情報告", title_style),
-        Paragraph(f"{meta['date']} {meta['slot']}｜最近 {meta['days']} 天｜{'AI 生成' if ai_generated else '規則備援'}", small_style),
-        Spacer(1, 5*mm),
-    ]
-    table = Table([["監測資料", str(meta["total"])], ["新聞", str(meta["news_count"])], ["社群", str(meta["social_count"])], ["需關注", str(len(attention))]], colWidths=[45*mm, 35*mm], hAlign="LEFT")
-    table.setStyle(TableStyle([("FONTNAME", (0,0), (-1,-1), font), ("FONTSIZE", (0,0), (-1,-1), 9.5), ("BACKGROUND", (0,0), (0,-1), colors.HexColor("#EEF3F8")), ("GRID", (0,0), (-1,-1), 0.4, colors.HexColor("#C8D1DC")), ("TOPPADDING", (0,0), (-1,-1), 5), ("BOTTOMPADDING", (0,0), (-1,-1), 5)]))
-    story += [table, Spacer(1, 5*mm)]
-
-    def section(title, text):
-        story.append(Paragraph(title, h_style))
-        story.append(Paragraph(html.escape(str(text)).replace("\n", "<br/>"), body_style))
-
-    section("一、整體輿情摘要", report.get("overall", ""))
-    section("二、是否需要立即處理", report.get("immediate_action", ""))
-    story.append(Paragraph("三、主要議題", h_style))
-    for theme in report.get("themes") or ["本期無明顯集中議題。"]:
-        story.append(Paragraph(f"• {html.escape(str(theme))}", body_style))
-    section("四、整體風險研判", report.get("risk_assessment", ""))
-    story.append(Paragraph("五、建議處置", h_style))
-    for rec in report.get("recommendations") or ["維持例行監測。"]:
-        story.append(Paragraph(f"• {html.escape(str(rec))}", body_style))
-    story.append(Paragraph("六、需關注原文", h_style))
-    if not attention:
-        story.append(Paragraph("本期無需特別關注訊息。", body_style))
-    else:
-        for index, item in enumerate(attention, start=1):
-            story.append(Paragraph(f"{index}. [{html.escape(str(item.get('source') or ''))}] {html.escape(str(item.get('title') or '（無標題）'))}", body_style))
-            story.append(Paragraph(html.escape(attention_reason(item)), small_style))
-            original = resolve_original_url(item.get("url"))
-            if original:
-                story.append(Paragraph(f'<link href="{html.escape(original, quote=True)}">查看原始來源</link>', small_style))
-            else:
-                story.append(Paragraph("原始發布網址暫無法可靠解析，因此不提供 Google News 中繼網址。", small_style))
-            story.append(Spacer(1, 2*mm))
-    story.append(Paragraph("七、持續觀察項目", h_style))
-    watchlist = report.get("watchlist") or []
-    if watchlist:
-        for item in watchlist:
-            story.append(Paragraph(f"• {html.escape(str(item))}", body_style))
-    else:
-        story.append(Paragraph("本期無額外持續觀察項目。", body_style))
-    story += [Spacer(1, 6*mm), Paragraph("本報告由公開新聞與社群監測資料自動整理，供校務輿情初步判讀使用；重要事件仍應回到原始來源確認。", small_style)]
-    doc.build(story)
-
-
-def encode_multipart(fields, file_field, file_path):
-    boundary = "----NTUEFormBoundary" + uuid.uuid4().hex
-    chunks = []
-    for name, value in fields.items():
-        chunks += [f"--{boundary}\r\n".encode(), f'Content-Disposition: form-data; name="{name}"\r\n\r\n'.encode(), str(value).encode("utf-8"), b"\r\n"]
-    filename = Path(file_path).name
-    chunks += [
-        f"--{boundary}\r\n".encode(),
-        f'Content-Disposition: form-data; name="{file_field}"; filename="{filename}"\r\n'.encode(),
-        b"Content-Type: application/pdf\r\n\r\n",
-        Path(file_path).read_bytes(), b"\r\n", f"--{boundary}--\r\n".encode(),
-    ]
-    return boundary, b"".join(chunks)
-
-
-def submit_to_formsubmit(recipient, subject, body_fields, source_url, pdf_path):
-    # File uploads are documented on the normal FormSubmit endpoint, not /ajax/.
-    endpoint = f"https://formsubmit.co/{urllib.parse.quote(recipient, safe='@.+-_')}"
-    fields = {
-        "_subject": subject,
-        "_template": "box",
-        "_captcha": "false",
-        "_url": source_url,
-        **body_fields,
-    }
-    boundary, data = encode_multipart(fields, "attachment", pdf_path)
-    req = urllib.request.Request(
-        endpoint,
-        data=data,
         headers={
-            "Content-Type": f"multipart/form-data; boundary={boundary}",
-            "Origin": "https://ntue-news-bulletin.vercel.app",
-            "Referer": source_url,
-            "User-Agent": "Mozilla/5.0 NTUE-Opinion-Monitor/3.0",
+            "api-key": api_key,
+            "accept": "application/json",
+            "content-type": "application/json",
+            "User-Agent": "NTUE-Opinion-Monitor/8.0",
         },
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req, timeout=45) as resp:
-            response_body = resp.read().decode("utf-8", errors="ignore")
+        with urllib.request.urlopen(req, timeout=35) as resp:
+            body = resp.read().decode("utf-8", errors="ignore")
             status = resp.status
-        lower = response_body.lower()
-        success = 200 <= status < 400 and "unable to submit" not in lower and "error" not in lower
-        print(f"[digest] FormSubmit file-upload HTTP {status} for {recipient}; attachment={Path(pdf_path).stat().st_size}B")
+        data = json.loads(body) if body else {}
+        message_id = data.get("messageId")
+        success = 200 <= status < 300 and bool(message_id)
+        print(f"[digest] Brevo HTTP {status}; messageId={message_id or 'missing'}; html-only=true")
         return success
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode("utf-8", errors="ignore")
-        print(f"[digest] FormSubmit HTTP {exc.code} for {recipient}: {detail[:800]}")
+        print(f"[digest] Brevo HTTP {exc.code}: {detail[:800]}")
         return False
     except Exception as exc:
-        print(f"[digest] FormSubmit failed for {recipient}: {exc}")
+        print(f"[digest] Brevo send failed: {exc}")
         return False
 
 
 def build_and_send(settings, feed, slot):
-    days = int(settings.get("report_days", 7) or 7)
-    selected = select_items(feed, days)
-    ranked = sorted(selected, key=lambda x: (risk_score(x), str(x.get("publish_time") or "")), reverse=True)
-    attention = [item for item in ranked if risk_score(item) >= 4][:5]
-    report, ai_generated = generate_ai_report(selected, attention, days)
-    news_count = sum(1 for item in selected if item.get("source") not in SOCIAL)
-    social_count = sum(1 for item in selected if item.get("source") in SOCIAL)
+    selected = select_items(feed, hours=24)
+    selected = sorted(
+        selected,
+        key=lambda item: _parse_publish_time(item.get("publish_time")) or datetime.min.replace(tzinfo=TAIPEI),
+        reverse=True,
+    )
+    summary, ai_generated = generate_ai_summary(selected)
+    suggestion = safe_suggestion(selected)
     now = datetime.now(TAIPEI)
-    base_url = os.getenv("PUBLIC_BASE_URL", "https://ntue-news-bulletin.vercel.app").rstrip("/")
-    prefix = "【需注意】" if any(risk_score(item) >= 7 for item in attention) else "【觀察】" if attention else "【例行】"
-    subject = f"{prefix}{settings.get('subject_prefix','【國北教大輿情快報】')}{now.strftime('%Y/%m/%d')} {slot}"
-    meta = {"date": now.strftime("%Y/%m/%d"), "slot": slot, "days": days, "total": len(selected), "news_count": news_count, "social_count": social_count}
-    pdf_path = Path("/tmp") / f"NTUE_Opinion_Report_{now.strftime('%Y%m%d')}_{slot.replace(':','')}.pdf"
-    create_pdf(pdf_path, report, meta, attention, ai_generated)
-    if pdf_path.stat().st_size > 9_500_000:
-        print(f"[digest] PDF too large for FormSubmit: {pdf_path.stat().st_size} bytes")
-        return False
-    attention_text = "\n".join(f"• [{item.get('source','')}] {item.get('title','')} — {attention_reason(item)}" for item in attention) if attention else "本期無需特別關注訊息。"
-    body_fields = {
-        "主管快覽": f"監測時間：{now.strftime('%Y/%m/%d %H:%M')}\n統計期間：最近 {days} 天\n有效相關資料：{len(selected)} 則（新聞 {news_count}｜社群 {social_count}）\n需關注訊息：{len(attention)} 則",
-        "本期研判摘要": report.get("overall", ""),
-        "建議處置": report.get("immediate_action", ""),
-        "需關注訊息": attention_text,
-        "附件": "完整輿情報告請見本信 PDF 附件。",
-        "系統報告頁": f"{base_url}/reports",
-    }
-    recipients = [str(x).strip() for x in settings.get("recipients", []) if str(x).strip()]
+    subject_prefix = str(settings.get("subject_prefix") or "【國北教大輿情快報】").strip()
+    subject = f"{subject_prefix}{now.strftime('%Y/%m/%d')} {slot}｜24小時"
+    html_content, text_content = build_email(
+        summary,
+        suggestion,
+        selected,
+        slot,
+        settings.get("include_latest_items", 20),
+    )
+    recipients = [str(value).strip() for value in settings.get("recipients", []) if str(value).strip()]
     if not recipients:
         print("[digest] no recipients configured")
         return False
-    source_url = f"{base_url}/settings"
-    results = [submit_to_formsubmit(recipient, subject, body_fields, source_url, pdf_path) for recipient in recipients]
+
+    results = [submit_via_brevo(recipient, subject, html_content, text_content) for recipient in recipients]
     success_count = sum(1 for ok in results if ok)
-    print(f"[digest] FormSubmit accepted {success_count}/{len(recipients)}; relevant={len(selected)} attention={len(attention)} ai_generated={ai_generated} pdf={pdf_path.stat().st_size}B")
+    print(
+        f"[digest] Brevo accepted {success_count}/{len(recipients)}; "
+        f"window=24h relevant={len(selected)} ai_generated={ai_generated} attachment=none"
+    )
     return success_count == len(recipients)
 
 
