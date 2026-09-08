@@ -34,23 +34,6 @@
       "sender_email": "",
       "exclude_holidays": false,
       "channel": "email"
-    },
-    {
-      "id": "profile-1788790140270-xgzww",
-      "name": "22:30 晚間輿情快報",
-      "enabled": false,
-      "time": "22:30",
-      "report_days": 1,
-      "include_latest_items": 100,
-      "recipients": [
-        "khyang.sinica@gmail.com",
-        "kancollect126@gmail.com"
-      ],
-      "subject_prefix": "【國北教大輿情快報】",
-      "sender_name": "",
-      "sender_email": "",
-      "exclude_holidays": false,
-      "channel": "email"
     }
   ],
   "email_enabled": true,
