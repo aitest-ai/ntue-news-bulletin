@@ -5,16 +5,18 @@ on:
     branches: [master]
     paths:
       - "scripts/send_scheduled_digest_guard.py"
+      - "scripts/send_delivery_profiles.py"
+      - "scripts/send_scheduled_digest_with_ai.py"
+      - "scripts/send_scheduled_digest.py"
+      - "frontend/public/data/settings.json"
+      - "frontend/src/app/api/ai-report/scheduled/route.ts"
+      - "frontend/src/middleware.ts"
       - ".github/workflows/deliver_bulletin.yml"
   schedule:
-    # GitHub cron uses UTC. These are redundant pre-warm and fallback triggers
-    # around 08:00 Asia/Taipei (UTC+8), intentionally avoiding dependence on
-    # a single top-of-hour cron invocation.
-    - cron: "45,50,55 23 * * *"
-    - cron: "0,5,10 0 * * *"
-    # Lightweight all-day fallback. If GitHub skips the exact window, the
-    # same-day catch-up logic still delivers on the next run.
-    - cron: "17,47 * * * *"
+    # Offset from :00 to reduce top-of-hour GitHub scheduler congestion.
+    # The guard pre-warms any profile within 20 minutes and waits until its
+    # exact Asia/Taipei time, so a run that starts early can still send on time.
+    - cron: "2-57/5 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -28,7 +30,7 @@ concurrency:
 jobs:
   deliver:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -40,18 +42,34 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Deliver due or pre-warmed bulletin
+      - name: Check due or near-due delivery profiles
+        id: guard
+        shell: bash
+        run: |
+          if python scripts/send_scheduled_digest_guard.py --check; then
+            echo "needed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Prepare PDF delivery runtime
+        if: steps.guard.outputs.needed == 'true'
+        run: python -m pip install --quiet reportlab playwright
+
+      - name: Deliver due or pre-warmed profiles
+        if: steps.guard.outputs.needed == 'true'
         env:
           GITHUB_WORKFLOW_TOKEN: ${{ github.token }}
           BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
           BREVO_SENDER_EMAIL: ${{ secrets.BREVO_SENDER_EMAIL }}
           BREVO_SENDER_NAME: 國北教大輿情監測
           PUBLIC_BASE_URL: https://ntue-news-bulletin.vercel.app
-        run: |
-          python -m pip install --quiet reportlab playwright
-          python scripts/send_scheduled_digest_guard.py
+        run: python scripts/send_scheduled_digest_guard.py
 
+      # Always persist any successful profile state, even if another profile in
+      # the same run failed. Failed profiles remain unsent and retry next wake.
       - name: Persist delivery state
+        if: always() && steps.guard.outputs.needed == 'true'
         run: |
           if git diff --quiet -- frontend/public/data/email-state.json; then
             echo "No delivery-state changes."
@@ -60,7 +78,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           cp frontend/public/data/email-state.json /tmp/email-state.json
-          for attempt in 1 2 3; do
+          for attempt in 1 2 3 4 5; do
             git fetch origin master
             git reset --hard origin/master
             cp /tmp/email-state.json frontend/public/data/email-state.json
@@ -69,11 +87,11 @@ jobs:
               echo "Delivery state already persisted by another runner."
               exit 0
             fi
-            git commit -m "state: persist bulletin delivery" || true
+            git commit -m "state: persist profile delivery" || true
             if git push origin HEAD:master; then
               exit 0
             fi
-            echo "State push raced with another workflow; retrying ($attempt/3)."
+            echo "State push raced with another workflow; retrying ($attempt/5)."
             sleep 2
           done
           echo "Failed to persist delivery state after retries."
