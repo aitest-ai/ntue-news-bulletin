@@ -59,7 +59,9 @@ jobs:
         run: python scripts/refine_news_quality.py
 
       - name: Resolve recent source URLs
-        run: python scripts/resolve_source_urls.py
+        run: |
+          python -m pip install --quiet googlenewsdecoder==0.1.7
+          python scripts/resolve_source_urls.py
 
       - name: Remove unrelated general news
         run: python scripts/filter_relevance.py
