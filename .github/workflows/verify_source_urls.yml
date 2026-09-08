@@ -1,0 +1,33 @@
+name: Verify Source URL Decoder
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - ".github/workflows/verify_source_urls.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Resolve current recent URLs on a disposable checkout
+        run: |
+          python -m pip install --quiet googlenewsdecoder==0.1.7
+          python scripts/resolve_source_urls.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from urllib.parse import urlparse
+          data=json.loads(Path('frontend/public/data/news.json').read_text(encoding='utf-8'))
+          recent=[x for x in data.get('items',[]) if x.get('url_source') in {'google_news_decoded','exact_title_source_lookup','google_news_index'}]
+          for x in recent[:20]:
+              print('[verify_url]', x.get('source'), x.get('url_source'), urlparse(x.get('url','')).netloc, (x.get('title') or '')[:90])
+          PY
