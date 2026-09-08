@@ -21,13 +21,14 @@
       "id": "profile-1788790140270-xgzww",
       "name": "新的推送任務",
       "enabled": true,
-      "time": "22:15",
-      "report_days": 7,
+      "time": "21:30",
+      "report_days": 1,
       "include_latest_items": 20,
       "recipients": [
-        "kancollect126@gmail.com"
+        "kancollect126@gmail.com",
+        "khyang.sinica@gmail.com"
       ],
-      "subject_prefix": "【國北教大輿情快報】",
+      "subject_prefix": "【國北教大輿情快報】21:30",
       "sender_name": "",
       "sender_email": "",
       "channel": "email"
@@ -40,7 +41,7 @@
   ],
   "schedules": [
     "07:30",
-    "22:15"
+    "21:30"
   ],
   "report_days": 1,
   "include_latest_items": 20,
