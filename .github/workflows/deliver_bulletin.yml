@@ -15,9 +15,6 @@ on:
       - "frontend/src/middleware.ts"
       - ".github/workflows/deliver_bulletin.yml"
   schedule:
-    # Offset from :00 to reduce top-of-hour GitHub scheduler congestion.
-    # The guard pre-warms any profile within 20 minutes and waits until its
-    # exact Asia/Taipei time, so a run that starts early can still send on time.
     - cron: "2-57/5 * * * *"
   workflow_dispatch:
 
@@ -44,6 +41,9 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Validate email runtime
+        run: python -c "import sys; sys.path.insert(0, 'scripts'); import send_delivery_profiles; print('email runtime import OK')"
+
       - name: Check due or near-due delivery profiles
         id: guard
         shell: bash
@@ -64,8 +64,6 @@ jobs:
           PUBLIC_BASE_URL: https://ntue-news-bulletin.vercel.app
         run: python scripts/send_scheduled_digest_guard.py
 
-      # Always persist any successful profile state, even if another profile in
-      # the same run failed. Failed profiles remain unsent and retry next wake.
       - name: Persist delivery state
         if: always() && steps.guard.outputs.needed == 'true'
         run: |
