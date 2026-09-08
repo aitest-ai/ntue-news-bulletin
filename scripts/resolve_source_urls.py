@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
-"""Resolve recent Google News discovery URLs to the original source when possible.
+"""Resolve recent Google News discovery URLs to original sources.
 
-The dashboard and email must always remain clickable. For recent items discovered
-through Google News, this script searches the exact title on the expected source
-site and rewrites the stored URL to a verified direct source URL when confidence
-is high. If no direct URL can be verified, the Google News URL is preserved as a
-clickable fallback and explicitly marked as an index link.
+Resolution order:
+1. Decode Google News' article wrapper with googlenewsdecoder.
+2. Validate the decoded host against the expected source when one is known.
+3. Fall back to exact-title source-site search.
+4. If neither works, preserve the Google News URL as a clickable fallback.
+
+The email and dashboard therefore never lose a source link, while verified direct
+links are preferred whenever they can be obtained confidently.
 """
 from __future__ import annotations
 
@@ -16,6 +19,11 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import collect_static as base
+
+try:
+    from googlenewsdecoder import gnewsdecoder
+except Exception:
+    gnewsdecoder = None
 
 ROOT = Path(__file__).resolve().parents[1]
 NEWS_FILE = ROOT / "frontend" / "public" / "data" / "news.json"
@@ -84,6 +92,24 @@ def similarity(a, b):
     return SequenceMatcher(None, a, b).ratio()
 
 
+def decode_google_news(url, domains):
+    if gnewsdecoder is None:
+        return ""
+    try:
+        result = gnewsdecoder(url, interval=None)
+        if not isinstance(result, dict) or not result.get("status"):
+            return ""
+        decoded = str(result.get("decoded_url") or "").strip()
+        if not decoded.startswith(("http://", "https://")) or is_google_news(decoded):
+            return ""
+        if not domain_ok(decoded, domains):
+            return ""
+        return decoded.split("#", 1)[0]
+    except Exception as exc:
+        print(f"[source_urls] Google decode failed: {exc}")
+        return ""
+
+
 def candidate_rows(title, domains):
     rows = []
     queries = []
@@ -110,16 +136,8 @@ def candidate_rows(title, domains):
     return rows
 
 
-def resolve_item(item):
-    url = str(item.get("url") or "").strip()
-    if not is_google_news(url):
-        return item, False
-
-    title = str(item.get("title") or "").strip()
-    if not title:
-        return item, False
-    domains = expected_domains(item)
-    best = None
+def title_search_url(title, domains):
+    best = ""
     best_score = 0.0
     for row in candidate_rows(title, domains):
         candidate = str(row.get("url") or "").strip()
@@ -132,16 +150,36 @@ def resolve_item(item):
         if score >= required and score > best_score:
             best = candidate.split("#", 1)[0]
             best_score = score
+    return best, best_score
 
+
+def resolve_item(item):
+    url = str(item.get("url") or "").strip()
+    if not is_google_news(url):
+        return item, False
+
+    title = str(item.get("title") or "").strip()
+    domains = expected_domains(item)
     out = dict(item)
     out["google_news_url"] = url
-    if best:
-        out["url"] = best
-        out["original_url"] = best
+
+    decoded = decode_google_news(url, domains)
+    if decoded:
+        out["url"] = decoded
+        out["original_url"] = decoded
         out["original_url_verified"] = True
-        out["url_source"] = "exact_title_source_lookup"
-        out["url_match_score"] = round(best_score, 3)
+        out["url_source"] = "google_news_decoded"
         return out, True
+
+    if title:
+        searched, score = title_search_url(title, domains)
+        if searched:
+            out["url"] = searched
+            out["original_url"] = searched
+            out["original_url_verified"] = True
+            out["url_source"] = "exact_title_source_lookup"
+            out["url_match_score"] = round(score, 3)
+            return out, True
 
     out["url_source"] = "google_news_index"
     return out, False
@@ -168,7 +206,7 @@ def main():
             untouched += 1
             continue
 
-        cache_key = (norm(item.get("title")), tuple(expected_domains(item)))
+        cache_key = url
         if cache_key in cache:
             cached_url = cache[cache_key]
             out = dict(item)
@@ -177,7 +215,7 @@ def main():
                 out["url"] = cached_url
                 out["original_url"] = cached_url
                 out["original_url_verified"] = True
-                out["url_source"] = "exact_title_source_lookup_cached"
+                out["url_source"] = "google_news_decoded_cached"
                 resolved += 1
             else:
                 out["url_source"] = "google_news_index"
