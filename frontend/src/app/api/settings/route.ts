@@ -20,13 +20,13 @@ function cleanProfiles(value: unknown) {
       name: String(raw?.name || `推送任務 ${index + 1}`).trim().slice(0, 80),
       enabled: Boolean(raw?.enabled),
       time,
-      // Supervisor bulletins always use the complete rolling 24-hour feed.
       report_days: 1,
       include_latest_items: 100,
       recipients: cleanEmails(raw?.recipients),
       subject_prefix: String(raw?.subject_prefix || "【國北教大輿情快報】").slice(0, 80),
       sender_name: String(raw?.sender_name || "").trim().slice(0, 80),
       sender_email: String(raw?.sender_email || "").trim().slice(0, 160),
+      exclude_holidays: Boolean(raw?.exclude_holidays),
       channel: "email",
     };
   });
