@@ -53,10 +53,6 @@ jobs:
             echo "needed=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Prepare PDF delivery runtime
-        if: steps.guard.outputs.needed == 'true'
-        run: python -m pip install --quiet reportlab playwright
-
       - name: Deliver due or pre-warmed profiles
         if: steps.guard.outputs.needed == 'true'
         env:
