@@ -3,7 +3,7 @@
   "delivery_profiles": [
     {
       "id": "legacy-0800-0",
-      "name": "07:30 電子報",
+      "name": "07:30 上班前輿情快報",
       "enabled": true,
       "time": "07:30",
       "report_days": 1,
@@ -12,22 +12,39 @@
         "khyang.sinica@gmail.com",
         "kancollect126@gmail.com"
       ],
-      "subject_prefix": "【國北教大輿情快報】07:30",
+      "subject_prefix": "【國北教大輿情快報】",
+      "sender_name": "",
+      "sender_email": "",
+      "channel": "email"
+    },
+    {
+      "id": "profile-afternoon-1530",
+      "name": "15:30 下班前輿情快報",
+      "enabled": true,
+      "time": "15:30",
+      "report_days": 1,
+      "include_latest_items": 20,
+      "recipients": [
+        "khyang.sinica@gmail.com",
+        "kancollect126@gmail.com"
+      ],
+      "subject_prefix": "【國北教大輿情快報】",
       "sender_name": "",
       "sender_email": "",
       "channel": "email"
     },
     {
       "id": "profile-1788790140270-xgzww",
-      "name": "新的推送任務",
+      "name": "22:30 晚間輿情快報",
       "enabled": true,
-      "time": "22:15",
+      "time": "22:30",
       "report_days": 1,
       "include_latest_items": 20,
       "recipients": [
+        "khyang.sinica@gmail.com",
         "kancollect126@gmail.com"
       ],
-      "subject_prefix": "【國北教大輿情快報】22:15",
+      "subject_prefix": "【國北教大輿情快報】",
       "sender_name": "",
       "sender_email": "",
       "channel": "email"
@@ -40,9 +57,10 @@
   ],
   "schedules": [
     "07:30",
-    "22:15"
+    "15:30",
+    "22:30"
   ],
   "report_days": 1,
   "include_latest_items": 20,
-  "subject_prefix": "【國北教大輿情快報】07:30"
+  "subject_prefix": "【國北教大輿情快報】"
 }
