@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 const REPOSITORY = "aitest-ai/ntue-news-bulletin";
 const SETTINGS_PATH = "frontend/public/data/settings.json";
 const TIME_RE = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
-const PREWAKE_MINUTES = 10;
+const PREWAKE_MINUTES = 18;
 
 type Profile = {
   id?: string;
