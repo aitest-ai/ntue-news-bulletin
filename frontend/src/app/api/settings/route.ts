@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { start } from "workflow/api";
+import { profileDeliveryWakeWorkflow } from "@/workflows/profile-delivery-wake";
 import { ADMIN_SESSION_COOKIE, isValidSession } from "../../../lib/auth";
 
 const REPO = "aitest-ai/ntue-news-bulletin";
 const PATH = "frontend/public/data/settings.json";
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+const PREWAKE_MINUTES = 10;
 
 function cleanEmails(value: unknown) {
   if (!Array.isArray(value)) return [];
@@ -30,6 +33,34 @@ function cleanProfiles(value: unknown) {
       channel: "email",
     };
   });
+}
+
+function taipeiDateString(now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Taipei",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(now);
+  const value = (type: string) => parts.find((part) => part.type === type)?.value || "";
+  return `${value("year")}-${value("month")}-${value("day")}`;
+}
+
+function wakeAtIso(localDate: string, slot: string) {
+  const target = new Date(`${localDate}T${slot}:00+08:00`);
+  return new Date(target.getTime() - PREWAKE_MINUTES * 60_000).toISOString();
+}
+
+async function refreshTodayDurableWakes(profiles: ReturnType<typeof cleanProfiles>) {
+  const localDate = taipeiDateString();
+  let started = 0;
+  for (const profile of profiles) {
+    if (!profile.enabled || profile.recipients.length === 0 || !TIME_RE.test(profile.time)) continue;
+    const wakeAt = wakeAtIso(localDate, profile.time);
+    await start(profileDeliveryWakeWorkflow, [profile.id, profile.time, localDate, wakeAt]);
+    started += 1;
+  }
+  return started;
 }
 
 export async function POST(req: NextRequest) {
@@ -88,7 +119,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `儲存設定失敗（GitHub ${save.status}）` }, { status: 502 });
     }
 
-    return NextResponse.json({ success: true, settings });
+    let schedulerWakes = 0;
+    try {
+      schedulerWakes = await refreshTodayDurableWakes(profiles);
+      console.log(`[settings] refreshed durable scheduler wakes=${schedulerWakes}`);
+    } catch (schedulerError) {
+      // The GitHub schedule remains a fallback. Never discard a successfully
+      // saved user setting merely because the secondary clock is unavailable.
+      console.error("[settings] durable scheduler refresh failed", schedulerError);
+    }
+
+    return NextResponse.json({ success: true, settings, scheduler_wakes: schedulerWakes });
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || "儲存設定失敗" }, { status: 500 });
   }
