@@ -34,6 +34,22 @@
       "sender_email": "",
       "exclude_holidays": false,
       "channel": "email"
+    },
+    {
+      "id": "profile-1788945209104-nzmqb",
+      "name": "晚上10:00輿情快報",
+      "enabled": true,
+      "time": "22:00",
+      "report_days": 1,
+      "include_latest_items": 100,
+      "recipients": [
+        "khyang.sinica@gmail.com"
+      ],
+      "subject_prefix": "【國北教大輿情快報】",
+      "sender_name": "",
+      "sender_email": "",
+      "exclude_holidays": false,
+      "channel": "email"
     }
   ],
   "email_enabled": true,
@@ -43,7 +59,8 @@
   ],
   "schedules": [
     "07:30",
-    "15:30"
+    "15:30",
+    "22:00"
   ],
   "report_days": 1,
   "include_latest_items": 100,
