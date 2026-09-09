@@ -43,7 +43,24 @@
       "report_days": 1,
       "include_latest_items": 100,
       "recipients": [
-        "khyang.sinica@gmail.com"
+        "khyang.sinica@gmail.com",
+        "kancollect126@gmail.com"
+      ],
+      "subject_prefix": "【國北教大輿情快報】",
+      "sender_name": "",
+      "sender_email": "",
+      "exclude_holidays": false,
+      "channel": "email"
+    },
+    {
+      "id": "makeup-evening-20260909",
+      "name": "21:30 晚間輿情快報補寄",
+      "enabled": true,
+      "time": "21:32",
+      "report_days": 1,
+      "include_latest_items": 100,
+      "recipients": [
+        "kancollect126@gmail.com"
       ],
       "subject_prefix": "【國北教大輿情快報】",
       "sender_name": "",
@@ -60,7 +77,8 @@
   "schedules": [
     "07:30",
     "14:30",
-    "21:30"
+    "21:30",
+    "21:32"
   ],
   "report_days": 1,
   "include_latest_items": 100,
