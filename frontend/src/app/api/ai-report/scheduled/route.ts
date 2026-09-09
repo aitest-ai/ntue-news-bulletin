@@ -35,7 +35,7 @@ async function verifyGithubRun(token: string, runId: string, sha: string) {
     run?.head_sha === sha &&
     run?.head_branch === "master" &&
     run?.repository?.full_name === REPO &&
-    ["push", "schedule", "workflow_dispatch"].includes(run?.event)
+    ["push", "schedule", "workflow_dispatch", "repository_dispatch"].includes(run?.event)
   );
 }
 
@@ -61,6 +61,15 @@ export async function POST(req: NextRequest) {
 
     const apiKey = (process.env.GEMINI_API_KEY || "").trim();
     if (!apiKey) return NextResponse.json({ error: "GEMINI_API_KEY 尚未設定" }, { status: 503 });
+
+    if (body?.verify_only === true) {
+      return NextResponse.json({
+        ok: true,
+        workflow_verified: true,
+        gemini_configured: true,
+        generated_at: new Date().toISOString(),
+      });
+    }
 
     const days = Math.min(Math.max(Number(body?.days || 1), 1), 30);
     const items: FeedItem[] = Array.isArray(body?.items) ? body.items.slice(0, 120) : [];
