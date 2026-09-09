@@ -10,6 +10,7 @@ on:
       - "frontend/tsconfig.json"
       - "frontend/vercel.json"
       - "frontend/src/app/api/scheduler/**"
+      - "frontend/src/app/api/settings/route.ts"
       - "frontend/src/workflows/**"
       - "frontend/src/middleware.ts"
       - ".github/workflows/frontend_build_check.yml"
