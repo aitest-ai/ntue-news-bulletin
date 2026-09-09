@@ -4,6 +4,14 @@ on:
   push:
     branches: [master]
     paths:
+      - "frontend/package.json"
+      - "frontend/package-lock.json"
+      - "frontend/next.config.js"
+      - "frontend/tsconfig.json"
+      - "frontend/vercel.json"
+      - "frontend/src/app/api/scheduler/**"
+      - "frontend/src/workflows/**"
+      - "frontend/src/middleware.ts"
       - ".github/workflows/frontend_build_check.yml"
   workflow_dispatch:
 
