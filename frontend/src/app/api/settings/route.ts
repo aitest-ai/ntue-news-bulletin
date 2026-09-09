@@ -6,7 +6,7 @@ import { ADMIN_SESSION_COOKIE, isValidSession } from "../../../lib/auth";
 const REPO = "aitest-ai/ntue-news-bulletin";
 const PATH = "frontend/public/data/settings.json";
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
-const PREWAKE_MINUTES = 10;
+const PREWAKE_MINUTES = 18;
 
 function cleanEmails(value: unknown) {
   if (!Array.isArray(value)) return [];
