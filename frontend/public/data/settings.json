@@ -20,9 +20,9 @@
     },
     {
       "id": "profile-afternoon-1530",
-      "name": "15:30 下班前輿情快報",
+      "name": "14:30 下午輿情快報",
       "enabled": true,
-      "time": "15:30",
+      "time": "14:30",
       "report_days": 1,
       "include_latest_items": 100,
       "recipients": [
@@ -37,9 +37,9 @@
     },
     {
       "id": "profile-1788945209104-nzmqb",
-      "name": "晚上10:00輿情快報",
+      "name": "21:30 晚間輿情快報",
       "enabled": true,
-      "time": "22:00",
+      "time": "21:30",
       "report_days": 1,
       "include_latest_items": 100,
       "recipients": [
@@ -59,8 +59,8 @@
   ],
   "schedules": [
     "07:30",
-    "15:30",
-    "22:00"
+    "14:30",
+    "21:30"
   ],
   "report_days": 1,
   "include_latest_items": 100,
