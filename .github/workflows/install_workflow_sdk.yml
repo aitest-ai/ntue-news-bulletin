@@ -1,0 +1,38 @@
+name: Install Vercel Workflow SDK
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - ".github/workflows/install_workflow_sdk.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install Workflow SDK and refresh lockfile
+        working-directory: frontend
+        run: npm install workflow@4.8.5 --save-exact
+      - name: Commit dependency files
+        run: |
+          if git diff --quiet -- frontend/package.json frontend/package-lock.json; then
+            echo "Workflow SDK already installed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/package.json frontend/package-lock.json
+          git commit -m "build: add Vercel Workflow SDK"
+          git push origin HEAD:master
