@@ -14,6 +14,8 @@ export async function middleware(req: NextRequest) {
     publicPaths.has(pathname) ||
     pathname.startsWith("/api/auth/") ||
     pathname === "/api/ai-report/scheduled" ||
+    pathname === "/api/scheduler/bootstrap" ||
+    pathname.startsWith("/.well-known/workflow/") ||
     pathname.startsWith("/r/") ||
     pathname.startsWith("/_next/")
   ) {
