@@ -1,6 +1,6 @@
 {
   "schema_version": 8,
-  "updated_at": "2026-09-11T03:50:09.194241+08:00",
+  "updated_at": "2026-09-11T06:09:30.483320+08:00",
   "keywords": [
     "國立臺北教育大學",
     "國北教大",
@@ -79,6 +79,21 @@
       "date_verified": true,
       "date_source": "threads_datetime",
       "discovered_at": "2026-09-10T08:00:39.884585+08:00",
+      "keyword": "國北教大",
+      "task": "threads",
+      "discovery": "threads_default",
+      "title_generated_from_body": true
+    },
+    {
+      "title": "國北教宿舍你的密碼到底是什麼",
+      "snippet": "國北教宿舍你的密碼到底是什麼",
+      "url": "https://www.threads.com/@__czy.85/post/DdEvFqHEy4M",
+      "source": "Threads",
+      "publisher": "__czy.85",
+      "publish_time": "2026-09-10T00:53:33+08:00",
+      "date_verified": true,
+      "date_source": "threads_datetime",
+      "discovered_at": "2026-09-11T06:12:21.239852+08:00",
       "keyword": "國北教大",
       "task": "threads",
       "discovery": "threads_default",
@@ -196,21 +211,6 @@
       "publisher": "Yahoo新聞",
       "publish_time": "2026-09-08T15:03:33+08:00",
       "discovered_at": "2026-09-11T03:49:50.730009+08:00",
-      "keyword": "國北教大",
-      "task": "google_news",
-      "discovery": "google_news",
-      "google_news_url": "https://news.google.com/rss/articles/CBMi4AJBVV95cUxNT1llVlhTTW1mQ0dUcERtT1R2YVNYT2puRTJJSHdaNEJYbkxyQjB1Z2c3V0d2amQ5eVc4Z1FIemRFZGdMekY5SnNaWDRPdHhwd0FYVE1oNHBKVXhacUtnTkVKU2kzTy1UV0F6Rmo2V1huaFptM0N5T0k0S011SGJKRHg5YlhoR1dndzRXODFuRmlsUkl0ZUF2S3BGcTFoZGxQLURhZENidFRlNy10UmJUY0I2V28zeDh6bGI1eHQwRWlFa0tZQXJ1eGZULS01dDdQVkJMX1MxelNlcl9FLU1PelYwYkduRXhJU0xRUmRBRW5vYUMySFdtdkwzay1YenhJZUhQNkpCX3B6Q0Z0QTN0VzN2Wjd6SEJnTkRsUnF3UnV2ODlSam1TOHNfd2NNQWwzRlFwUHBUR3pILVRPTHdsYlczMk52bzdLR3ZldjJ3aVp1TnJvMTljTzN3Mmt5V09G?oc=5",
-      "original_url": "https://tw.news.yahoo.com/%E5%9C%8B%E5%8C%97%E6%95%99%E5%A4%A7%E6%95%99%E6%AA%A2%E9%80%9A%E9%81%8E%E7%8E%87%E9%80%BE88-%E6%AF%8D%E6%A0%A1%E4%B8%89%E6%96%B9%E6%A1%88%E6%94%AF%E6%8C%81%E8%B5%B0%E7%A9%A9%E7%AC%AC-%E5%93%A9%E8%B7%AF-070333247.html",
-      "original_url_verified": true,
-      "url_source": "google_news_decoded"
-    },
-    {
-      "title": "國北教大教檢通過率逾88% 母校三方案支持走穩第一哩路",
-      "url": "https://tw.news.yahoo.com/%E5%9C%8B%E5%8C%97%E6%95%99%E5%A4%A7%E6%95%99%E6%AA%A2%E9%80%9A%E9%81%8E%E7%8E%87%E9%80%BE88-%E6%AF%8D%E6%A0%A1%E4%B8%89%E6%96%B9%E6%A1%88%E6%94%AF%E6%8C%81%E8%B5%B0%E7%A9%A9%E7%AC%AC-%E5%93%A9%E8%B7%AF-070333247.html",
-      "source": "tw.news.yahoo.com",
-      "publisher": "tw.news.yahoo.com",
-      "publish_time": "2026-09-08T15:03:33+08:00",
-      "discovered_at": "2026-09-11T01:11:55.853744+08:00",
       "keyword": "國北教大",
       "task": "google_news",
       "discovery": "google_news",
@@ -2443,25 +2443,18 @@
     {
       "task": "google_news",
       "source": "新聞媒體",
-      "status": "healthy",
-      "count": 25,
-      "error": null,
-      "keyword_counts": {
-        "國立臺北教育大學": 5,
-        "國北教大": 16,
-        "北教大": 18,
-        "NTUE": 0,
-        "National Taipei University of Education": 0
-      }
+      "status": "failed",
+      "count": 0,
+      "error": "HTTP Error 503: Service Unavailable"
     },
     {
       "task": "dcard",
       "source": "Dcard",
       "status": "healthy",
-      "count": 36,
+      "count": 0,
       "error": null,
       "engine_counts": {
-        "google_news": 36,
+        "google_news": 0,
         "bing_web": 0
       }
     },
@@ -2480,10 +2473,10 @@
       "task": "instagram",
       "source": "Instagram",
       "status": "healthy",
-      "count": 77,
+      "count": 0,
       "error": null,
       "engine_counts": {
-        "google_news": 77,
+        "google_news": 0,
         "bing_web": 0
       }
     },
@@ -2501,9 +2494,9 @@
         "bing": 0,
         "yahoo": 0,
         "mojeek": 0,
-        "threads_recent": 1
+        "threads_default": 1
       },
-      "deep_search_last_run": "2026-09-11T03:52:43.986006+08:00",
+      "deep_search_last_run": "2026-09-11T06:12:23.663802+08:00",
       "deep_search_terms": [
         "國北教大",
         "北教大",
@@ -2512,26 +2505,26 @@
         "臺北教育大學",
         "台北教育大學",
         "NTUE",
-        "國北 課程",
-        "國北 社團",
-        "國北 系所",
-        "國北 實習",
-        "北教大 學生",
-        "北教大 校園"
+        "國北 學生",
+        "國北 校園",
+        "國北 宿舍",
+        "國北 選課",
+        "北教大 宿舍",
+        "北教大 選課"
       ]
     }
   ],
   "summary": {
-    "total": 225,
-    "fresh_this_run": 138,
-    "healthy_tasks": 5,
-    "failed_tasks": 0,
-    "news_publishers": 22,
-    "removed_school_only": 2,
+    "total": 205,
+    "fresh_this_run": 0,
+    "healthy_tasks": 4,
+    "failed_tasks": 1,
+    "news_publishers": 12,
+    "removed_school_only": 0,
     "removed_unverified_news_date": 0,
     "removed_stale_original_news": 0,
     "verified_original_news_dates": 0,
-    "resolved_recent_source_urls": 10,
+    "resolved_recent_source_urls": 0,
     "google_news_fallback_urls": 0,
     "removed_school_only_relevance": 0
   }
