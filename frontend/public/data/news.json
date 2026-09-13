@@ -1,6 +1,6 @@
 {
   "schema_version": 8,
-  "updated_at": "2026-09-13T18:33:11.038191+08:00",
+  "updated_at": "2026-09-13T22:43:29.084046+08:00",
   "keywords": [
     "國立臺北教育大學",
     "國北教大",
@@ -94,21 +94,6 @@
       "date_verified": true,
       "date_source": "threads_datetime",
       "discovered_at": "2026-09-11T21:41:36.298777+08:00",
-      "keyword": "國北教大",
-      "task": "threads",
-      "discovery": "threads_default",
-      "title_generated_from_body": true
-    },
-    {
-      "title": "👨‍⚕️「不錯啊，你們學校在哪裡」 ：博愛中正那一帶 👨‍⚕️「喔喔，東吳嗎」 ：不 不是⋯⋯ 醫生看了一眼學校健檢單子 👨‍⚕️「台北大學喔」 ：也不是（我考不上） 👨‍⚕️…",
-      "snippet": "去新生健檢，一進門醫生就笑咪咪恭喜我考上大學，問我讀哪裡 ：北市大！ 👨‍⚕️「不錯啊，你們學校在哪裡」 ：博愛中正那一帶 👨‍⚕️「喔喔，東吳嗎」 ：不 不是⋯⋯ 醫生看了一眼學校健檢單子 👨‍⚕️「台北大學喔」 ：也不是（我考不上） 👨‍⚕️「我知道了是不是有小教，之前是師範那個⋯⋯」 ：對對對我們有小教 👨‍⚕️「台北教育大學！」 ：不是耶（逐漸）（虛弱） 👨‍⚕️「呵呵，呵呵，我真的不知道抱歉抱歉，我會再研究研究」 👨‍⚕️「中文系的喔，很厲害，我覺得中文很難」 就這樣在歉意的笑容裡做完了健康檢查 （敝校老師很好、課也很有趣，只是介紹學校很困擾而已）（下次我就說台大了出門在外身分自己給的）",
-      "url": "https://www.threads.com/@xxi_o00/post/DdI7sYSk6Wz",
-      "source": "Threads",
-      "publisher": "xxi_o00",
-      "publish_time": "2026-09-11T16:00:40+08:00",
-      "date_verified": true,
-      "date_source": "threads_datetime",
-      "discovered_at": "2026-09-13T18:35:20.988533+08:00",
       "keyword": "國北教大",
       "task": "threads",
       "discovery": "threads_default",
@@ -2639,25 +2624,18 @@
     {
       "task": "google_news",
       "source": "新聞媒體",
-      "status": "healthy",
-      "count": 10,
-      "error": null,
-      "keyword_counts": {
-        "國立臺北教育大學": 4,
-        "國北教大": 5,
-        "北教大": 5,
-        "NTUE": 0,
-        "National Taipei University of Education": 0
-      }
+      "status": "failed",
+      "count": 0,
+      "error": "HTTP Error 503: Service Unavailable"
     },
     {
       "task": "dcard",
       "source": "Dcard",
       "status": "healthy",
-      "count": 38,
+      "count": 0,
       "error": null,
       "engine_counts": {
-        "google_news": 38,
+        "google_news": 0,
         "bing_web": 0
       }
     },
@@ -2676,10 +2654,10 @@
       "task": "instagram",
       "source": "Instagram",
       "status": "healthy",
-      "count": 73,
+      "count": 0,
       "error": null,
       "engine_counts": {
-        "google_news": 73,
+        "google_news": 0,
         "bing_web": 0
       }
     },
@@ -2687,7 +2665,7 @@
       "task": "threads",
       "source": "Threads",
       "status": "healthy",
-      "count": 44,
+      "count": 43,
       "error": null,
       "engine_counts": {
         "threads_direct": 0,
@@ -2696,10 +2674,9 @@
         "duckduckgo": 0,
         "bing": 0,
         "yahoo": 0,
-        "mojeek": 0,
-        "threads_default": 2
+        "mojeek": 0
       },
-      "deep_search_last_run": "2026-09-13T18:35:58.513250+08:00",
+      "deep_search_last_run": "2026-09-13T22:46:32.966054+08:00",
       "deep_search_terms": [
         "國北教大",
         "北教大",
@@ -2708,26 +2685,26 @@
         "臺北教育大學",
         "台北教育大學",
         "NTUE",
-        "國北",
-        "#國北教大",
-        "#北教大",
-        "#NTUE",
-        "國北 教授",
-        "國北 老師"
+        "國北 學生",
+        "國北 校園",
+        "國北 宿舍",
+        "國北 選課",
+        "北教大 宿舍",
+        "北教大 選課"
       ]
     }
   ],
   "summary": {
-    "total": 225,
-    "fresh_this_run": 121,
-    "healthy_tasks": 5,
-    "failed_tasks": 0,
-    "news_publishers": 16,
+    "total": 220,
+    "fresh_this_run": 0,
+    "healthy_tasks": 4,
+    "failed_tasks": 1,
+    "news_publishers": 12,
     "removed_school_only": 0,
     "removed_unverified_news_date": 0,
     "removed_stale_original_news": 0,
     "verified_original_news_dates": 0,
-    "resolved_recent_source_urls": 8,
+    "resolved_recent_source_urls": 0,
     "google_news_fallback_urls": 0,
     "removed_school_only_relevance": 0
   }
