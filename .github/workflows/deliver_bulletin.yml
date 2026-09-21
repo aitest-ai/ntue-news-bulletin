@@ -37,6 +37,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # A scheduled run may wait behind a pre-warmed repository_dispatch run.
+          # Always read the latest delivery state after the concurrency wait instead
+          # of the event's older head SHA, otherwise the same slot can be sent twice.
+          ref: master
 
       - name: Setup Python
         uses: actions/setup-python@v5
