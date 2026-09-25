@@ -254,6 +254,12 @@ def submit_via_brevo(recipient, subject, html_content, text_content):
 def build_and_send(settings, feed, slot):
     selected = legacy.select_items(feed, 24)
     summary, ai_generated = legacy.generate_ai_summary(selected)
+    if selected and not ai_generated:
+        # AI is part of the production contract. Do not silently mark a
+        # deterministic fallback as a successful scheduled bulletin: returning
+        # failure leaves delivery state untouched so the next guard wake retries.
+        print("[digest] AI summary required for non-empty bulletin; aborting before Brevo so the slot can retry")
+        return False
     suggestion = legacy.safe_suggestion(selected)
     html_content, text_content = build_email(summary, suggestion, selected, slot)
     now = datetime.now(TAIPEI)
