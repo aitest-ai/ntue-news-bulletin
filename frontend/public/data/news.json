@@ -1,6 +1,6 @@
 {
   "schema_version": 8,
-  "updated_at": "2026-09-26T20:28:09.045543+08:00",
+  "updated_at": "2026-09-27T00:45:03.568261+08:00",
   "keywords": [
     "國立臺北教育大學",
     "國北教大",
@@ -9,6 +9,21 @@
     "National Taipei University of Education"
   ],
   "items": [
+    {
+      "title": "📌#台北萬華｜大學女學生 01｜❋ 舒映澐｜20歲｜臺北市立大學｜教育相關 └ 安靜耐看・喜歡閱讀・平常會逛展覽 02｜❋ 戚若榆｜21歲｜中國文化大學｜傳播相關 └ 個性開朗…",
+      "snippet": "📌#台北萬華｜大學女學生 01｜❋ 舒映澐｜20歲｜臺北市立大學｜教育相關 └ 安靜耐看・喜歡閱讀・平常會逛展覽 02｜❋ 戚若榆｜21歲｜中國文化大學｜傳播相關 └ 個性開朗・喜歡拍照・熱衷校園活動 03｜❋ 溫采甯｜22歲｜實踐大學｜設計相關 └ 文藝感・喜歡插畫・平時關注服裝設計 04｜❋ 裴昀希｜19歲｜臺北市立大學｜運動相關 └ 活力型・喜歡慢跑・常參加校園活動 05｜❋ 洛知音｜23歲｜國立臺北教育大學｜人文相關 └ 氣質文靜・喜歡音樂・咖啡店閱讀 06｜❋ 喻晴禾｜21歲｜世新大學｜新聞相關 └ 反應靈活・喜歡採訪・對城市生活有興趣",
+      "url": "https://www.threads.com/@ravexspark43/post/DdwdITpE26s",
+      "source": "Threads",
+      "publisher": "ravexspark43",
+      "publish_time": "2026-09-27T00:23:13+08:00",
+      "date_verified": true,
+      "date_source": "threads_datetime",
+      "discovered_at": "2026-09-27T00:47:52.995488+08:00",
+      "keyword": "國北教大",
+      "task": "threads",
+      "discovery": "threads_default",
+      "title_generated_from_body": true
+    },
     {
       "title": "半年實習學校聯絡- 臺北教育大學板",
       "url": "https://www.dcard.tw/f/ntue/p/262211003",
@@ -4060,25 +4075,18 @@
     {
       "task": "google_news",
       "source": "新聞媒體",
-      "status": "healthy",
-      "count": 40,
-      "error": null,
-      "keyword_counts": {
-        "國立臺北教育大學": 5,
-        "國北教大": 26,
-        "北教大": 33,
-        "NTUE": 1,
-        "National Taipei University of Education": 1
-      }
+      "status": "failed",
+      "count": 0,
+      "error": "HTTP Error 503: Service Unavailable"
     },
     {
       "task": "dcard",
       "source": "Dcard",
       "status": "healthy",
-      "count": 40,
+      "count": 0,
       "error": null,
       "engine_counts": {
-        "google_news": 40,
+        "google_news": 0,
         "bing_web": 0
       }
     },
@@ -4097,10 +4105,10 @@
       "task": "instagram",
       "source": "Instagram",
       "status": "healthy",
-      "count": 83,
+      "count": 0,
       "error": null,
       "engine_counts": {
-        "google_news": 83,
+        "google_news": 0,
         "bing_web": 0
       }
     },
@@ -4108,7 +4116,7 @@
       "task": "threads",
       "source": "Threads",
       "status": "healthy",
-      "count": 73,
+      "count": 74,
       "error": null,
       "engine_counts": {
         "threads_direct": 0,
@@ -4117,9 +4125,10 @@
         "duckduckgo": 0,
         "bing": 0,
         "yahoo": 0,
-        "mojeek": 0
+        "mojeek": 0,
+        "threads_default": 1
       },
-      "deep_search_last_run": "2026-09-26T20:30:07.569677+08:00",
+      "deep_search_last_run": "2026-09-27T00:47:57.565906+08:00",
       "deep_search_terms": [
         "國北教大",
         "北教大",
@@ -4128,26 +4137,26 @@
         "臺北教育大學",
         "台北教育大學",
         "NTUE",
-        "國北 課程",
-        "國北 社團",
-        "國北 系所",
-        "國北 實習",
-        "北教大 學生",
-        "北教大 校園"
+        "國北 學生",
+        "國北 校園",
+        "國北 宿舍",
+        "國北 選課",
+        "北教大 宿舍",
+        "北教大 選課"
       ]
     }
   ],
   "summary": {
-    "total": 357,
-    "fresh_this_run": 163,
-    "healthy_tasks": 5,
-    "failed_tasks": 0,
-    "news_publishers": 37,
+    "total": 337,
+    "fresh_this_run": 0,
+    "healthy_tasks": 4,
+    "failed_tasks": 1,
+    "news_publishers": 27,
     "removed_school_only": 0,
-    "removed_unverified_news_date": 2,
+    "removed_unverified_news_date": 0,
     "removed_stale_original_news": 0,
     "verified_original_news_dates": 0,
-    "resolved_recent_source_urls": 5,
+    "resolved_recent_source_urls": 0,
     "google_news_fallback_urls": 0,
     "removed_school_only_relevance": 0
   }
