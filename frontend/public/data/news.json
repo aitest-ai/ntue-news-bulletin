@@ -1,6 +1,6 @@
 {
   "schema_version": 8,
-  "updated_at": "2026-10-04T07:03:26.515072+08:00",
+  "updated_at": "2026-10-04T10:37:29.342631+08:00",
   "keywords": [
     "國立臺北教育大學",
     "國北教大",
@@ -635,7 +635,7 @@
       "publish_time": "2026-09-23T12:51:49+08:00",
       "date_verified": true,
       "date_source": "threads_datetime",
-      "discovered_at": "2026-10-04T07:05:40.240655+08:00",
+      "discovered_at": "2026-10-04T10:40:23.149513+08:00",
       "keyword": "國北教大",
       "task": "threads",
       "discovery": "threads_recent",
@@ -4449,25 +4449,18 @@
     {
       "task": "google_news",
       "source": "新聞媒體",
-      "status": "healthy",
-      "count": 35,
-      "error": null,
-      "keyword_counts": {
-        "國立臺北教育大學": 7,
-        "國北教大": 22,
-        "北教大": 24,
-        "NTUE": 0,
-        "National Taipei University of Education": 0
-      }
+      "status": "failed",
+      "count": 0,
+      "error": "HTTP Error 503: Service Unavailable"
     },
     {
       "task": "dcard",
       "source": "Dcard",
       "status": "healthy",
-      "count": 43,
+      "count": 0,
       "error": null,
       "engine_counts": {
-        "google_news": 43,
+        "google_news": 0,
         "bing_web": 0
       }
     },
@@ -4486,10 +4479,10 @@
       "task": "instagram",
       "source": "Instagram",
       "status": "healthy",
-      "count": 79,
+      "count": 0,
       "error": null,
       "engine_counts": {
-        "google_news": 79,
+        "google_news": 0,
         "bing_web": 0
       }
     },
@@ -4509,7 +4502,7 @@
         "mojeek": 0,
         "threads_recent": 1
       },
-      "deep_search_last_run": "2026-10-04T07:05:49.195043+08:00",
+      "deep_search_last_run": "2026-10-04T10:40:32.198111+08:00",
       "deep_search_terms": [
         "國北教大",
         "北教大",
@@ -4528,17 +4521,17 @@
     }
   ],
   "summary": {
-    "total": 383,
-    "fresh_this_run": 157,
-    "healthy_tasks": 5,
-    "failed_tasks": 0,
-    "news_publishers": 33,
-    "removed_school_only": 1,
+    "total": 373,
+    "fresh_this_run": 0,
+    "healthy_tasks": 4,
+    "failed_tasks": 1,
+    "news_publishers": 28,
+    "removed_school_only": 0,
     "removed_unverified_news_date": 0,
     "removed_stale_original_news": 0,
     "verified_original_news_dates": 0,
     "resolved_recent_source_urls": 0,
-    "google_news_fallback_urls": 10,
+    "google_news_fallback_urls": 7,
     "removed_school_only_relevance": 0
   }
 }
