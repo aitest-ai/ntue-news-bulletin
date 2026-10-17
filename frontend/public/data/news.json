@@ -1,6 +1,6 @@
 {
   "schema_version": 8,
-  "updated_at": "2026-10-17T09:41:31.347105+08:00",
+  "updated_at": "2026-10-17T14:14:06.737366+08:00",
   "keywords": [
     "國立臺北教育大學",
     "國北教大",
@@ -10,12 +10,40 @@
   ],
   "items": [
     {
+      "title": "meta.ai 你現在是 大學生學系轉生模擬器 來讓大家抽看看各自會是哪一間的大學哪一科系： 臺灣大學、臺灣師大、中興大學、成功大學、東吳大學、政治大學、高雄醫學大學、中原大…",
+      "snippet": "meta.ai 你現在是 大學生學系轉生模擬器 來讓大家抽看看各自會是哪一間的大學哪一科系： 臺灣大學、臺灣師大、中興大學、成功大學、東吳大學、政治大學、高雄醫學大學、中原大學、東海大學、清華大學、中國醫藥大學、國立陽明交通大學、淡江大學、逢甲大學、國立中央大學、中國文化大學、靜宜大學、大同大學、輔仁大學、國立海洋大學、國立高雄師範大學、國立彰化師範大學、中山醫學大學、中山大學、臺北藝術大學、長庚大學、國立臺中教育大學、國立臺北教育大學、臺南大學、東華大學、臺北市立大學、國立屏東大學、國立臺東大學、國立體育大學、元智大學、中正大學、大葉大學、華梵大學、義守大學、銘傳大學、世新大學、實踐大學、長榮大學、臺灣藝術大學、暨南大學、南華大學、臺灣體大、臺南藝術大學、玄裝大學、真理大學、臺北大學、嘉義大學、高雄大學、慈濟大學、臺北醫學大學、開南大學、康寧大學、中信金融管理學院、佛光大學、亞洲大學、宜蘭大學、馬偕醫學大學、金門大學、臺北基督學院 請依個人主頁興趣公平分配學校",
+      "url": "https://www.threads.com/@fh_03.02/post/DelS72jIN5B",
+      "source": "Threads",
+      "publisher": "fh_03.02",
+      "publish_time": "2026-10-17T12:53:53+08:00",
+      "date_verified": true,
+      "date_source": "threads_datetime",
+      "discovered_at": "2026-10-17T14:16:14.327713+08:00",
+      "keyword": "國北教大",
+      "task": "threads",
+      "discovery": "threads_default",
+      "title_generated_from_body": true
+    },
+    {
+      "title": "AI時代師資培育國際研討會北教大登場 逾450人報名",
+      "url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE85bmljSk5jZWhUS3JFdlM3NjgxeTJIWGQ2ZHdNX0dCUGRHbVFTZmhqLWVLUF96aWlSakVfX2lGMWlQSXAyY0lacExyMnBEdnJEUWc?oc=5",
+      "source": "蕃新聞",
+      "publisher": "蕃新聞",
+      "publish_time": "2026-10-17T12:46:00+08:00",
+      "discovered_at": "2026-10-17T14:13:52.982737+08:00",
+      "keyword": "國北教大",
+      "task": "google_news",
+      "discovery": "google_news",
+      "google_news_url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE85bmljSk5jZWhUS3JFdlM3NjgxeTJIWGQ2ZHdNX0dCUGRHbVFTZmhqLWVLUF96aWlSakVfX2lGMWlQSXAyY0lacExyMnBEdnJEUWc?oc=5",
+      "url_source": "google_news_index"
+    },
+    {
       "title": "迎AI時代師培創新 師培國際學術研討會北教大登場",
       "url": "https://news.google.com/rss/articles/CBMibkFVX3lxTE5EbXI5TFVDbnFucVU4VzZTeEhfUk5Rd3ctZlk1TWlMQ0FhSGFWc3FXTWdqS2toakJQajU5a1gwYjFNdDZrQXIyNS12V2RjdGFKRjJMbUt4SF9MR0JoakdLSzBfdTdGLWZoY1c1ZTFR?oc=5",
       "source": "國立教育廣播電台",
       "publisher": "國立教育廣播電台",
       "publish_time": "2026-10-16T18:34:28+08:00",
-      "discovered_at": "2026-10-17T07:47:23.553637+08:00",
+      "discovered_at": "2026-10-17T14:13:52.684813+08:00",
       "keyword": "國立臺北教育大學",
       "task": "google_news",
       "discovery": "google_news",
@@ -41,7 +69,7 @@
       "source": "Mobile01",
       "publisher": "Mobile01",
       "publish_time": "2026-10-16T06:00:20+08:00",
-      "discovered_at": "2026-10-17T07:47:24.044213+08:00",
+      "discovered_at": "2026-10-17T14:13:53.260998+08:00",
       "keyword": "北教大",
       "task": "google_news",
       "discovery": "google_news",
@@ -54,7 +82,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-10-16T02:40:29+08:00",
-      "discovered_at": "2026-10-17T07:47:28.996615+08:00",
+      "discovered_at": "2026-10-17T14:13:58.069952+08:00",
       "keyword": "國北教大",
       "task": "instagram",
       "discovery": "google_news",
@@ -67,7 +95,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-10-15T22:55:11+08:00",
-      "discovered_at": "2026-10-17T07:47:28.427713+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533401+08:00",
       "keyword": "國立臺北教育大學",
       "task": "instagram",
       "discovery": "google_news",
@@ -80,7 +108,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-10-15T22:49:48+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779636+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993527+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news",
@@ -108,7 +136,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-10-15T11:28:11+08:00",
-      "discovered_at": "2026-10-17T07:47:30.500659+08:00",
+      "discovered_at": "2026-10-17T14:13:59.539158+08:00",
       "keyword": "國立臺北教育大學",
       "task": "instagram",
       "discovery": "google_news",
@@ -136,7 +164,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-10-14T21:32:14+08:00",
-      "discovered_at": "2026-10-17T07:47:29.604633+08:00",
+      "discovered_at": "2026-10-17T14:13:58.685181+08:00",
       "keyword": "北教大",
       "task": "instagram",
       "discovery": "google_news",
@@ -179,7 +207,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-10-14T18:00:02+08:00",
-      "discovered_at": "2026-10-17T07:47:28.428154+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533826+08:00",
       "keyword": "國北教大",
       "task": "instagram",
       "discovery": "google_news",
@@ -192,7 +220,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-10-14T17:50:46+08:00",
-      "discovered_at": "2026-10-17T07:47:28.427538+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533230+08:00",
       "keyword": "國立臺北教育大學",
       "task": "instagram",
       "discovery": "google_news",
@@ -280,7 +308,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-10-13T11:41:48+08:00",
-      "discovered_at": "2026-10-17T07:47:28.996815+08:00",
+      "discovered_at": "2026-10-17T14:13:58.070188+08:00",
       "keyword": "國北教大",
       "task": "instagram",
       "discovery": "google_news"
@@ -291,7 +319,7 @@
       "source": "換日線 Crossing",
       "publisher": "換日線 Crossing",
       "publish_time": "2026-10-13T00:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.044207+08:00",
+      "discovered_at": "2026-10-17T14:13:53.260949+08:00",
       "keyword": "北教大",
       "task": "google_news",
       "discovery": "google_news"
@@ -302,7 +330,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-10-12T22:56:15+08:00",
-      "discovered_at": "2026-10-17T07:47:28.997005+08:00",
+      "discovered_at": "2026-10-17T14:13:58.070326+08:00",
       "keyword": "國北教大",
       "task": "instagram",
       "discovery": "google_news"
@@ -328,7 +356,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-10-12T18:30:02+08:00",
-      "discovered_at": "2026-10-17T07:47:28.427640+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533334+08:00",
       "keyword": "國北教大",
       "task": "instagram",
       "discovery": "google_news"
@@ -339,7 +367,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-10-12T17:16:03+08:00",
-      "discovered_at": "2026-10-17T07:47:25.842426+08:00",
+      "discovered_at": "2026-10-17T14:13:55.124621+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -350,7 +378,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-10-12T15:25:20+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779423+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993323+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -361,7 +389,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-10-12T12:40:26+08:00",
-      "discovered_at": "2026-10-17T07:47:28.996936+08:00",
+      "discovered_at": "2026-10-17T14:13:58.070266+08:00",
       "keyword": "國北教大",
       "task": "instagram",
       "discovery": "google_news"
@@ -372,7 +400,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-10-12T07:46:13+08:00",
-      "discovered_at": "2026-10-17T07:47:28.996690+08:00",
+      "discovered_at": "2026-10-17T14:13:58.070051+08:00",
       "keyword": "國北教大",
       "task": "instagram",
       "discovery": "google_news"
@@ -394,7 +422,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-10-11T22:09:30+08:00",
-      "discovered_at": "2026-10-17T07:47:28.996496+08:00",
+      "discovered_at": "2026-10-17T14:13:58.069830+08:00",
       "keyword": "國北教大",
       "task": "instagram",
       "discovery": "google_news"
@@ -431,7 +459,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-10-10T22:56:43+08:00",
-      "discovered_at": "2026-10-17T07:47:28.427555+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533247+08:00",
       "keyword": "國立臺北教育大學",
       "task": "instagram",
       "discovery": "google_news"
@@ -472,7 +500,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-10-09T22:51:25+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779629+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993519+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -483,7 +511,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-10-09T18:25:19+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779578+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993475+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -524,7 +552,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-10-08T17:47:50+08:00",
-      "discovered_at": "2026-10-17T07:47:28.428248+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533918+08:00",
       "keyword": "國北教大",
       "task": "instagram",
       "discovery": "google_news"
@@ -535,7 +563,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-10-07T21:07:39+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779616+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993505+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -591,7 +619,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-10-06T18:00:02+08:00",
-      "discovered_at": "2026-10-17T07:47:28.427812+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533513+08:00",
       "keyword": "國北教大",
       "task": "instagram",
       "discovery": "google_news"
@@ -602,7 +630,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-10-06T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.427891+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533584+08:00",
       "keyword": "國立臺北教育大學",
       "task": "instagram",
       "discovery": "google_news"
@@ -613,7 +641,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-10-06T10:30:42+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779368+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993282+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -624,7 +652,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-10-06T00:54:09+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779472+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993369+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -635,7 +663,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-10-06T00:48:24+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779623+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993512+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -661,7 +689,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-10-05T14:07:37+08:00",
-      "discovered_at": "2026-10-17T07:47:28.996436+08:00",
+      "discovered_at": "2026-10-17T14:13:58.069779+08:00",
       "keyword": "國北教大",
       "task": "instagram",
       "discovery": "google_news"
@@ -709,7 +737,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-10-04T13:48:30+08:00",
-      "discovered_at": "2026-10-17T07:47:28.427667+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533361+08:00",
       "keyword": "國立臺北教育大學",
       "task": "instagram",
       "discovery": "google_news"
@@ -750,7 +778,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-10-03T22:56:43+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779595+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993492+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -772,7 +800,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-10-03T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.427513+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533205+08:00",
       "keyword": "國立臺北教育大學",
       "task": "instagram",
       "discovery": "google_news"
@@ -783,7 +811,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-10-03T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.428123+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533796+08:00",
       "keyword": "國立臺北教育大學",
       "task": "instagram",
       "discovery": "google_news"
@@ -805,7 +833,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-10-02T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779568+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993465+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -816,7 +844,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-10-02T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.428135+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533807+08:00",
       "keyword": "國立臺北教育大學",
       "task": "instagram",
       "discovery": "google_news"
@@ -913,7 +941,7 @@
       "source": "自由時報",
       "publisher": "自由時報",
       "publish_time": "2026-10-01T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:23.802286+08:00",
+      "discovered_at": "2026-10-17T14:13:52.982753+08:00",
       "keyword": "國北教大",
       "task": "google_news",
       "discovery": "google_news"
@@ -976,7 +1004,7 @@
       "source": "中時新聞網",
       "publisher": "中時新聞網",
       "publish_time": "2026-09-30T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:23.802288+08:00",
+      "discovered_at": "2026-10-17T14:13:52.982755+08:00",
       "keyword": "國北教大",
       "task": "google_news",
       "discovery": "google_news"
@@ -987,7 +1015,7 @@
       "source": "TVBS新聞網",
       "publisher": "TVBS新聞網",
       "publish_time": "2026-09-30T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.044217+08:00",
+      "discovered_at": "2026-10-17T14:13:53.260958+08:00",
       "keyword": "北教大",
       "task": "google_news",
       "discovery": "google_news"
@@ -998,7 +1026,7 @@
       "source": "NOWnews今日新聞",
       "publisher": "NOWnews今日新聞",
       "publish_time": "2026-09-30T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.044219+08:00",
+      "discovered_at": "2026-10-17T14:13:53.261017+08:00",
       "keyword": "北教大",
       "task": "google_news",
       "discovery": "google_news"
@@ -1009,7 +1037,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-30T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.427628+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533321+08:00",
       "keyword": "國立臺北教育大學",
       "task": "instagram",
       "discovery": "google_news"
@@ -1020,7 +1048,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-29T18:26:48+08:00",
-      "discovered_at": "2026-10-17T07:47:30.165305+08:00",
+      "discovered_at": "2026-10-17T14:13:59.539284+08:00",
       "keyword": "NTUE",
       "task": "instagram",
       "discovery": "google_news"
@@ -1046,7 +1074,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-29T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779464+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993362+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -1057,18 +1085,18 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-29T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.427526+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533218+08:00",
       "keyword": "國立臺北教育大學",
       "task": "instagram",
       "discovery": "google_news"
     },
     {
       "title": "本次畢業以「銀河」作為主軸 循光而行，星途未央。 聚於國北，各自成星。 我們從不同的地方而來，帶著各自的故事與期待，在國北相遇、學習，也在一次次的陪伴與經歷中，留下屬於彼此的星軌。 每一位畢業生，都像銀河中獨一無二的星星。 曾在這裡交會、並肩前行，也將",
-      "url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTFA3cC1HMWtpQVJTN2xGVS1TaE51U1ZLN1pjUDcwMmhMeUY4ZmwzTXBsSDQtN0EwaThmcExMa0NOTnpFQlFrU1prb2k2Y0xBZHBUZUE?oc=5",
+      "url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTFBaRV9zdnN0ZVY5ZmhtMXppM0ZvOW5jdUFfNWwzQ2J4OGJDMHk3YVJ6VjBuSkplS1J0M0dOdS1rWVI0T0Uxa3ljbldVd1ZNckQxLVE?oc=5",
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-29T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:30.500792+08:00",
+      "discovered_at": "2026-10-17T14:13:58.070064+08:00",
       "keyword": "國北教大",
       "task": "instagram",
       "discovery": "google_news"
@@ -1101,7 +1129,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-28T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.997048+08:00",
+      "discovered_at": "2026-10-17T14:13:58.070374+08:00",
       "keyword": "國北教大",
       "task": "instagram",
       "discovery": "google_news"
@@ -1112,7 +1140,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-27T21:00:02+08:00",
-      "discovered_at": "2026-10-17T07:47:28.996527+08:00",
+      "discovered_at": "2026-10-17T14:13:58.069860+08:00",
       "keyword": "國北教大",
       "task": "instagram",
       "discovery": "google_news"
@@ -1134,7 +1162,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-26T21:00:04+08:00",
-      "discovered_at": "2026-10-17T07:47:28.996516+08:00",
+      "discovered_at": "2026-10-17T14:13:58.069849+08:00",
       "keyword": "國北教大",
       "task": "instagram",
       "discovery": "google_news"
@@ -1145,7 +1173,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-26T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779457+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993355+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -1156,7 +1184,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-26T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.427573+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533266+08:00",
       "keyword": "國立臺北教育大學",
       "task": "instagram",
       "discovery": "google_news"
@@ -1219,7 +1247,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-25T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:25.842484+08:00",
+      "discovered_at": "2026-10-17T14:13:55.124672+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -1252,7 +1280,18 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-24T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.427564+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533257+08:00",
+      "keyword": "國立臺北教育大學",
+      "task": "instagram",
+      "discovery": "google_news"
+    },
+    {
+      "title": "#ctpulse生活 國慶親善大使！副團長尹玟馨神似林心如 國立臺北教育大學芝山親善大使團換上專屬設計的「偶遇百合」國慶服裝，展現優雅服務姿態。為了國慶大典，大使們經歷嚴苛的貼壁與重訓考驗。其中副團長尹玟馨因遺傳母親優良基因，神似女星林心如成為焦點！",
+      "url": "https://news.google.com/rss/articles/CBMiVkFVX3lxTE93UTBWN1JnRGVSZVZ3d01tZ0JLXzNhWm9DZ2N3REhCYzZQZEd1TU5temFVM2N0bk1OZno3d1ZEWkx6VVdqMEk5RmtJSTNNd0RZQ3JpZEdn?oc=5",
+      "source": "Instagram",
+      "publisher": "Instagram",
+      "publish_time": "2026-09-24T15:00:00+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533303+08:00",
       "keyword": "國立臺北教育大學",
       "task": "instagram",
       "discovery": "google_news"
@@ -1263,19 +1302,8 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-24T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.427760+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533460+08:00",
       "keyword": "國北教大",
-      "task": "instagram",
-      "discovery": "google_news"
-    },
-    {
-      "title": "#ctpulse生活 國慶親善大使！副團長尹玟馨神似林心如 國立臺北教育大學芝山親善大使團換上專屬設計的「偶遇百合」國慶服裝，展現優雅服務姿態。為了國慶大典，大使們經歷嚴苛的貼壁與重訓考驗。其中副團長尹玟馨因遺傳母親優良基因，神似女星林心如成為焦點！",
-      "url": "https://news.google.com/rss/articles/CBMiVkFVX3lxTE93UTBWN1JnRGVSZVZ3d01tZ0JLXzNhWm9DZ2N3REhCYzZQZEd1TU5temFVM2N0bk1OZno3d1ZEWkx6VVdqMEk5RmtJSTNNd0RZQ3JpZEdn?oc=5",
-      "source": "Instagram",
-      "publisher": "Instagram",
-      "publish_time": "2026-09-24T15:00:00+08:00",
-      "discovered_at": "2026-10-17T02:10:41.005877+08:00",
-      "keyword": "國立臺北教育大學",
       "task": "instagram",
       "discovery": "google_news"
     },
@@ -1367,7 +1395,7 @@
       "source": "中時新聞網",
       "publisher": "中時新聞網",
       "publish_time": "2026-09-23T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:23.802280+08:00",
+      "discovered_at": "2026-10-17T14:13:52.982747+08:00",
       "keyword": "國北教大",
       "task": "google_news",
       "discovery": "google_news"
@@ -1378,7 +1406,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-23T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.427583+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533276+08:00",
       "keyword": "國立臺北教育大學",
       "task": "instagram",
       "discovery": "google_news"
@@ -1422,7 +1450,7 @@
       "publish_time": "2026-09-23T12:51:49+08:00",
       "date_verified": true,
       "date_source": "threads_datetime",
-      "discovered_at": "2026-10-17T09:44:18.735847+08:00",
+      "discovered_at": "2026-10-17T14:16:13.873978+08:00",
       "keyword": "國北教大",
       "task": "threads",
       "discovery": "threads_recent",
@@ -1546,7 +1574,7 @@
       "source": "UDN",
       "publisher": "UDN",
       "publish_time": "2026-09-22T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:23.802257+08:00",
+      "discovered_at": "2026-10-17T14:13:52.982721+08:00",
       "keyword": "國北教大",
       "task": "google_news",
       "discovery": "google_news"
@@ -1557,7 +1585,18 @@
       "source": "ETtoday新聞雲",
       "publisher": "ETtoday新聞雲",
       "publish_time": "2026-09-22T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:23.802265+08:00",
+      "discovered_at": "2026-10-17T14:13:52.982729+08:00",
+      "keyword": "國北教大",
+      "task": "google_news",
+      "discovery": "google_news"
+    },
+    {
+      "title": "睽違3年重返國慶大典 國北教大全新禮賓服亮相",
+      "url": "https://news.google.com/rss/articles/CBMiV0FVX3lxTE1lU0ZiU1FJZV9ISjRvMGxiWmdUNFZSczNOTGVLSkJfbTQ5V0I3TTFza1c0SEdOdTFJcFU2bnFETlo1Q2NCdE5BejZTUFUzTDI1YkJORTdUcw?oc=5",
+      "source": "Rti 中央廣播電臺",
+      "publisher": "Rti 中央廣播電臺",
+      "publish_time": "2026-09-22T15:00:00+08:00",
+      "discovered_at": "2026-10-17T14:13:52.982732+08:00",
       "keyword": "國北教大",
       "task": "google_news",
       "discovery": "google_news"
@@ -1568,7 +1607,7 @@
       "source": "中時新聞網",
       "publisher": "中時新聞網",
       "publish_time": "2026-09-22T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:23.802267+08:00",
+      "discovered_at": "2026-10-17T14:13:52.982734+08:00",
       "keyword": "國北教大",
       "task": "google_news",
       "discovery": "google_news"
@@ -1579,7 +1618,7 @@
       "source": "壹蘋新聞網",
       "publisher": "壹蘋新聞網",
       "publish_time": "2026-09-22T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:23.802274+08:00",
+      "discovered_at": "2026-10-17T14:13:52.982741+08:00",
       "keyword": "國北教大",
       "task": "google_news",
       "discovery": "google_news"
@@ -1590,7 +1629,7 @@
       "source": "自由時報",
       "publisher": "自由時報",
       "publish_time": "2026-09-22T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:23.802276+08:00",
+      "discovered_at": "2026-10-17T14:13:52.982743+08:00",
       "keyword": "國北教大",
       "task": "google_news",
       "discovery": "google_news"
@@ -1601,7 +1640,7 @@
       "source": "LINE TODAY",
       "publisher": "LINE TODAY",
       "publish_time": "2026-09-22T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:23.802278+08:00",
+      "discovered_at": "2026-10-17T14:13:52.982745+08:00",
       "keyword": "國北教大",
       "task": "google_news",
       "discovery": "google_news"
@@ -1612,7 +1651,7 @@
       "source": "Yahoo",
       "publisher": "Yahoo",
       "publish_time": "2026-09-22T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.044222+08:00",
+      "discovered_at": "2026-10-17T14:13:53.261012+08:00",
       "keyword": "北教大",
       "task": "google_news",
       "discovery": "google_news"
@@ -1623,7 +1662,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-22T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.427795+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533495+08:00",
       "keyword": "國北教大",
       "task": "instagram",
       "discovery": "google_news"
@@ -1635,17 +1674,6 @@
       "publisher": "LINE TODAY",
       "publish_time": "2026-09-22T15:00:00+08:00",
       "discovered_at": "2026-10-13T22:59:56.817613+08:00",
-      "keyword": "國北教大",
-      "task": "google_news",
-      "discovery": "google_news"
-    },
-    {
-      "title": "睽違3年重返國慶大典 國北教大全新禮賓服亮相",
-      "url": "https://news.google.com/rss/articles/CBMiV0FVX3lxTE1lU0ZiU1FJZV9ISjRvMGxiWmdUNFZSczNOTGVLSkJfbTQ5V0I3TTFza1c0SEdOdTFJcFU2bnFETlo1Q2NCdE5BejZTUFUzTDI1YkJORTdUcw?oc=5",
-      "source": "Rti 中央廣播電臺",
-      "publisher": "Rti 中央廣播電臺",
-      "publish_time": "2026-09-22T15:00:00+08:00",
-      "discovered_at": "2026-10-09T01:34:12.694479+08:00",
       "keyword": "國北教大",
       "task": "google_news",
       "discovery": "google_news"
@@ -1778,7 +1806,7 @@
       "source": "中央社 CNA",
       "publisher": "中央社 CNA",
       "publish_time": "2026-09-21T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:23.802260+08:00",
+      "discovered_at": "2026-10-17T14:13:52.982724+08:00",
       "keyword": "國北教大",
       "task": "google_news",
       "discovery": "google_news"
@@ -1789,7 +1817,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-21T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779588+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993485+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -1800,7 +1828,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-21T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.427924+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533600+08:00",
       "keyword": "國立臺北教育大學",
       "task": "instagram",
       "discovery": "google_news"
@@ -1811,7 +1839,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-21T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:30.164935+08:00",
+      "discovered_at": "2026-10-17T14:13:59.215656+08:00",
       "keyword": "NTUE",
       "task": "instagram",
       "discovery": "google_news"
@@ -1881,7 +1909,7 @@
       "source": "自由時報",
       "publisher": "自由時報",
       "publish_time": "2026-09-20T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:23.802263+08:00",
+      "discovered_at": "2026-10-17T14:13:52.982726+08:00",
       "keyword": "國北教大",
       "task": "google_news",
       "discovery": "google_news"
@@ -1892,7 +1920,7 @@
       "source": "Yahoo新聞",
       "publisher": "Yahoo新聞",
       "publish_time": "2026-09-20T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:23.802269+08:00",
+      "discovered_at": "2026-10-17T14:13:52.982739+08:00",
       "keyword": "國北教大",
       "task": "google_news",
       "discovery": "google_news"
@@ -1903,7 +1931,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-20T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779271+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993181+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -1914,7 +1942,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-20T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.427857+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533551+08:00",
       "keyword": "NTUE",
       "task": "instagram",
       "discovery": "google_news"
@@ -1925,7 +1953,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-20T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.996565+08:00",
+      "discovered_at": "2026-10-17T14:13:58.069879+08:00",
       "keyword": "國北教大",
       "task": "instagram",
       "discovery": "google_news"
@@ -1984,7 +2012,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-19T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779543+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993441+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -1995,7 +2023,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-19T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.427601+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533294+08:00",
       "keyword": "國立臺北教育大學",
       "task": "instagram",
       "discovery": "google_news"
@@ -2006,7 +2034,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-19T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.427617+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533310+08:00",
       "keyword": "國立臺北教育大學",
       "task": "instagram",
       "discovery": "google_news"
@@ -2017,7 +2045,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-19T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.427703+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533392+08:00",
       "keyword": "國北教大",
       "task": "instagram",
       "discovery": "google_news"
@@ -2028,7 +2056,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-19T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.996546+08:00",
+      "discovered_at": "2026-10-17T14:13:58.069891+08:00",
       "keyword": "國北教大",
       "task": "instagram",
       "discovery": "google_news"
@@ -2121,7 +2149,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-18T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779480+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993377+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -2132,7 +2160,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-18T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.427658+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533351+08:00",
       "keyword": "國立臺北教育大學",
       "task": "instagram",
       "discovery": "google_news"
@@ -2143,7 +2171,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-18T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.427693+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533382+08:00",
       "keyword": "國立臺北教育大學",
       "task": "instagram",
       "discovery": "google_news"
@@ -2154,7 +2182,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-18T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.428084+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533750+08:00",
       "keyword": "國立臺北教育大學",
       "task": "instagram",
       "discovery": "google_news"
@@ -2221,7 +2249,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-17T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779375+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993289+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -2232,7 +2260,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-17T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.427679+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533406+08:00",
       "keyword": "國立臺北教育大學",
       "task": "instagram",
       "discovery": "google_news"
@@ -2243,7 +2271,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-17T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.427967+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533641+08:00",
       "keyword": "國立臺北教育大學",
       "task": "instagram",
       "discovery": "google_news"
@@ -2340,7 +2368,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-16T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779525+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993422+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -2351,7 +2379,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-16T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779550+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993448+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -2362,7 +2390,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-16T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.427592+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533285+08:00",
       "keyword": "國立臺北教育大學",
       "task": "instagram",
       "discovery": "google_news"
@@ -2373,7 +2401,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-16T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.427610+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533438+08:00",
       "keyword": "國立臺北教育大學",
       "task": "instagram",
       "discovery": "google_news"
@@ -2384,7 +2412,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-16T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.427747+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533448+08:00",
       "keyword": "國立臺北教育大學",
       "task": "instagram",
       "discovery": "google_news"
@@ -2395,7 +2423,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-16T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:29.604658+08:00",
+      "discovered_at": "2026-10-17T14:13:58.685207+08:00",
       "keyword": "北教大",
       "task": "instagram",
       "discovery": "google_news"
@@ -2443,7 +2471,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-15T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.996627+08:00",
+      "discovered_at": "2026-10-17T14:13:58.069979+08:00",
       "keyword": "國北教大",
       "task": "instagram",
       "discovery": "google_news"
@@ -2490,12 +2518,42 @@
       "title_generated_from_body": true
     },
     {
+      "title": "翻譯 782 69 47 120 noksungw 老實說，我蠻高興當年在世新大學裡我欣賞的教授及老師，大部分不是退休了，就是去更好的學校(政治大學、東吳大學、臺北市立大學、甚…",
+      "snippet": "世新大學 介紹世新人的圖書館... 給全國學術圈的學者、教育部的人： 同學們，不是只有妳你們苦，我跟大家報告~~世新對一個做研究的教授而言，妳你們知道有多苦嗎？？ 「資料庫」，過去10多年，我必須卑微地拜託其他學校的朋友幫忙......有空請看看我們的資料「庫」.... 「程式、軟體」，世新已經全部沒有資源...全部必須自己買...連adobe...都是奢侈的需求... 「硬體」，我上課、研究用的所有硬體，都是我自己買的... 開學了，我看到圖書館增加了：KTV、PS5、影音歡樂城的概念.... 我無言，卻不驚訝，也懶得再多說....只有世新，可以超越世新！ 翻譯 782 69 47 120 noksungw 老實說，我蠻高興當年在世新大學裡我欣賞的教授及老師，大部分不是退休了，就是去更好的學校(政治大學、東吳大學、臺北市立大學、甚至國立臺北教育大學)，其實世新大學這副德行也不能怪學校啦，根本沒有任何一個學生想出來反抗。",
+      "url": "https://www.threads.com/@lionkillstiger/post/DdRbH_gE-1m",
+      "source": "Threads",
+      "publisher": "lionkillstiger",
+      "publish_time": "2026-09-14T23:09:14+08:00",
+      "date_verified": true,
+      "date_source": "threads_datetime",
+      "discovered_at": "2026-10-17T14:16:14.030842+08:00",
+      "keyword": "國北教大",
+      "task": "threads",
+      "discovery": "threads_default",
+      "title_generated_from_body": true
+    },
+    {
+      "title": "翻譯 782 69 47 120 noksungw 老實說，我蠻高興當年在世新大學裡我欣賞的教授及老師，大部分不是退休了，就是去更好的學校(政治大學、東吳大學、臺北市立大學、甚…",
+      "snippet": "lionkillstiger 世新大學 介紹世新人的圖書館... 給全國學術圈的學者、教育部的人： 同學們，不是只有妳你們苦，我跟大家報告~~世新對一個做研究的教授而言，妳你們知道有多苦嗎？？ 「資料庫」，過去10多年，我必須卑微地拜託其他學校的朋友幫忙......有空請看看我們的資料「庫」.... 「程式、軟體」，世新已經全部沒有資源...全部必須自己買...連adobe...都是奢侈的需求... 「硬體」，我上課、研究用的所有硬體，都是我自己買的... 開學了，我看到圖書館增加了：KTV、PS5、影音歡樂城的概念.... 我無言，卻不驚訝，也懶得再多說....只有世新，可以超越世新！ 翻譯 782 69 47 120 noksungw 老實說，我蠻高興當年在世新大學裡我欣賞的教授及老師，大部分不是退休了，就是去更好的學校(政治大學、東吳大學、臺北市立大學、甚至國立臺北教育大學)，其實世新大學這副德行也不能怪學校啦，根本沒有任何一個學生想出來反抗。",
+      "url": "https://www.threads.com/@noksungw/post/DdSNE2zE7oQ",
+      "source": "Threads",
+      "publisher": "noksungw",
+      "publish_time": "2026-09-14T23:09:14+08:00",
+      "date_verified": true,
+      "date_source": "threads_datetime",
+      "discovered_at": "2026-10-17T14:16:14.189689+08:00",
+      "keyword": "國北教大",
+      "task": "threads",
+      "discovery": "threads_default",
+      "title_generated_from_body": true
+    },
+    {
       "title": "免修普通數學- 臺北教育大學板",
       "url": "https://news.google.com/rss/articles/CBMiUEFVX3lxTE9KZFZEOThPZlY3ZWlkblZyZzdrTUk4c3RWWUZGUGJ5ZzdKT0tiTjRFR3JsUG5BSWYzdEFwMG5ZV0h3MTVOMkxWaXBWeGZLaDVZ?oc=5",
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-14T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779360+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993275+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -2506,7 +2564,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-14T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779438+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993337+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -2641,27 +2699,12 @@
       "title_generated_from_body": true
     },
     {
-      "title": "據說現在女生對女生的要求有3N，那就是 「有學識的」（Nerdy） 「有品格的」（Noble） 「國立臺北教育大學」（NTUE） 國立臺北教育大學創立於1895年，是一所具有悠…",
-      "snippet": "據說現在女生對女生的要求有3N，那就是 「有學識的」（Nerdy） 「有品格的」（Noble） 「國立臺北教育大學」（NTUE） 國立臺北教育大學創立於1895年，是一所具有悠久歷史的教育學府，坐落於臺北市中心，鄰近臺大、師大、臺科大等知名大學，致力於培育具多元能力與國際視野的人才。 歡迎大家報考國立臺北教育大學。 （一則貼文一學分，括號記得刪）",
-      "url": "https://www.threads.com/@annachen98146/post/DdODUFjCSt2",
-      "source": "Threads",
-      "publisher": "annachen98146",
-      "publish_time": "2026-09-13T15:43:27+08:00",
-      "date_verified": true,
-      "date_source": "threads_datetime",
-      "discovered_at": "2026-10-17T09:44:20.849588+08:00",
-      "keyword": "NTUE",
-      "task": "threads",
-      "discovery": "threads_default",
-      "title_generated_from_body": true
-    },
-    {
       "title": "Moodle可以用APP登入嗎- 臺北教育大學板",
       "url": "https://news.google.com/rss/articles/CBMiUEFVX3lxTFA2aWRlVW9vUGpXSVZhVFRLa3hrbXp5R2M3ZE9jLXZHTTR6NV9MSUhINTlMSlNENzBlMGRVdExpeW1FSmtEdEREWlRwRTNubHZp?oc=5",
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-13T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779501+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993397+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -2672,7 +2715,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-13T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779514+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993411+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -2683,7 +2726,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-13T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.996341+08:00",
+      "discovered_at": "2026-10-17T14:13:58.069686+08:00",
       "keyword": "NTUE",
       "task": "instagram",
       "discovery": "google_news"
@@ -2709,7 +2752,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-12T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.996578+08:00",
+      "discovered_at": "2026-10-17T14:13:58.069909+08:00",
       "keyword": "國北教大",
       "task": "instagram",
       "discovery": "google_news"
@@ -2776,7 +2819,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-11T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779290+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993198+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -2787,7 +2830,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-11T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779533+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993431+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -2824,7 +2867,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-10T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779430+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993330+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -2835,7 +2878,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-10T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779449+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993348+08:00",
       "keyword": "北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -2846,7 +2889,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-10T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.428103+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533775+08:00",
       "keyword": "國立臺北教育大學",
       "task": "instagram",
       "discovery": "google_news"
@@ -2958,7 +3001,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-09T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779327+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993235+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -2969,7 +3012,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-09T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.428273+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533943+08:00",
       "keyword": "國北教大",
       "task": "instagram",
       "discovery": "google_news"
@@ -3006,7 +3049,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-08T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779416+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993316+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -3017,7 +3060,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-08T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.427737+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533430+08:00",
       "keyword": "國北教大",
       "task": "instagram",
       "discovery": "google_news"
@@ -3028,7 +3071,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-08T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:30.165409+08:00",
+      "discovered_at": "2026-10-17T14:13:59.216143+08:00",
       "keyword": "NTUE",
       "task": "instagram",
       "discovery": "google_news"
@@ -3109,7 +3152,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-07T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779507+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993404+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -3120,7 +3163,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-07T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779561+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993458+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -3131,7 +3174,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-07T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.428054+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533727+08:00",
       "keyword": "國北教大",
       "task": "instagram",
       "discovery": "google_news"
@@ -3250,7 +3293,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-06T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779487+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993384+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -3261,7 +3304,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-06T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779602+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993499+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -3272,7 +3315,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-06T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.428199+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533884+08:00",
       "keyword": "國北教大",
       "task": "instagram",
       "discovery": "google_news"
@@ -3339,7 +3382,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-05T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779310+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993217+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -3350,7 +3393,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-05T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779404+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993306+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -3361,7 +3404,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-05T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.996661+08:00",
+      "discovered_at": "2026-10-17T14:13:58.070014+08:00",
       "keyword": "國北教大",
       "task": "instagram",
       "discovery": "google_news"
@@ -3372,7 +3415,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-05T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.996865+08:00",
+      "discovered_at": "2026-10-17T14:13:58.070230+08:00",
       "keyword": "國北教大",
       "task": "instagram",
       "discovery": "google_news"
@@ -3427,7 +3470,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-04T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.427724+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533417+08:00",
       "keyword": "國北教大",
       "task": "instagram",
       "discovery": "google_news"
@@ -3438,7 +3481,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-03T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779341+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993254+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -3449,7 +3492,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-03T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.427785+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533486+08:00",
       "keyword": "國北教大",
       "task": "instagram",
       "discovery": "google_news"
@@ -3460,7 +3503,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-03T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.428263+08:00",
+      "discovered_at": "2026-10-17T14:13:57.533933+08:00",
       "keyword": "國立臺北教育大學",
       "task": "instagram",
       "discovery": "google_news"
@@ -3471,7 +3514,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-03T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:28.997080+08:00",
+      "discovered_at": "2026-10-17T14:13:58.070409+08:00",
       "keyword": "國北教大",
       "task": "instagram",
       "discovery": "google_news"
@@ -3560,7 +3603,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-02T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779352+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993267+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -3571,7 +3614,7 @@
       "source": "Dcard",
       "publisher": "Dcard",
       "publish_time": "2026-09-02T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:24.779494+08:00",
+      "discovered_at": "2026-10-17T14:13:53.993390+08:00",
       "keyword": "國北教大",
       "task": "dcard",
       "discovery": "google_news"
@@ -3582,7 +3625,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-02T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:29.604990+08:00",
+      "discovered_at": "2026-10-17T14:13:58.685499+08:00",
       "keyword": "北教大",
       "task": "instagram",
       "discovery": "google_news"
@@ -3593,7 +3636,7 @@
       "source": "Instagram",
       "publisher": "Instagram",
       "publish_time": "2026-09-02T15:00:00+08:00",
-      "discovered_at": "2026-10-17T07:47:30.165351+08:00",
+      "discovered_at": "2026-10-17T14:13:59.216081+08:00",
       "keyword": "NTUE",
       "task": "instagram",
       "discovery": "google_news"
@@ -5181,18 +5224,25 @@
     {
       "task": "google_news",
       "source": "新聞媒體",
-      "status": "failed",
-      "count": 0,
-      "error": "HTTP Error 503: Service Unavailable"
+      "status": "healthy",
+      "count": 34,
+      "error": null,
+      "keyword_counts": {
+        "國立臺北教育大學": 12,
+        "國北教大": 16,
+        "北教大": 18,
+        "NTUE": 0,
+        "National Taipei University of Education": 0
+      }
     },
     {
       "task": "dcard",
       "source": "Dcard",
       "status": "healthy",
-      "count": 0,
+      "count": 40,
       "error": null,
       "engine_counts": {
-        "google_news": 0,
+        "google_news": 40,
         "bing_web": 0
       }
     },
@@ -5211,10 +5261,10 @@
       "task": "instagram",
       "source": "Instagram",
       "status": "healthy",
-      "count": 0,
+      "count": 69,
       "error": null,
       "engine_counts": {
-        "google_news": 0,
+        "google_news": 69,
         "bing_web": 0
       }
     },
@@ -5222,7 +5272,7 @@
       "task": "threads",
       "source": "Threads",
       "status": "healthy",
-      "count": 89,
+      "count": 91,
       "error": null,
       "engine_counts": {
         "threads_direct": 0,
@@ -5233,9 +5283,9 @@
         "yahoo": 0,
         "mojeek": 0,
         "threads_recent": 1,
-        "threads_default": 1
+        "threads_default": 3
       },
-      "deep_search_last_run": "2026-10-17T09:44:34.668936+08:00",
+      "deep_search_last_run": "2026-10-17T14:16:20.614113+08:00",
       "deep_search_terms": [
         "國北教大",
         "北教大",
@@ -5254,17 +5304,17 @@
     }
   ],
   "summary": {
-    "total": 435,
-    "fresh_this_run": 0,
-    "healthy_tasks": 4,
-    "failed_tasks": 1,
-    "news_publishers": 31,
-    "removed_school_only": 0,
-    "removed_unverified_news_date": 0,
+    "total": 453,
+    "fresh_this_run": 143,
+    "healthy_tasks": 5,
+    "failed_tasks": 0,
+    "news_publishers": 38,
+    "removed_school_only": 1,
+    "removed_unverified_news_date": 1,
     "removed_stale_original_news": 0,
     "verified_original_news_dates": 0,
     "resolved_recent_source_urls": 0,
-    "google_news_fallback_urls": 10,
+    "google_news_fallback_urls": 12,
     "removed_school_only_relevance": 0
   }
 }
