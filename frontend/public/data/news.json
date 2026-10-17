@@ -1,6 +1,6 @@
 {
   "schema_version": 8,
-  "updated_at": "2026-10-17T07:47:38.702291+08:00",
+  "updated_at": "2026-10-17T09:41:31.347105+08:00",
   "keywords": [
     "國立臺北教育大學",
     "國北教大",
@@ -1422,7 +1422,7 @@
       "publish_time": "2026-09-23T12:51:49+08:00",
       "date_verified": true,
       "date_source": "threads_datetime",
-      "discovered_at": "2026-10-17T07:50:01.068021+08:00",
+      "discovered_at": "2026-10-17T09:44:18.735847+08:00",
       "keyword": "國北教大",
       "task": "threads",
       "discovery": "threads_recent",
@@ -2635,6 +2635,21 @@
       "date_verified": true,
       "date_source": "threads_datetime",
       "discovered_at": "2026-09-14T03:56:51.508529+08:00",
+      "keyword": "NTUE",
+      "task": "threads",
+      "discovery": "threads_default",
+      "title_generated_from_body": true
+    },
+    {
+      "title": "據說現在女生對女生的要求有3N，那就是 「有學識的」（Nerdy） 「有品格的」（Noble） 「國立臺北教育大學」（NTUE） 國立臺北教育大學創立於1895年，是一所具有悠…",
+      "snippet": "據說現在女生對女生的要求有3N，那就是 「有學識的」（Nerdy） 「有品格的」（Noble） 「國立臺北教育大學」（NTUE） 國立臺北教育大學創立於1895年，是一所具有悠久歷史的教育學府，坐落於臺北市中心，鄰近臺大、師大、臺科大等知名大學，致力於培育具多元能力與國際視野的人才。 歡迎大家報考國立臺北教育大學。 （一則貼文一學分，括號記得刪）",
+      "url": "https://www.threads.com/@annachen98146/post/DdODUFjCSt2",
+      "source": "Threads",
+      "publisher": "annachen98146",
+      "publish_time": "2026-09-13T15:43:27+08:00",
+      "date_verified": true,
+      "date_source": "threads_datetime",
+      "discovered_at": "2026-10-17T09:44:20.849588+08:00",
       "keyword": "NTUE",
       "task": "threads",
       "discovery": "threads_default",
@@ -5166,25 +5181,18 @@
     {
       "task": "google_news",
       "source": "新聞媒體",
-      "status": "healthy",
-      "count": 33,
-      "error": null,
-      "keyword_counts": {
-        "國立臺北教育大學": 12,
-        "國北教大": 15,
-        "北教大": 17,
-        "NTUE": 0,
-        "National Taipei University of Education": 0
-      }
+      "status": "failed",
+      "count": 0,
+      "error": "HTTP Error 503: Service Unavailable"
     },
     {
       "task": "dcard",
       "source": "Dcard",
       "status": "healthy",
-      "count": 42,
+      "count": 0,
       "error": null,
       "engine_counts": {
-        "google_news": 42,
+        "google_news": 0,
         "bing_web": 0
       }
     },
@@ -5203,10 +5211,10 @@
       "task": "instagram",
       "source": "Instagram",
       "status": "healthy",
-      "count": 70,
+      "count": 0,
       "error": null,
       "engine_counts": {
-        "google_news": 70,
+        "google_news": 0,
         "bing_web": 0
       }
     },
@@ -5214,7 +5222,7 @@
       "task": "threads",
       "source": "Threads",
       "status": "healthy",
-      "count": 88,
+      "count": 89,
       "error": null,
       "engine_counts": {
         "threads_direct": 0,
@@ -5224,9 +5232,10 @@
         "bing": 0,
         "yahoo": 0,
         "mojeek": 0,
-        "threads_recent": 1
+        "threads_recent": 1,
+        "threads_default": 1
       },
-      "deep_search_last_run": "2026-10-17T07:50:22.123655+08:00",
+      "deep_search_last_run": "2026-10-17T09:44:34.668936+08:00",
       "deep_search_terms": [
         "國北教大",
         "北教大",
@@ -5245,17 +5254,17 @@
     }
   ],
   "summary": {
-    "total": 449,
-    "fresh_this_run": 145,
-    "healthy_tasks": 5,
-    "failed_tasks": 0,
-    "news_publishers": 38,
-    "removed_school_only": 1,
-    "removed_unverified_news_date": 1,
+    "total": 435,
+    "fresh_this_run": 0,
+    "healthy_tasks": 4,
+    "failed_tasks": 1,
+    "news_publishers": 31,
+    "removed_school_only": 0,
+    "removed_unverified_news_date": 0,
     "removed_stale_original_news": 0,
     "verified_original_news_dates": 0,
     "resolved_recent_source_urls": 0,
-    "google_news_fallback_urls": 11,
+    "google_news_fallback_urls": 10,
     "removed_school_only_relevance": 0
   }
 }
