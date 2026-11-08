@@ -1,6 +1,6 @@
 {
   "schema_version": 8,
-  "updated_at": "2026-11-08T06:37:11.449596+08:00",
+  "updated_at": "2026-11-08T09:53:21.000532+08:00",
   "keywords": [
     "國立臺北教育大學",
     "國北教大",
@@ -967,21 +967,6 @@
       "keyword": "國立臺北教育大學",
       "task": "instagram",
       "discovery": "google_news"
-    },
-    {
-      "title": "（當然如果想坐下來喝茶聊天，他們一定也很歡迎😆） 📍發放地點：Google 「森森語心Sense Within茶屋｜人文空間」（大安區和平東路二段96巷17弄10-1號1樓）…",
-      "snippet": "洋流飄帶 有脆友也會參與本週末的大安文山車掃嗎～ 我們10/30（五）14:00～17:00間 會在定點發放「洋流飄帶」 挑戰深入深藍區好緊張🙈 ✅憑船員證，一人限定一條～ ✅單純支持與分享，無需消費！！也沒有任何隱形要求～敬請安心索取～ （數量有限，若飄帶發完會盡快更新在脆文周知，如果怕白跑，也可以先留言詢問一下～￼） 🆓已取得店家同意作為臨時發放據點，請大方禮貌的直接入內，告知櫃檯是小水滴來領取飄帶即可喔！（當然如果想坐下來喝茶聊天，他們一定也很歡迎😆） 📍發放地點：Google 「森森語心Sense Within茶屋｜人文空間」（大安區和平東路二段96巷17弄10-1號1樓） 鄰近：科技大樓捷運站、台大、國北教大、和平東路二段、辛亥路二段、大安森林公園",
-      "url": "https://www.threads.com/@yihsin_liu1219/post/DfEvMeLH7kA",
-      "source": "Threads",
-      "publisher": "yihsin_liu1219",
-      "publish_time": "2026-10-29T17:57:16+08:00",
-      "date_verified": true,
-      "date_source": "threads_datetime",
-      "discovered_at": "2026-11-08T06:39:18.402916+08:00",
-      "keyword": "國北教大",
-      "task": "threads",
-      "discovery": "threads_default",
-      "title_generated_from_body": true
     },
     {
       "title": "🌟 國北幼教碩士班甄試入學第二階段面試公告啦~ 面試時間為11/7(六) 報到地點在本校行政大樓7樓706辦公室 記得要攜帶「國民身分證」或有效期限內附照片之駕照、護照等政府核發之證明文件應試 提醒各位考生要記得上幼教系官網確認報到時段喔 連結： https://ecfe.",
@@ -2036,21 +2021,6 @@
       "date_verified": true,
       "date_source": "threads_datetime",
       "discovered_at": "2026-10-18T14:37:03.315126+08:00",
-      "keyword": "國北教大",
-      "task": "threads",
-      "discovery": "threads_default",
-      "title_generated_from_body": true
-    },
-    {
-      "title": "大學生 ❗️2026全臺最大的校園傳情活動倒數一週✨下禮拜這個時候就不能訂購了～～下次就是明年見🎄 中山醫學大學 國立宜蘭大學 國立臺東大學 中國醫藥大學 國立屏東大學 國立臺…",
-      "snippet": "大學生 ❗️2026全臺最大的校園傳情活動倒數一週✨下禮拜這個時候就不能訂購了～～下次就是明年見🎄 中山醫學大學 國立宜蘭大學 國立臺東大學 中國醫藥大學 國立屏東大學 國立臺灣科技大學 元智大學 國立政治大學 國立臺灣海洋大學 文藻外語大學 國立清華大學 國立臺灣體育運動大學 世新大學 國立陽明交通大學 國立體育大學 南華大學 逢甲大學 高雄醫學大學 國立暨南國際大學 臺北市立大學 國立中山大學 國立臺中科技大學 輔仁大學 國立中央大學 國立臺中教育大學 輔英科技大學 國立中興大學 國立臺北教育大學 國立臺南大學",
-      "url": "https://www.threads.com/@zanny__official/post/DemNjwLHVF8",
-      "source": "Threads",
-      "publisher": "zanny__official",
-      "publish_time": "2026-10-17T21:26:08+08:00",
-      "date_verified": true,
-      "date_source": "threads_datetime",
-      "discovered_at": "2026-11-08T06:39:18.804681+08:00",
       "keyword": "國北教大",
       "task": "threads",
       "discovery": "threads_default",
@@ -6622,25 +6592,18 @@
     {
       "task": "google_news",
       "source": "新聞媒體",
-      "status": "healthy",
-      "count": 23,
-      "error": null,
-      "keyword_counts": {
-        "國立臺北教育大學": 7,
-        "國北教大": 12,
-        "北教大": 14,
-        "NTUE": 0,
-        "National Taipei University of Education": 2
-      }
+      "status": "failed",
+      "count": 0,
+      "error": "HTTP Error 503: Service Unavailable"
     },
     {
       "task": "dcard",
       "source": "Dcard",
       "status": "healthy",
-      "count": 5,
+      "count": 0,
       "error": null,
       "engine_counts": {
-        "google_news": 5,
+        "google_news": 0,
         "bing_web": 0
       }
     },
@@ -6648,10 +6611,10 @@
       "task": "ptt",
       "source": "PTT",
       "status": "healthy",
-      "count": 1,
+      "count": 0,
       "error": null,
       "engine_counts": {
-        "google_news": 1,
+        "google_news": 0,
         "bing_web": 0
       }
     },
@@ -6659,10 +6622,10 @@
       "task": "instagram",
       "source": "Instagram",
       "status": "healthy",
-      "count": 61,
+      "count": 0,
       "error": null,
       "engine_counts": {
-        "google_news": 61,
+        "google_news": 0,
         "bing_web": 0
       }
     },
@@ -6670,7 +6633,7 @@
       "task": "threads",
       "source": "Threads",
       "status": "healthy",
-      "count": 124,
+      "count": 122,
       "error": null,
       "engine_counts": {
         "threads_direct": 0,
@@ -6678,11 +6641,10 @@
         "bing_web": 0,
         "duckduckgo": 0,
         "bing": 0,
-        "yahoo": 1,
-        "mojeek": 0,
-        "threads_default": 4
+        "yahoo": 0,
+        "mojeek": 0
       },
-      "deep_search_last_run": "2026-11-08T06:39:23.713366+08:00",
+      "deep_search_last_run": "2026-11-08T09:56:26.842298+08:00",
       "deep_search_terms": [
         "國北教大",
         "北教大",
@@ -6691,27 +6653,27 @@
         "臺北教育大學",
         "台北教育大學",
         "NTUE",
-        "國北",
-        "#國北教大",
-        "#北教大",
-        "#NTUE",
-        "國北 教授",
-        "國北 老師"
+        "國北 課程",
+        "國北 社團",
+        "國北 系所",
+        "國北 實習",
+        "北教大 學生",
+        "北教大 校園"
       ]
     }
   ],
   "summary": {
-    "total": 562,
-    "fresh_this_run": 90,
-    "healthy_tasks": 5,
-    "failed_tasks": 0,
-    "news_publishers": 46,
+    "total": 550,
+    "fresh_this_run": 0,
+    "healthy_tasks": 4,
+    "failed_tasks": 1,
+    "news_publishers": 39,
     "removed_school_only": 0,
-    "removed_unverified_news_date": 1,
+    "removed_unverified_news_date": 0,
     "removed_stale_original_news": 0,
     "verified_original_news_dates": 0,
     "resolved_recent_source_urls": 0,
-    "google_news_fallback_urls": 14,
+    "google_news_fallback_urls": 11,
     "removed_school_only_relevance": 0
   }
 }
