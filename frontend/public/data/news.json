@@ -1,6 +1,6 @@
 {
   "schema_version": 8,
-  "updated_at": "2026-11-08T23:38:04.073130+08:00",
+  "updated_at": "2026-11-09T04:00:36.711199+08:00",
   "keywords": [
     "國立臺北教育大學",
     "國北教大",
@@ -33,6 +33,21 @@
       "date_source": "threads_datetime",
       "discovered_at": "2026-11-08T16:50:36.570251+08:00",
       "keyword": "國北教大",
+      "task": "threads",
+      "discovery": "threads_default",
+      "title_generated_from_body": true
+    },
+    {
+      "title": "🏐【11/6-11/11 第15屆全國北港媽祖盃排球錦標賽】 企排休賽，戰力不停歇",
+      "snippet": "🏐【11/6-11/11 第15屆全國北港媽祖盃排球錦標賽】 企排休賽，戰力不停歇！全力出擊北港媽祖盃！ 💥一日四戰、四戰全勝！挺進排名賽！ 從首戰穩定取勝，到第二戰落後後逆轉勝出，再到下午連續拿下兩場勝利，國北教大展現絕佳團隊默契與強大競爭力！ 🏆 今日戰績｜4 戰全勝！ Match 1｜國北教大-臺北鳳凰🆚 輔英科大 2：0 勝｜25：13、25：16 Match 2｜國北教大-億光電子🆚晉塽裝修 2：1 勝｜24：26、25：13、15：9 🔥克服首局失利，成功逆轉！ Match 3｜國北教大-臺北鳳凰🆚鳴序 A 2：0 勝｜25：12、25：11 Match 4｜國北教大-億光電子🆚明德高中 2：0 勝｜25：15、25：20 🔥小組賽全勝晉級！下一場繼續拚🏐 #臺北鳳凰 #億光電子 #TaipeiPhoenix #四戰全勝 #排球魂 21 1",
+      "url": "https://www.threads.com/@taipei_ntue_phoenix/post/DfciBppkydv",
+      "source": "Threads",
+      "publisher": "taipei_ntue_phoenix",
+      "publish_time": "2026-11-07T23:43:58+08:00",
+      "date_verified": true,
+      "date_source": "threads_datetime",
+      "discovered_at": "2026-11-09T04:03:40.062256+08:00",
+      "keyword": "NTUE",
       "task": "threads",
       "discovery": "threads_default",
       "title_generated_from_body": true
@@ -3314,6 +3329,21 @@
       "keyword": "國立臺北教育大學",
       "task": "instagram",
       "discovery": "google_news"
+    },
+    {
+      "title": "大學生 發了一篇30萬瀏覽次數的傳情（有被嚇到） 餅乾是跟 @ozip.tw 合作 一天賣300盒（也被嚇到） 聖誕款式是我們才有的💞✨ ❗️大家快來玩傳情❗️ 中山醫學大學…",
+      "snippet": "大學生 發了一篇30萬瀏覽次數的傳情（有被嚇到） 餅乾是跟 @ozip.tw 合作 一天賣300盒（也被嚇到） 聖誕款式是我們才有的💞✨ ❗️大家快來玩傳情❗️ 中山醫學大學 國立宜蘭大學 國立臺東大學 中國醫藥大學 國立屏東大學 國立臺灣科技大學 元智大學 國立政治大學 國立臺灣海洋大學 文藻外語大學 國立清華大學 國立臺灣體育運動大學 世新大學 國立陽明交通大學 國立體育大學 南華大學 逢甲大學 高雄醫學大學 國立暨南國際大學 臺北市立大學 國立中山大學 國立臺中科技大學 輔仁大學 國立中央大學 國立臺中教育大學 輔英科技大學 國立中興大學 國立臺北教育大學 國立臺南大學",
+      "url": "https://www.threads.com/@zanny__official/post/DeBG7KrncI8",
+      "source": "Threads",
+      "publisher": "zanny__official",
+      "publish_time": "2026-10-03T11:36:16+08:00",
+      "date_verified": true,
+      "date_source": "threads_datetime",
+      "discovered_at": "2026-11-09T04:03:40.307450+08:00",
+      "keyword": "國北教大",
+      "task": "threads",
+      "discovery": "threads_default",
+      "title_generated_from_body": true
     },
     {
       "title": "國立臺北教育大學62級畢業50週年快樂的同學會。#母校 #老同學 #台北師專#國立臺北教育大學",
@@ -6625,25 +6655,18 @@
     {
       "task": "google_news",
       "source": "新聞媒體",
-      "status": "healthy",
-      "count": 25,
-      "error": null,
-      "keyword_counts": {
-        "國立臺北教育大學": 9,
-        "國北教大": 12,
-        "北教大": 15,
-        "NTUE": 0,
-        "National Taipei University of Education": 2
-      }
+      "status": "failed",
+      "count": 0,
+      "error": "HTTP Error 503: Service Unavailable"
     },
     {
       "task": "dcard",
       "source": "Dcard",
       "status": "healthy",
-      "count": 5,
+      "count": 0,
       "error": null,
       "engine_counts": {
-        "google_news": 5,
+        "google_news": 0,
         "bing_web": 0
       }
     },
@@ -6651,10 +6674,10 @@
       "task": "ptt",
       "source": "PTT",
       "status": "healthy",
-      "count": 1,
+      "count": 0,
       "error": null,
       "engine_counts": {
-        "google_news": 1,
+        "google_news": 0,
         "bing_web": 0
       }
     },
@@ -6662,10 +6685,10 @@
       "task": "instagram",
       "source": "Instagram",
       "status": "healthy",
-      "count": 61,
+      "count": 0,
       "error": null,
       "engine_counts": {
-        "google_news": 61,
+        "google_news": 0,
         "bing_web": 0
       }
     },
@@ -6673,7 +6696,7 @@
       "task": "threads",
       "source": "Threads",
       "status": "healthy",
-      "count": 122,
+      "count": 125,
       "error": null,
       "engine_counts": {
         "threads_direct": 0,
@@ -6682,9 +6705,10 @@
         "duckduckgo": 0,
         "bing": 0,
         "yahoo": 0,
-        "mojeek": 0
+        "mojeek": 0,
+        "threads_default": 3
       },
-      "deep_search_last_run": "2026-11-08T23:40:52.398792+08:00",
+      "deep_search_last_run": "2026-11-09T04:04:02.092926+08:00",
       "deep_search_terms": [
         "國北教大",
         "北教大",
@@ -6703,17 +6727,17 @@
     }
   ],
   "summary": {
-    "total": 565,
-    "fresh_this_run": 92,
-    "healthy_tasks": 5,
-    "failed_tasks": 0,
-    "news_publishers": 46,
-    "removed_school_only": 0,
-    "removed_unverified_news_date": 2,
+    "total": 556,
+    "fresh_this_run": 0,
+    "healthy_tasks": 4,
+    "failed_tasks": 1,
+    "news_publishers": 39,
+    "removed_school_only": 1,
+    "removed_unverified_news_date": 0,
     "removed_stale_original_news": 0,
     "verified_original_news_dates": 0,
     "resolved_recent_source_urls": 0,
-    "google_news_fallback_urls": 13,
+    "google_news_fallback_urls": 12,
     "removed_school_only_relevance": 0
   }
 }
