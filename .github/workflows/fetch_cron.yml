@@ -13,8 +13,13 @@ on:
       - "scripts/resolve_source_urls.py"
       - "scripts/filter_relevance.py"
       - ".github/workflows/fetch_cron.yml"
+  # Run once before each enabled 07:30 / 14:30 / 21:30 Asia/Taipei delivery.
+  # Allow collection and GitHub scheduler delay before Vercel's pre-wake.
+  # Cron is UTC; times below are 06:55, 13:55, 20:55 in Taiwan.
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "55 22 * * *"  # 06:55 Asia/Taipei (next day)
+    - cron: "55 5 * * *"   # 13:55 Asia/Taipei
+    - cron: "55 12 * * *"  # 20:55 Asia/Taipei
   workflow_dispatch:
 
 permissions:
