@@ -8,7 +8,9 @@ export const dynamic = "force-dynamic";
 const REPOSITORY = "aitest-ai/ntue-news-bulletin";
 const SETTINGS_PATH = "frontend/public/data/settings.json";
 const TIME_RE = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
-const PREWAKE_MINUTES = 18;
+// Keep the GitHub delivery runner warm briefly instead of idling for 18 minutes.
+// Exact-time GitHub cron fallback stays active for resilience.
+const PREWAKE_MINUTES = 5;
 
 type Profile = {
   id?: string;
