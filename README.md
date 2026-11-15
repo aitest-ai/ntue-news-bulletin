@@ -1,52 +1,28 @@
-# 國北教大新聞公佈欄 (NTUE News Bulletin Board)
+# 國北教大輿情監測系統
 
-本系統是一套受密碼保護的定時新聞公佈欄，專門為國立臺北教育大學（NTUE）相關網路新聞設計。
+本專案協助整理與國立臺北教育大學相關的公開新聞及網路討論，提供資料彙整、查閱與定時電子報功能。
 
-> Deployment trigger: GitHub–Vercel connection confirmed after repository linking on 2026-09-03.
+> 本系統為獨立開發的輿情彙整工具，內容引用公開來源，不代表國立臺北教育大學官方立場。
 
-## 🌟 系統特色
-- **密碼安全保護**：首頁設有密碼鎖定（預設密碼：`ntue1234`），登入成功後才會取得 JWT 憑證，並載入新聞內容。後端所有 API 皆受憑證保護。
-- **特定頻率採集**：每天早上 **7:30 - 10:00** 期間，每 30 分鐘（07:30, 08:00, 08:30, 09:00, 09:30, 10:00）會自動從 Google News RSS 抓取最新新聞。
-- **無 LINE 推播**：本版本完全移除了 LINE 自動推播邏輯，轉為單純的網頁公佈欄形式。
-- **輕量與快開**：預設採用 SQLite 本地資料庫，免去繁瑣的 PostgreSQL 資料庫建置，開箱即用。
+## 功能概要
 
-## 📂 專案架構
-詳細的系統架構圖與 API 說明，請參見 [系統產出的 Walkthrough](file:///C:/Users/User/.gemini/antigravity/brain/269e1ac6-37c6-4069-9cca-173a37183dd9/walkthrough.md)。
+- **輿情彙整**：從公開新聞與可公開檢索的社群資訊整理相關內容。
+- **資料查閱**：透過網頁瀏覽近期彙整結果。
+- **定時電子報**：可依管理者設定的時段寄送整理結果。
+- **排程蒐集**：輿情資料在寄送前定時更新，不再每十分鐘執行一次。
+- **後台管理**：相關設定與操作權限由系統管理者維護。
 
-## 🚀 快速啟動 (Docker Compose)
-1. 於本專案根目錄下執行啟動指令：
-   ```bash
-   docker compose up --build -d
-   ```
-2. 存取系統：
-   - 前台佈告欄：[http://localhost:3002](http://localhost:3002)（預設登入密碼：`ntue1234`）
-   - 後端 API 文件：[http://localhost:8001/docs](http://localhost:8001/docs)
+## 技術概要
 
-## 🛠️ 本地手動執行 (免 Docker)
-請依序啟動後端與前端：
+系統包含 Python 資料處理程式、Next.js 網頁介面及 GitHub Actions 定時工作；網頁服務可部署於 Vercel。
 
-### 1. 後端 (FastAPI)
-1. 進入 `backend` 目錄：
-   ```bash
-   cd backend
-   ```
-2. 安裝套件並啟動伺服器：
-   ```bash
-   python -m venv venv
-   venv\Scripts\activate
-   pip install -r requirements.txt
-   uvicorn app.main:app --host 127.0.0.1 --port 8001
-   ```
+## 安全與資料使用
 
-### 2. 前端 (Next.js)
-1. 進入 `frontend` 目錄：
-   ```bash
-   cd ../frontend
-   ```
-2. 安裝套件並啟動開發伺服器：
-   ```bash
-   npm install
-   $env:BACKEND_URL="http://127.0.0.1:8001"
-   npm run dev
-   ```
-3. 造訪 [http://localhost:3002](http://localhost:3002) 並使用 `ntue1234` 登入。
+- 不在公開說明中揭露管理密碼、API 金鑰、郵件帳號、收件名單或內部操作資訊。
+- 敏感憑證應使用受保護的環境變數或其他機密管理方式保存，不應直接寫入原始碼。
+- 公開來源的內容仍須遵守相關網站的使用規範，並以原始來源為準。
+- 本專案目前仍保留私人存取權限。**公開儲存庫前，必須另外完成程式碼、資料檔、歷史提交與執行紀錄的安全檢查。**
+
+## 維運說明
+
+系統的登入、通知對象、部署授權與故障排除細節，僅提供授權管理者使用，不收錄於此公開導覽文件。
